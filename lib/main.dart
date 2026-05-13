@@ -19,8 +19,12 @@ void main() async {
   sharedPrefs = await SharedPreferences.getInstance();
 
   if (!kIsWeb && Platform.isWindows) {
-    await windowManager.ensureInitialized();
-    await TrayManager.init();
+    try {
+      await windowManager.ensureInitialized();
+      await TrayManager.init();
+    } catch (_) {
+      // Plugin unavailable during hot restart or unsupported platform.
+    }
   }
 
   runApp(const MyApp());

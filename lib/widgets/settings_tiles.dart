@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable section header for settings screens.
@@ -41,7 +40,7 @@ Widget buildSettingsListTile(
           ),
         const SizedBox(width: 8),
         Icon(
-          CupertinoIcons.chevron_forward,
+          Icons.chevron_right,
           size: 16,
           color: theme.iconTheme.color?.withValues(alpha: 0.3),
         ),
@@ -64,7 +63,7 @@ Widget buildSettingsSwitchTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
     leading: Icon(icon, color: theme.iconTheme.color),
     title: Text(title, style: theme.textTheme.bodyLarge),
-    trailing: CupertinoSwitch(value: value, onChanged: onChanged),
+    trailing: Switch(value: value, onChanged: onChanged),
   );
 }
 
@@ -94,7 +93,7 @@ Widget buildSettingsDisabledListTile(
           ),
         const SizedBox(width: 8),
         Icon(
-          CupertinoIcons.chevron_forward,
+          Icons.chevron_right,
           size: 16,
           color: dimColor,
         ),
@@ -119,6 +118,6 @@ Widget buildSettingsDisabledSwitchTile(
       title,
       style: theme.textTheme.bodyLarge?.copyWith(color: dimColor),
     ),
-    trailing: CupertinoSwitch(value: value, onChanged: null),
+    trailing: Switch(value: value, onChanged: null),
   );
 }

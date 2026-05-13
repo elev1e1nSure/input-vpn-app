@@ -29,15 +29,19 @@ class _HomePageState extends State<HomePage> with WindowListener {
   void initState() {
     super.initState();
     if (!kIsWeb && Platform.isWindows) {
-      windowManager.addListener(this);
-      windowManager.setPreventClose(true);
+      try {
+        windowManager.addListener(this);
+        windowManager.setPreventClose(true);
+      } catch (_) {}
     }
   }
 
   @override
   void dispose() {
     if (!kIsWeb && Platform.isWindows) {
-      windowManager.removeListener(this);
+      try {
+        windowManager.removeListener(this);
+      } catch (_) {}
     }
     super.dispose();
   }
@@ -45,11 +49,13 @@ class _HomePageState extends State<HomePage> with WindowListener {
   @override
   void onWindowClose() async {
     final appState = AppState.of(context, listen: false);
-    if (appState.minimizeToTray) {
-      await windowManager.hide();
-    } else {
-      await windowManager.destroy();
-    }
+    try {
+      if (appState.minimizeToTray) {
+        await windowManager.hide();
+      } else {
+        await windowManager.destroy();
+      }
+    } catch (_) {}
   }
 
   @override
