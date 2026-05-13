@@ -98,6 +98,7 @@ class AppStrings {
   String get upToDate => isRu ? 'Актуальная версия' : 'Up to Date';
   String get updateAvailable => isRu ? 'Доступно обновление' : 'Update Available';
   String get check => isRu ? 'Проверить' : 'Check';
+  String get minimizeToTray => isRu ? 'Сворачивать в трей' : 'Minimize to Tray';
   String get language => isRu ? 'Язык' : 'Language';
 
   // --- Settings ---

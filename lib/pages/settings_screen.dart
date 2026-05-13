@@ -107,6 +107,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               appState.autoLaunch,
               (val) => appState.setAutoLaunch(val),
             ),
+          if (Platform.isWindows)
+            buildSettingsSwitchTile(
+              theme,
+              s.minimizeToTray,
+              Icons.minimize,
+              appState.minimizeToTray,
+              (val) => appState.setMinimizeToTray(val),
+            ),
           buildSettingsListTile(
             theme,
             s.advanced,

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
@@ -9,6 +10,7 @@ import 'package:vpn/pages/settings_screen.dart';
 import 'package:vpn/pages/servers_screen.dart';
 import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/l10n/app_strings.dart';
+import 'package:window_manager/window_manager.dart';
 
 @NowaGenerated()
 class HomePage extends StatefulWidget {
@@ -19,9 +21,36 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WindowListener {
   int _selectedIndex = 0;
   bool _sidebarExpanded = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb && Platform.isWindows) {
+      windowManager.addListener(this);
+      windowManager.setPreventClose(true);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (!kIsWeb && Platform.isWindows) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    final appState = AppState.of(context, listen: false);
+    if (appState.minimizeToTray) {
+      await windowManager.hide();
+    } else {
+      await windowManager.destroy();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

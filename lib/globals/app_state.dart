@@ -13,6 +13,7 @@ import 'package:vpn/services/singbox_vpn_service.dart';
 import 'package:vpn/services/subscription_service.dart';
 import 'package:vpn/services/vpn_service.dart';
 import 'package:vpn/services/vpn_url_parser.dart';
+import 'package:vpn/services/tray_manager.dart';
 import 'package:vpn/services/windows_startup_manager.dart';
 import 'package:vpn/vpn_server.dart';
 import 'package:vpn/vpn_config.dart';
@@ -40,6 +41,7 @@ class AppState extends ChangeNotifier {
         _subs = subscriptionService ?? SubscriptionService() {
     _connectOnBoot = sharedPrefs.getBool('connectOnBoot') ?? false;
     _autoLaunch = sharedPrefs.getBool('autoLaunch') ?? false;
+    _minimizeToTray = sharedPrefs.getBool('minimizeToTray') ?? false;
     _customDns = sharedPrefs.getString('customDns') ?? 'Default';
     _dnsPreset = sharedPrefs.getString('dnsPreset') ?? 'cloudflare';
     _proxyPort = sharedPrefs.getInt('proxyPort') ?? 11080;
@@ -174,6 +176,7 @@ class AppState extends ChangeNotifier {
 
   bool _connectOnBoot = false;
   bool _autoLaunch = false;
+  bool _minimizeToTray = false;
 
   String _customDns = 'Default';
   String _dnsPreset = 'cloudflare';
@@ -185,6 +188,10 @@ class AppState extends ChangeNotifier {
 
   bool get autoLaunch {
     return _autoLaunch;
+  }
+
+  bool get minimizeToTray {
+    return _minimizeToTray;
   }
 
   String get customDns {
@@ -369,9 +376,11 @@ class AppState extends ChangeNotifier {
       case Connecting():
         _isConnecting = true;
         _isConnected = false;
+        TrayManager.updateTooltip('Connecting...');
       case Connected():
         _isConnecting = false;
         _isConnected = true;
+        TrayManager.updateTooltip('Connected');
       case Disconnected(failure: final f):
         _isConnecting = false;
         _isConnected = false;
@@ -382,6 +391,7 @@ class AppState extends ChangeNotifier {
         _ping = 0;
         _downloadSpeed = '0.0 KB/s';
         _uploadSpeed = '0.0 KB/s';
+        TrayManager.updateTooltip('Disconnected');
     }
     notifyListeners();
   }
@@ -426,6 +436,13 @@ class AppState extends ChangeNotifier {
     } else {
       WindowsStartupManager.disable();
     }
+    notifyListeners();
+  }
+
+  void setMinimizeToTray(bool value) {
+    if (_minimizeToTray == value) return;
+    _minimizeToTray = value;
+    sharedPrefs.setBool('minimizeToTray', value);
     notifyListeners();
   }
 

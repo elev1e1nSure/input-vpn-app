@@ -1,17 +1,27 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/globals/router.dart';
 import 'package:vpn/globals/shared_prefs.dart';
 import 'package:vpn/l10n/app_strings.dart';
+import 'package:vpn/services/tray_manager.dart';
 
 @NowaGenerated()
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
+
+  if (!kIsWeb && Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    await TrayManager.init();
+  }
 
   runApp(const MyApp());
 }
