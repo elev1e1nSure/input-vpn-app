@@ -54,3 +54,6 @@ hiddify-app/
 # Windows artifacts
 nul
 cache.db
+
+# AI context (local-only)
+AI_CONTEXT.md
