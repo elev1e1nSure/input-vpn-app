@@ -15,7 +15,7 @@ class AppStrings {
 
   // --- HomePage ---
   String get setupRequired => isRu ? 'Требуется настройка' : 'Setup Required';
-  String get connectInOneMinute => isRu ? 'Подключите VPN за 1 минуту' : 'Connect VPN in 1 minute';
+  String get connectInOneMinute => isRu ? 'Подключите VPN' : 'Connect VPN';
   String get emptyStateSubtitle => isRu
       ? 'Импортируйте конфиг, отсканируйте QR или вставьте ссылку'
       : 'Import a config, scan a QR code, or paste a link';

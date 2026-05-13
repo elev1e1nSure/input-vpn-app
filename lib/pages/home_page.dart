@@ -127,13 +127,16 @@ class _Sidebar extends StatelessWidget {
             SizedBox(
               height: 48,
               child: Center(
-                child: IconButton(
-                  icon: Icon(
-                    expanded ? Icons.menu_open : Icons.menu,
-                    size: 20,
-                    color: theme.iconTheme.color?.withValues(alpha: 0.6),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: IconButton(
+                    icon: Icon(
+                      expanded ? Icons.menu_open : Icons.menu,
+                      size: 20,
+                      color: theme.iconTheme.color?.withValues(alpha: 0.6),
+                    ),
+                    onPressed: onToggleExpand,
                   ),
-                  onPressed: onToggleExpand,
                 ),
               ),
             ),
@@ -644,8 +647,8 @@ class _HomeTab extends StatelessWidget {
                                     server != null
                                         ? s.selectedServer
                                         : s.noServer,
-                                    style: theme.textTheme.bodyMedium
-                                        ?.copyWith(fontSize: 11),
+                                    style: theme.textTheme.titleLarge
+                                        ?.copyWith(fontSize: 11, fontWeight: FontWeight.normal),
                                   ),
                                   const SizedBox(height: 2),
                                   if (server != null)
@@ -660,16 +663,19 @@ class _HomeTab extends StatelessWidget {
                               ),
                             ),
                             if (server != null)
-                              IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  size: 18,
-                                  color: theme.colorScheme.error
-                                      .withValues(alpha: 0.7),
+                              MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    size: 18,
+                                    color: theme.colorScheme.error
+                                        .withValues(alpha: 0.7),
+                                  ),
+                                  onPressed: () {
+                                    appState.removeConfig(server.configId);
+                                  },
                                 ),
-                                onPressed: () {
-                                  appState.removeConfig(server.configId);
-                                },
                               ),
                           ],
                         ),

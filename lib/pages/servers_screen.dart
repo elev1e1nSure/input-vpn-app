@@ -74,21 +74,27 @@ class ServersScreen extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: Text(AppStrings.of(context).myServers),
         leading: Navigator.of(context).canPop()
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.of(context).pop(),
+            ? MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               )
             : null,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.of(context).push(
-                CupertinoPageRoute<void>(
-                  builder: (context) => const AddConfigScreen(),
-                ),
-              );
-            },
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.of(context).push(
+                  CupertinoPageRoute<void>(
+                    builder: (context) => const AddConfigScreen(),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -167,16 +173,19 @@ class ServersScreen extends StatelessWidget {
                               : theme.colorScheme.error,
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: Icon(
-                            Icons.delete_outline,
-                            size: 18,
-                            color: theme.colorScheme.error
-                                .withValues(alpha: 0.7),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: theme.colorScheme.error
+                                  .withValues(alpha: 0.7),
+                            ),
+                            onPressed: () {
+                              appState.removeConfig(server.configId);
+                            },
                           ),
-                          onPressed: () {
-                            appState.removeConfig(server.configId);
-                          },
                         ),
                       ],
                     ),

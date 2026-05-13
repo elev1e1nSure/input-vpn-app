@@ -6,8 +6,8 @@ final ThemeData lightTheme = ThemeData(
   colorScheme: const ColorScheme.light(),
   textTheme: const TextTheme(),
   switchTheme: SwitchThemeData(
-    trackOutlineWidth: const WidgetStatePropertyAll(0),
-    trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+    trackOutlineWidth: const WidgetStatePropertyAll(0.5),
+    trackOutlineColor: WidgetStateProperty.all(const Color(0xFF808080).withValues(alpha: 0.25)),
   ),
 );
 
@@ -49,8 +49,8 @@ final ThemeData darkTheme = ThemeData(
   ),
   iconTheme: const IconThemeData(color: Colors.white),
   switchTheme: SwitchThemeData(
-    trackOutlineWidth: const WidgetStatePropertyAll(0),
-    trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+    trackOutlineWidth: const WidgetStatePropertyAll(0.5),
+    trackOutlineColor: WidgetStateProperty.all(const Color(0xFF808080).withValues(alpha: 0.25)),
   ),
   dividerTheme: const DividerThemeData(
     color: Color(0xFF38383A),
