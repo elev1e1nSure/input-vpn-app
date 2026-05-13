@@ -89,16 +89,17 @@ class _Sidebar extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (expanded)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child: Text(
-                  'Input VPN',
-                  style: theme.textTheme.titleMedium,
+            Padding(
+              padding: EdgeInsets.fromLTRB(expanded ? 12 : 8, 12, expanded ? 12 : 8, 8),
+              child: IconButton(
+                icon: Icon(
+                  expanded ? Icons.menu_open : Icons.menu,
+                  size: 20,
+                  color: theme.iconTheme.color?.withValues(alpha: 0.6),
                 ),
-              )
-            else
-              const SizedBox(height: 56),
+                onPressed: onToggleExpand,
+              ),
+            ),
             Divider(
               height: 1,
               color: theme.dividerTheme.color,
@@ -126,25 +127,6 @@ class _Sidebar extends StatelessWidget {
               onTap: () => onItemSelected(2),
             ),
             const Spacer(),
-            Divider(
-              height: 1,
-              color: theme.dividerTheme.color,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Center(
-                child: IconButton(
-                  icon: Icon(
-                    expanded
-                        ? Icons.menu_open
-                        : Icons.menu,
-                    size: 18,
-                    color: theme.iconTheme.color?.withValues(alpha: 0.5),
-                  ),
-                  onPressed: onToggleExpand,
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -605,9 +587,10 @@ class _HomeTab extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
-                                child: Text(
-                                  server != null ? '🌍' : '🌍',
-                                  style: const TextStyle(fontSize: 20),
+                                child: Icon(
+                                  Icons.public,
+                                  size: 20,
+                                  color: theme.iconTheme.color?.withValues(alpha: 0.3),
                                 ),
                               ),
                             ),
