@@ -148,7 +148,7 @@ class _Sidebar extends StatelessWidget {
   }
 }
 
-class _SidebarItem extends StatelessWidget {
+class _SidebarItem extends StatefulWidget {
   const _SidebarItem({
     required this.expanded,
     required this.icon,
@@ -164,75 +164,76 @@ class _SidebarItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_SidebarItem> createState() => _SidebarItemState();
+}
+
+class _SidebarItemState extends State<_SidebarItem> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hoverNotifier = ValueNotifier<bool>(false);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) => hoverNotifier.value = true,
-      onExit: (_) => hoverNotifier.value = false,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: onTap,
-        child: ValueListenableBuilder<bool>(
-          valueListenable: hoverNotifier,
-          builder: (context, hovered, child) {
-            return AnimatedScale(
-              scale: hovered ? 1.03 : 1.0,
-              duration: const Duration(milliseconds: 150),
-                child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                      : hovered
-                          ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
-                          : null,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      child: Center(
-                        child: Icon(
-                          icon,
-                          size: 20,
-                          color: selected
-                              ? theme.colorScheme.primary
-                              : theme.iconTheme.color?.withValues(alpha: 0.5),
-                        ),
-                      ),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _hovered ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: widget.selected
+                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                  : _hovered
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
+                      : null,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 24,
+                  child: Center(
+                    child: Icon(
+                      widget.icon,
+                      size: 20,
+                      color: widget.selected
+                          ? theme.colorScheme.primary
+                          : theme.iconTheme.color?.withValues(alpha: 0.5),
                     ),
-                    AnimatedOpacity(
-                      opacity: expanded ? 1 : 0,
-                      duration: const Duration(milliseconds: 120),
-                      child: SizedBox(
-                        width: expanded ? null : 0,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(width: 8),
-                            Text(
-                              label,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontSize: 13,
-                                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                                color: selected
-                                    ? theme.colorScheme.primary
-                                    : theme.textTheme.bodyMedium?.color
-                                        ?.withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
+                AnimatedOpacity(
+                  opacity: widget.expanded ? 1 : 0,
+                  duration: const Duration(milliseconds: 120),
+                  child: SizedBox(
+                    width: widget.expanded ? null : 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.label,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 13,
+                            fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
+                            color: widget.selected
+                                ? theme.colorScheme.primary
+                                : theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
