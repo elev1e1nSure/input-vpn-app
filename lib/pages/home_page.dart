@@ -392,9 +392,12 @@ class _HomeTab extends StatelessWidget {
       appBar: AppBar(
         title: const SizedBox.shrink(),
         actions: [
-          IconButton(
-            icon: const Icon(CupertinoIcons.add),
-            onPressed: () => _openAddConfig(context),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: IconButton(
+              icon: const Icon(CupertinoIcons.add),
+              onPressed: () => _openAddConfig(context),
+            ),
           ),
         ],
       ),
