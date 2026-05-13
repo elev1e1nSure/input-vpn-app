@@ -1,8 +1,9 @@
 {
+    "showGrid": false,
     "canvases": [
         {
-            "x": 500,
-            "y": 200,
+            "x": 650,
+            "y": 253,
             "w": 393,
             "h": 808,
             "widget": "const HomePage()",

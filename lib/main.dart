@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/globals/router.dart';
@@ -18,7 +18,7 @@ main() async {
 
 @NowaGenerated({'visibleInNowa': false})
 class MyApp extends StatelessWidget {
-  @NowaGenerated()
+  @NowaGenerated({'loader': 'auto-constructor'})
   const MyApp({super.key});
 
   @override
