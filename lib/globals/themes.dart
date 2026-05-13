@@ -10,7 +10,7 @@ final ThemeData lightTheme = ThemeData(
 @NowaGenerated()
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
-  scaffoldBackgroundColor: Colors.black,
+  scaffoldBackgroundColor: const Color(0xFF121212),
   colorScheme: const ColorScheme.dark(
     primary: Color(0xFF0A84FF),
     secondary: Color(0xFF0A84FF),
