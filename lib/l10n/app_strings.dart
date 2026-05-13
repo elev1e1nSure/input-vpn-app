@@ -15,6 +15,10 @@ class AppStrings {
 
   // --- HomePage ---
   String get setupRequired => isRu ? 'Требуется настройка' : 'Setup Required';
+  String get connectInOneMinute => isRu ? 'Подключите VPN за 1 минуту' : 'Connect VPN in 1 minute';
+  String get emptyStateSubtitle => isRu
+      ? 'Импортируйте конфиг, отсканируйте QR или вставьте ссылку'
+      : 'Import a config, scan a QR code, or paste a link';
   String get connecting => isRu ? 'Подключение...' : 'Connecting...';
   String get connected => isRu ? 'Подключено' : 'Connected';
   String get readyToConnect => isRu ? 'Готово к подключению' : 'Ready to Connect';
@@ -24,9 +28,30 @@ class AppStrings {
   String get selectedServer => isRu ? 'Выбранный сервер' : 'Selected Server';
   String get noServer => isRu ? 'Нет сервера' : 'No Server';
   String get addAConfiguration => isRu ? 'Добавить конфигурацию' : 'Add a configuration';
+  String get addConfigurationBtn => isRu ? 'Добавить конфигурацию' : 'Add Configuration';
+  String get connect => isRu ? 'Подключить' : 'Connect';
+  String get disconnect => isRu ? 'Отключить' : 'Disconnect';
+  String get disconnectedStatus => isRu ? 'Отключено' : 'Disconnected';
   String get ping => isRu ? 'ПИНГ' : 'PING';
   String get download => isRu ? 'СКАЧИВАНИЕ' : 'DOWNLOAD';
   String get upload => isRu ? 'ОТПРАВКА' : 'UPLOAD';
+
+  // --- Onboarding Quick Actions ---
+  String get importConfig => isRu ? 'Импорт' : 'Import';
+  String get scanQR => isRu ? 'Скан QR' : 'Scan QR';
+  String get getConfig => isRu ? 'Получить' : 'Get Config';
+
+  // --- Trust / Micro-info ---
+  String get configsStoredLocally => isRu ? 'Конфигурации хранятся локально' : 'Configs stored locally';
+  String get supportsWireGuardOpenVPN => isRu ? 'Поддержка VLESS / VMess / SS / Trojan' : 'VLESS / VMess / SS / Trojan support';
+
+  // --- Mock server states ---
+  String get offline => isRu ? 'Offline' : 'Offline';
+  String get notConfigured => isRu ? 'Не настроен' : 'Not configured';
+
+  // --- Mode toggle ---
+  String get vpnLabel => isRu ? 'VPN' : 'VPN';
+  String get socks5Label => isRu ? 'SOCKS5' : 'SOCKS5';
 
   // --- ServersScreen ---
   String get myServers => isRu ? 'Мои серверы' : 'My Servers';

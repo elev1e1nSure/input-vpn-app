@@ -27,19 +27,24 @@ class HomePage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.dividerTheme.color!),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: theme.dividerTheme.color ??
+                  theme.colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               _ModePill(
-                label: s.vpnMode,
+                label: s.vpnLabel,
+                icon: CupertinoIcons.shield_fill,
                 active: !isProxy,
                 theme: theme,
               ),
               _ModePill(
-                label: s.proxyMode,
+                label: s.socks5Label,
+                icon: CupertinoIcons.wifi,
                 active: isProxy,
                 theme: theme,
               ),
@@ -62,29 +67,249 @@ class HomePage extends StatelessWidget {
       children: [
         Icon(
           icon,
-          size: 24,
+          size: 20,
           color: theme.iconTheme.color?.withValues(alpha: 0.5),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           value,
           style: theme.textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.bold,
+            fontSize: 14,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(label, style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10),
+        ),
       ],
     );
+  }
+
+  Widget _buildQuickAction({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: theme.dividerTheme.color ??
+                    theme.colorScheme.onSurface.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 22,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    final s = AppStrings.of(context);
+    return Row(
+      children: [
+        _buildQuickAction(
+          context: context,
+          icon: CupertinoIcons.arrow_down_doc,
+          label: s.importConfig,
+          onTap: () => _goToAddConfig(context),
+        ),
+        const SizedBox(width: 10),
+        _buildQuickAction(
+          context: context,
+          icon: CupertinoIcons.qrcode,
+          label: s.scanQR,
+          onTap: () => _goToAddConfig(context),
+        ),
+        const SizedBox(width: 10),
+        _buildQuickAction(
+          context: context,
+          icon: CupertinoIcons.link,
+          label: s.getConfig,
+          onTap: () => _goToAddConfig(context),
+        ),
+      ],
+    );
+  }
+
+  void _goToAddConfig(BuildContext context) {
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (context) => const ServersScreen(),
+      ),
+    );
+  }
+
+  Widget _buildMockServerRow(
+    BuildContext context, {
+    required String flag,
+    required String city,
+    required String status,
+    required Color statusColor,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.dividerTheme.color ??
+              theme.colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(flag, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              city,
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
+            ),
+          ),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: statusColor,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            status,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 11,
+              color: statusColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockServers(BuildContext context) {
+    final s = AppStrings.of(context);
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Servers',
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontSize: 11,
+            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildMockServerRow(
+          context,
+          flag: countryCodeToEmoji('DE'),
+          city: 'Frankfurt',
+          status: s.offline,
+          statusColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+        ),
+        const SizedBox(height: 8),
+        _buildMockServerRow(
+          context,
+          flag: countryCodeToEmoji('NL'),
+          city: 'Amsterdam',
+          status: s.notConfigured,
+          statusColor: Colors.orange.withValues(alpha: 0.7),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrustInfo(BuildContext context) {
+    final s = AppStrings.of(context);
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          CupertinoIcons.lock_fill,
+          size: 10,
+          color: muted,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          s.configsStoredLocally,
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontSize: 10,
+            color: muted,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Icon(
+          CupertinoIcons.checkmark_shield_fill,
+          size: 10,
+          color: muted,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          s.supportsWireGuardOpenVPN,
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontSize: 10,
+            color: muted,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _mainButtonLabel(AppState appState, AppStrings s) {
+    if (appState.selectedServer == null) return s.addConfigurationBtn;
+    if (appState.isConnecting) return s.connecting;
+    if (appState.isConnected) return s.disconnect;
+    return s.connect;
+  }
+
+  IconData _mainButtonIcon(AppState appState) {
+    if (appState.selectedServer == null) return CupertinoIcons.add;
+    if (appState.isConnecting) return CupertinoIcons.pause_fill;
+    if (appState.isConnected) return CupertinoIcons.power;
+    return CupertinoIcons.power;
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = AppState.of(context);
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     final bool isConnected = appState.isConnected;
     final bool isConnecting = appState.isConnecting;
     final server = appState.selectedServer;
+    final hasServer = server != null;
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -105,222 +330,289 @@ class HomePage extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            Column(
-              children: [
-                const Spacer(),
-            Text(
-              server == null
-                  ? AppStrings.of(context).setupRequired
-                  : isConnecting
-                  ? AppStrings.of(context).connecting
-                  : isConnected
-                  ? AppStrings.of(context).connected
-                  : AppStrings.of(context).readyToConnect,
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: isConnected
-                    ? theme.colorScheme.primary
-                    : theme.textTheme.titleLarge?.color,
-                fontSize: 22,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              server == null
-                  ? AppStrings.of(context).pleaseAddConfig
-                  : isConnected
-                  ? AppStrings.of(context).yourIpIsHidden
-                  : AppStrings.of(context).securityLevelHigh,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: isConnected
-                    ? theme.colorScheme.primary.withValues(alpha: 0.8)
-                    : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-              ),
-            ),
-            if (Platform.isWindows) ...[
-              const SizedBox(height: 16),
-              _buildModeToggle(context, appState),
-            ],
-            const Spacer(),
-            MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  if (server == null) {
-                    Navigator.of(context).push(
-                      CupertinoPageRoute<void>(
-                        builder: (context) => const ServersScreen(),
-                      ),
-                    );
-                  } else {
-                    appState.toggleConnection();
-                  }
-                },
-                child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isConnected
-                      ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                      : theme.colorScheme.surface,
-                  border: Border.all(
-                    color: isConnected
-                        ? theme.colorScheme.primary
-                        : theme.dividerTheme.color!,
-                    width: 2,
-                  ),
-                  boxShadow: isConnected
-                      ? [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.3,
-                            ),
-                            blurRadius: 40,
-                            spreadRadius: 10,
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Center(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: server == null
-                          ? theme.colorScheme.surface
-                          : isConnected
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    hasServer
+                        ? (isConnecting
+                            ? s.connecting
+                            : isConnected
+                                ? s.connected
+                                : s.readyToConnect)
+                        : s.connectInOneMinute,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: isConnected
                           ? theme.colorScheme.primary
-                          : const Color(0xFF3A3A3C),
+                          : theme.textTheme.titleLarge?.color,
+                      fontSize: 20,
                     ),
-                    child: Center(
-                      child: isConnecting
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Icon(
-                              server == null
-                                  ? CupertinoIcons.add
-                                  : CupertinoIcons.power,
-                              size: 60,
-                              color: Colors.white,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    hasServer
+                        ? (isConnected
+                            ? s.yourIpIsHidden
+                            : s.securityLevelHigh)
+                        : s.emptyStateSubtitle,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isConnected
+                          ? theme.colorScheme.primary.withValues(alpha: 0.8)
+                          : theme.textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.5),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (!hasServer) ...[
+                    _buildQuickActions(context),
+                    const SizedBox(height: 16),
+                  ],
+                  if (Platform.isWindows) ...[
+                    _buildModeToggle(context, appState),
+                    const SizedBox(height: 16),
+                  ],
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (!hasServer) {
+                          _goToAddConfig(context);
+                        } else {
+                          appState.toggleConnection();
+                        }
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            width: 170,
+                            height: 170,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isConnected
+                                  ? theme.colorScheme.primary
+                                      .withValues(alpha: 0.12)
+                                  : theme.colorScheme.surface,
+                              border: Border.all(
+                                color: isConnected
+                                    ? theme.colorScheme.primary
+                                    : theme.dividerTheme.color ??
+                                        theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.15),
+                                width: 2,
+                              ),
+                              boxShadow: isConnected
+                                  ? [
+                                      BoxShadow(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.25),
+                                        blurRadius: 32,
+                                        spreadRadius: 6,
+                                      ),
+                                    ]
+                                  : null,
                             ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const Spacer(),
-            AnimatedOpacity(
-              opacity: isConnected ? 1 : 0,
-              duration: const Duration(milliseconds: 300),
-              child: isConnected
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatItem(
-                          context,
-                          AppStrings.of(context).ping,
-                          '${appState.ping} ms',
-                          CupertinoIcons.wifi,
-                        ),
-                        _buildStatItem(
-                          context,
-                          AppStrings.of(context).download,
-                          appState.downloadSpeed,
-                          CupertinoIcons.arrow_down,
-                        ),
-                        _buildStatItem(
-                          context,
-                          AppStrings.of(context).upload,
-                          appState.uploadSpeed,
-                          CupertinoIcons.arrow_up,
-                        ),
-                      ],
-                    )
-                  : const SizedBox(height: 68),
-            ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      CupertinoPageRoute<void>(
-                        builder: (context) => const ServersScreen(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.cardTheme.color ?? theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: theme.dividerTheme.color!),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: theme.scaffoldBackgroundColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            server != null
-                                ? countryCodeToEmoji(server.flagCode)
-                                : '?',
-                            style: const TextStyle(fontSize: 24),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              server != null ? AppStrings.of(context).selectedServer : AppStrings.of(context).noServer,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontSize: 12,
+                            child: Center(
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                width: hasServer ? 120 : 110,
+                                height: hasServer ? 120 : 110,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isConnected
+                                      ? theme.colorScheme.primary
+                                      : hasServer
+                                          ? const Color(0xFF3A3A3C)
+                                          : theme.colorScheme.surface,
+                                ),
+                                child: Center(
+                                  child: AnimatedSwitcher(
+                                    duration:
+                                        const Duration(milliseconds: 250),
+                                    transitionBuilder: (child, animation) {
+                                      return ScaleTransition(
+                                        scale: animation,
+                                        child: child,
+                                      );
+                                    },
+                                    child: isConnecting
+                                        ? const SizedBox(
+                                            width: 32,
+                                            height: 32,
+                                            child:
+                                                CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 3,
+                                            ),
+                                          )
+                                        : Icon(
+                                            _mainButtonIcon(appState),
+                                            key: ValueKey<bool>(hasServer),
+                                            size: hasServer ? 48 : 40,
+                                            color: Colors.white,
+                                          ),
+                                  ),
+                                ),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _mainButtonLabel(appState, s),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 12,
+                              color: isConnected
+                                  ? theme.colorScheme.primary
+                                  : theme.textTheme.bodyMedium?.color
+                                      ?.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (!hasServer) ...[
                             const SizedBox(height: 4),
                             Text(
-                              server != null
-                                  ? server.name
-                                  : AppStrings.of(context).addAConfiguration,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontSize: 16,
+                              s.disconnectedStatus,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 10,
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.3),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  AnimatedOpacity(
+                    opacity: isConnected ? 1 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: isConnected
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildStatItem(
+                                context,
+                                s.ping,
+                                '${appState.ping} ms',
+                                CupertinoIcons.wifi,
+                              ),
+                              _buildStatItem(
+                                context,
+                                s.download,
+                                appState.downloadSpeed,
+                                CupertinoIcons.arrow_down,
+                              ),
+                              _buildStatItem(
+                                context,
+                                s.upload,
+                                appState.uploadSpeed,
+                                CupertinoIcons.arrow_up,
+                              ),
+                            ],
+                          )
+                        : const SizedBox(height: 52),
+                  ),
+                  const SizedBox(height: 20),
+                  if (!hasServer) ...[
+                    _buildMockServers(context),
+                    const SizedBox(height: 12),
+                    _buildTrustInfo(context),
+                    const SizedBox(height: 16),
+                  ],
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (context) => const ServersScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: theme.cardTheme.color ??
+                              theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.dividerTheme.color ??
+                                theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: theme.scaffoldBackgroundColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  server != null
+                                      ? countryCodeToEmoji(server.flagCode)
+                                      : '🌍',
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    server != null
+                                        ? s.selectedServer
+                                        : s.noServer,
+                                    style: theme.textTheme.bodyMedium
+                                        ?.copyWith(fontSize: 11),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    server != null
+                                        ? server.name
+                                        : s.addAConfiguration,
+                                    style: theme.textTheme.titleLarge
+                                        ?.copyWith(fontSize: 15),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              CupertinoIcons.chevron_forward,
+                              size: 18,
+                              color: theme.iconTheme.color
+                                  ?.withValues(alpha: 0.4),
                             ),
                           ],
                         ),
                       ),
-                      Icon(
-                        CupertinoIcons.chevron_forward,
-                        color: theme.iconTheme.color?.withValues(alpha: 0.5),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 24),
+                ],
               ),
-            ),
-          ),
-              ],
             ),
             if (appState.lastError != null)
               Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
+                bottom: 12,
+                left: 16,
+                right: 16,
                 child: _ErrorBanner(message: appState.lastError!),
               ),
           ],
@@ -333,30 +625,48 @@ class HomePage extends StatelessWidget {
 class _ModePill extends StatelessWidget {
   const _ModePill({
     required this.label,
+    required this.icon,
     required this.active,
     required this.theme,
   });
 
   final String label;
+  final IconData icon;
   final bool active;
   final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: active ? theme.colorScheme.primary.withValues(alpha: 0.15) : null,
-        borderRadius: BorderRadius.circular(16),
+        color: active ? theme.colorScheme.primary : null,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: active
-              ? theme.colorScheme.primary
-              : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-          fontWeight: active ? FontWeight.bold : FontWeight.normal,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 12,
+            color: active
+                ? Colors.white
+                : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: active
+                  ? Colors.white
+                  : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+              fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -371,44 +681,52 @@ class _ErrorBanner extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.12),
+        color: theme.colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(CupertinoIcons.exclamationmark_triangle,
-              color: Colors.red, size: 20),
+          Icon(
+            CupertinoIcons.exclamationmark_triangle_fill,
+            color: theme.colorScheme.error,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: SelectableText(
+            child: Text(
               message,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.red.shade100,
-                fontFamily: 'monospace',
-                fontSize: 11,
+                color: theme.colorScheme.onErrorContainer,
+                fontSize: 12,
                 height: 1.3,
               ),
-              maxLines: 12,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          IconButton(
-            tooltip: 'Copy',
-            icon: const Icon(CupertinoIcons.doc_on_clipboard,
-                color: Colors.red, size: 18),
-            onPressed: () =>
-                Clipboard.setData(ClipboardData(text: message)),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => Clipboard.setData(ClipboardData(text: message)),
+            child: Icon(
+              CupertinoIcons.doc_on_clipboard,
+              color: theme.colorScheme.error,
+              size: 16,
+            ),
           ),
-          IconButton(
-            tooltip: 'Dismiss',
-            icon: const Icon(CupertinoIcons.xmark,
-                color: Colors.red, size: 18),
-            onPressed: () =>
-                AppState.of(context, listen: false).clearError(),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => AppState.of(context, listen: false).clearError(),
+            child: Icon(
+              CupertinoIcons.xmark,
+              color: theme.colorScheme.error,
+              size: 16,
+            ),
           ),
         ],
       ),

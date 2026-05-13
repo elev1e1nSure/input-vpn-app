@@ -13,32 +13,35 @@ class ServersScreen extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              CupertinoIcons.add_circled,
-              size: 80,
-              color: theme.iconTheme.color?.withValues(alpha: 0.2),
+              CupertinoIcons.globe,
+              size: 48,
+              color: theme.iconTheme.color?.withValues(alpha: 0.15),
             ),
-            const SizedBox(height: 24),
-            Text(AppStrings.of(context).noServersYet, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            Text(s.noServersYet, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
             Text(
-              AppStrings.of(context).addFirstConfigHint,
+              s.addFirstConfigHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 13,
                 color: theme.textTheme.bodyMedium?.color?.withValues(
-                  alpha: 0.6,
+                  alpha: 0.5,
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             CupertinoButton.filled(
               borderRadius: BorderRadius.circular(12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               onPressed: () {
                 Navigator.of(context).push(
                   CupertinoPageRoute<void>(
@@ -47,8 +50,12 @@ class ServersScreen extends StatelessWidget {
                 );
               },
               child: Text(
-                AppStrings.of(context).addConfig,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                s.addConfig,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
