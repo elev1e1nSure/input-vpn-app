@@ -60,6 +60,7 @@ class AppStrings {
       ? 'Добавьте первую конфигурацию или ссылку на подписку.'
       : 'Add your first configuration or subscription link to get started.';
   String get addConfig => isRu ? 'Добавить' : 'Add Config';
+  String get deleteServer => isRu ? 'Удалить сервер' : 'Delete Server';
 
   // --- AddConfigScreen ---
   String get addConfiguration => isRu ? 'Добавить конфигурацию' : 'Add Configuration';

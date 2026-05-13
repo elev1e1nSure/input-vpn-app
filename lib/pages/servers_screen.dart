@@ -161,6 +161,18 @@ class ServersScreen extends StatelessWidget {
                             color: theme.colorScheme.primary,
                           ),
                         ],
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: Icon(
+                            CupertinoIcons.trash,
+                            size: 18,
+                            color: theme.colorScheme.error
+                                .withValues(alpha: 0.7),
+                          ),
+                          onPressed: () {
+                            appState.removeConfig(server.configId);
+                          },
+                        ),
                       ],
                     ),
                     onTap: () {

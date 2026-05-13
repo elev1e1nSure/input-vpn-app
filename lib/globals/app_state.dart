@@ -63,6 +63,7 @@ class AppState extends ChangeNotifier {
   StreamSubscription<ConnectionStatus>? _statusSub;
   StreamSubscription<VpnStats>? _statsSub;
   Timer? _autoConnectTimer;
+  Timer? _errorTimer;
 
   /// Parsed VPN configuration per server.id, populated by [addConfig].
   final Map<String, ParsedConfig> _parsedByServerId = {};
@@ -71,10 +72,17 @@ class AppState extends ChangeNotifier {
   String? get lastError => _lastError;
 
   void clearError() {
+    _errorTimer?.cancel();
+    _errorTimer = null;
     if (_lastError != null) {
       _lastError = null;
       notifyListeners();
     }
+  }
+
+  void _scheduleErrorClear() {
+    _errorTimer?.cancel();
+    _errorTimer = Timer(const Duration(seconds: 4), clearError);
   }
 
   /// Whether the Windows backend is running in SOCKS-proxy mode (no
@@ -250,6 +258,7 @@ class AppState extends ChangeNotifier {
       _lastError = null;
     } else {
       _lastError = 'Failed to parse "$name". Saved as raw config.';
+      _scheduleErrorClear();
       _userServers.add(VpnServer(
         id: serverId,
         name: name,
@@ -281,6 +290,7 @@ class AppState extends ChangeNotifier {
         _lastError = result.failures.isEmpty
             ? 'Subscription "$name" contained no usable entries.'
             : 'Subscription "$name": ${result.failures.length} entries failed to parse.';
+        _scheduleErrorClear();
         notifyListeners();
         return;
       }
@@ -305,6 +315,7 @@ class AppState extends ChangeNotifier {
       _lastError = null;
     } catch (e) {
       _lastError = 'Failed to load subscription "$name": $e';
+      _scheduleErrorClear();
     } finally {
       notifyListeners();
     }
@@ -346,6 +357,7 @@ class AppState extends ChangeNotifier {
     final parsed = _parsedByServerId[server.id];
     if (parsed == null) {
       _lastError = 'Selected server has no parsed VPN configuration.';
+      _scheduleErrorClear();
       notifyListeners();
       return;
     }
@@ -363,7 +375,10 @@ class AppState extends ChangeNotifier {
       case Disconnected(failure: final f):
         _isConnecting = false;
         _isConnected = false;
-        if (f != null) _lastError = f.message;
+        if (f != null) {
+          _lastError = f.message;
+          _scheduleErrorClear();
+        }
         _ping = 0;
         _downloadSpeed = '0.0 KB/s';
         _uploadSpeed = '0.0 KB/s';
@@ -425,6 +440,7 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _errorTimer?.cancel();
     _autoConnectTimer?.cancel();
     _statusSub?.cancel();
     _statsSub?.cancel();

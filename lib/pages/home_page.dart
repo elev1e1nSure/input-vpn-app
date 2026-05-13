@@ -433,6 +433,18 @@ class HomePage extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            if (server != null)
+                              IconButton(
+                                icon: Icon(
+                                  CupertinoIcons.trash,
+                                  size: 18,
+                                  color: theme.colorScheme.error
+                                      .withValues(alpha: 0.7),
+                                ),
+                                onPressed: () {
+                                  appState.removeConfig(server.configId);
+                                },
+                              ),
                             Icon(
                               CupertinoIcons.chevron_forward,
                               size: 18,
