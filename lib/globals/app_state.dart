@@ -236,7 +236,7 @@ class AppState extends ChangeNotifier {
 
   void selectServer(VpnServer server) {
     _selectedServer = server;
-    _savePersistedState();
+    _savePersistedState().ignore();
     if (_isConnected) {
       _vpn.disconnect();
     }
@@ -302,7 +302,7 @@ class AppState extends ChangeNotifier {
         configId: id,
       ));
     }
-    _savePersistedState();
+    _savePersistedState().ignore();
     notifyListeners();
   }
 
@@ -373,7 +373,7 @@ class AppState extends ChangeNotifier {
       _lastError = 'Failed to load subscription "$name": $e';
       _scheduleErrorClear();
     } finally {
-      _savePersistedState();
+      _savePersistedState().ignore();
       notifyListeners();
     }
   }
@@ -400,7 +400,7 @@ class AppState extends ChangeNotifier {
       _selectedServer = _userServers.isNotEmpty ? _userServers.first : null;
       _vpn.disconnect();
     }
-    _savePersistedState();
+    _savePersistedState().ignore();
     notifyListeners();
   }
 
@@ -454,7 +454,7 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    _savePersistedState();
+    _savePersistedState().ignore();
     notifyListeners();
   }
 
@@ -484,7 +484,7 @@ class AppState extends ChangeNotifier {
               ? info.expire!.millisecondsSinceEpoch ~/ 1000 
               : null,
         );
-        _savePersistedState();
+        _savePersistedState().ignore();
         notifyListeners();
       }
     } catch (e) {
@@ -549,7 +549,7 @@ class AppState extends ChangeNotifier {
     _ping = stats.pingMs;
     _downloadSpeed = stats.downloadHuman;
     _uploadSpeed = stats.uploadHuman;
-    notifyListeners();
+    // Don't notifyListeners() - stats are read directly without rebuild
   }
 
   void _persistBool(String key, bool Function() getter, void Function(bool) fieldSetter, bool value) {
@@ -645,20 +645,21 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void _savePersistedState() {
+  Future<void> _savePersistedState() async {
     try {
-      final configsJson = jsonEncode(_userConfigs.map((c) => c.toJson()).toList());
-      sharedPrefs.setString('userConfigs', configsJson);
+      // Offload heavy JSON encoding to a microtask so it doesn't block animations
+      final configsJson = await Future(() => jsonEncode(_userConfigs.map((c) => c.toJson()).toList()));
+      await sharedPrefs.setString('userConfigs', configsJson);
 
-      final serversJson = jsonEncode(_userServers.map((s) => s.toJson()).toList());
-      sharedPrefs.setString('userServers', serversJson);
+      final serversJson = await Future(() => jsonEncode(_userServers.map((s) => s.toJson()).toList()));
+      await sharedPrefs.setString('userServers', serversJson);
 
-      sharedPrefs.setString('selectedServerId', _selectedServer?.id ?? '');
+      await sharedPrefs.setString('selectedServerId', _selectedServer?.id ?? '');
 
-      final parsedJson = jsonEncode(
+      final parsedJson = await Future(() => jsonEncode(
         _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
-      );
-      sharedPrefs.setString('parsedByServerId', parsedJson);
+      ));
+      await sharedPrefs.setString('parsedByServerId', parsedJson);
     } catch (e) {
       debugPrint('Failed to save persisted state: $e');
     }

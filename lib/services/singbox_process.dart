@@ -186,7 +186,7 @@ Future<void> stop() async {
     } catch (_) {}
 
     // Проверяем жив ли ещё
-    if (_isSingBoxRunningByName()) {
+    if (await _isSingBoxRunningByName()) {
       try {
         await Process.run('taskkill', ['/PID', '$_processId', '/T', '/F']);
       } catch (_) {}
@@ -272,7 +272,7 @@ Future<void> stop() async {
   /// For elevated launches via [ShellExecuteEx] our recorded handle is
   /// typically the (already-dead) UAC consent intermediate, so as a fallback
   /// we also scan running `sing-box.exe` instances by name.
-  bool isProcessAlive() {
+  Future<bool> isProcessAlive() async {
     final proc = _normalProc;
     if (proc != null) {
       // Process.kill(signal: 0) is a portable "still alive" probe but Dart's
@@ -293,14 +293,14 @@ Future<void> stop() async {
     // Fallback: was launched elevated and the recorded handle is dead. Check
     // by image name. This is best-effort and may yield false positives if
     // another sing-box.exe is unrelated to us, but in our app that's fine.
-    return _isSingBoxRunningByName();
+    return await _isSingBoxRunningByName();
   }
 
   bool _normalProcExited = false;
 
-  bool _isSingBoxRunningByName() {
+  Future<bool> _isSingBoxRunningByName() async {
     try {
-      final r = Process.runSync('tasklist',
+      final r = await Process.run('tasklist',
           ['/FI', 'IMAGENAME eq sing-box.exe', '/FO', 'CSV', '/NH']);
       final out = r.stdout.toString();
       return out.toLowerCase().contains('sing-box.exe');

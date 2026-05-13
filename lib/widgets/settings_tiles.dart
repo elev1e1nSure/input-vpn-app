@@ -63,7 +63,15 @@ Widget buildSettingsSwitchTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
     leading: Icon(icon, color: theme.iconTheme.color),
     title: Text(title, style: theme.textTheme.bodyLarge),
-    trailing: Switch(value: value, onChanged: onChanged),
+    trailing: Switch(
+      value: value,
+      onChanged: onChanged,
+      thumbColor: WidgetStateProperty.all(Colors.white),
+      trackColor: WidgetStateProperty.all(
+        value ? theme.colorScheme.primary.withValues(alpha: 0.5) : theme.colorScheme.surfaceContainerHighest,
+      ),
+      overlayColor: WidgetStateProperty.all(Colors.transparent),
+    ),
   );
 }
 

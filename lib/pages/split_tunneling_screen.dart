@@ -38,11 +38,21 @@ class _SplitTunnelingScreenState extends State<SplitTunnelingScreen> {
             title: Text('Browser', style: theme.textTheme.bodyLarge),
             value: app1,
             onChanged: (v) => setState(() => app1 = v),
+            thumbColor: WidgetStateProperty.all(Colors.white),
+            trackColor: WidgetStateProperty.all(
+              app1 ? theme.colorScheme.primary.withValues(alpha: 0.5) : theme.colorScheme.surfaceContainerHighest,
+            ),
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
           ),
           SwitchListTile(
             title: Text('Banking App', style: theme.textTheme.bodyLarge),
             value: app2,
             onChanged: (v) => setState(() => app2 = v),
+            thumbColor: WidgetStateProperty.all(Colors.white),
+            trackColor: WidgetStateProperty.all(
+              app2 ? theme.colorScheme.primary.withValues(alpha: 0.5) : theme.colorScheme.surfaceContainerHighest,
+            ),
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
           ),
         ],
       ),

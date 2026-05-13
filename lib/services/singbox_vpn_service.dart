@@ -130,7 +130,7 @@ class SingBoxVpnService implements VpnService {
     final deadline = DateTime.now().add(overall);
     while (DateTime.now().isBefore(deadline)) {
       // Fail-fast if the child process is gone.
-      if (!_process.isProcessAlive()) {
+      if (!await _process.isProcessAlive()) {
         final err = await _process.extractFatalError();
         throw UnexpectedFailure(
           'VPN engine failed to start.\n\n'
@@ -186,7 +186,7 @@ class SingBoxVpnService implements VpnService {
   void _startLivenessCheck() {
     _liveCheckTimer?.cancel();
     _liveCheckTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
-      if (!_process.isProcessAlive() && _status is Connected) {
+      if (!await _process.isProcessAlive() && _status is Connected) {
         _setStatus(const Disconnected(
           failure: UnexpectedFailure(
             'sing-box exited unexpectedly. See sing-box.log for details.',

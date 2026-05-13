@@ -95,6 +95,38 @@ class _HomePageState extends State<HomePage> with WindowListener {
     }
   }
 
+  Widget _buildBody() {
+    switch (_selectedIndex) {
+      case 0:
+        return _HomeTab(onSwitchToServers: () => setState(() => _selectedIndex = 1));
+      case 1:
+        return ServersScreen(
+          onSwitchToAddConfig: () => setState(() => _selectedIndex = 3),
+          onServerSelected: () => setState(() => _selectedIndex = 0),
+          onBack: () => setState(() => _selectedIndex = 0),
+          onEditServer: (server) {
+            setState(() {
+              _editingServer = server;
+              _selectedIndex = 4;
+            });
+          },
+        );
+      case 2:
+        return const SettingsScreen();
+      case 3:
+        return AddConfigScreen(onBack: () => setState(() => _selectedIndex = 1));
+      case 4:
+        return AddConfigScreen(
+          onBack: () => setState(() => _selectedIndex = 1),
+          initialName: _editingServer?.name,
+          initialConfig: _editingServer?.rawConfig,
+          configId: _editingServer?.configId,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -111,40 +143,41 @@ class _HomePageState extends State<HomePage> with WindowListener {
           color: theme.dividerTheme.color,
         ),
         Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            switchInCurve: Curves.easeInOut,
-            switchOutCurve: Curves.easeInOut,
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-            child: KeyedSubtree(
-              key: ValueKey<int>(_selectedIndex),
-              child: [
-                _HomeTab(onSwitchToServers: () => setState(() => _selectedIndex = 1)),
-                ServersScreen(
-                  onSwitchToAddConfig: () => setState(() => _selectedIndex = 3),
-                  onServerSelected: () => setState(() => _selectedIndex = 0),
-                  onBack: () => setState(() => _selectedIndex = 0),
-                  onEditServer: (server) {
-                    setState(() {
-                      _editingServer = server;
-                      _selectedIndex = 4;
-                    });
-                  },
-                ),
-                const SettingsScreen(),
-                AddConfigScreen(onBack: () => setState(() => _selectedIndex = 1)),
-                AddConfigScreen(
-                  onBack: () => setState(() => _selectedIndex = 1),
-                  initialName: _editingServer?.name,
-                  initialConfig: _editingServer?.rawConfig,
-                  configId: _editingServer?.configId,
-                ),
-              ][_selectedIndex],
+          child: RepaintBoundary(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) {
+                final positionAnimation = Tween<Offset>(
+                  begin: const Offset(0.03, 0.0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ));
+                final scaleAnimation = Tween<double>(
+                  begin: 0.97,
+                  end: 1.0,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ));
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: positionAnimation,
+                    child: ScaleTransition(
+                      scale: scaleAnimation,
+                      child: child,
+                    ),
+                  ),
+                );
+              },
+              child: KeyedSubtree(
+                key: ValueKey<int>(_selectedIndex),
+                child: _buildBody(),
+              ),
             ),
           ),
         ),
