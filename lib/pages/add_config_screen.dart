@@ -3,6 +3,7 @@ import 'package:vpn/config_type.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:vpn/globals/app_state.dart';
+import 'package:vpn/l10n/app_strings.dart';
 
 @NowaGenerated()
 class AddConfigScreen extends StatefulWidget {
@@ -83,28 +84,50 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Add Configuration'),
+        title: Text(AppStrings.of(context).addConfiguration),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(
+            AppStrings.of(context).cancel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              if (_nameController.text.isNotEmpty &&
-                  _configController.text.isNotEmpty) {
-                appState.addConfig(
-                  _nameController.text,
-                  _configController.text,
-                  _selectedType,
-                );
-                Navigator.pop(context);
-              }
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _nameController,
+            builder: (context, nameValue, child) {
+              return ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _configController,
+                builder: (context, configValue, child) {
+                  final bool canAdd = nameValue.text.isNotEmpty &&
+                      configValue.text.isNotEmpty;
+                  return TextButton(
+                    onPressed: canAdd
+                        ? () {
+                            appState.addConfig(
+                              _nameController.text,
+                              _configController.text,
+                              _selectedType,
+                            );
+                            Navigator.pop(context);
+                          }
+                        : null,
+                    child: Text(
+                      AppStrings.of(context).add,
+                      style: TextStyle(
+                        color: canAdd
+                            ? theme.colorScheme.primary
+                            : theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.3),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
+              );
             },
-            child: const Text(
-              'Add',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
           ),
         ],
       ),
@@ -113,10 +136,10 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel(theme, 'DISPLAY NAME'),
-            _buildTextField(theme, _nameController, 'e.g. My Premium VLESS'),
+            _buildLabel(theme, AppStrings.of(context).displayName),
+            _buildTextField(theme, _nameController, AppStrings.of(context).displayNameHint),
             const SizedBox(height: 24),
-            _buildLabel(theme, 'TYPE'),
+            _buildLabel(theme, AppStrings.of(context).type),
             Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
@@ -124,28 +147,28 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
               ),
               child: Column(
                 children: [
-                  _buildTypeItem(ConfigType.vless, 'VLESS / VMess / SS'),
+                  _buildTypeItem(ConfigType.vless, AppStrings.of(context).vlessVmessSs),
                   Divider(
                     height: 1,
                     color: theme.dividerTheme.color,
                     indent: 16,
                   ),
-                  _buildTypeItem(ConfigType.subscription, 'Subscription URL'),
+                  _buildTypeItem(ConfigType.subscription, AppStrings.of(context).subscriptionUrl),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            _buildLabel(theme, 'CONFIG OR URL'),
+            _buildLabel(theme, AppStrings.of(context).configOrUrl),
             _buildTextField(
               theme,
               _configController,
-              'Paste your key or link here...',
+              AppStrings.of(context).configOrUrl,
               maxLines: 5,
             ),
             const SizedBox(height: 40),
             Center(
               child: Text(
-                'Supported formats: vless://, vmess://, ss://, trojan:// or a subscription link (HTTP/HTTPS).',
+                AppStrings.of(context).supportedFormats,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: 13,
                   color: theme.textTheme.bodyMedium?.color?.withValues(

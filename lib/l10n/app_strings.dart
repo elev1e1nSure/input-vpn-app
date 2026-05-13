@@ -1,0 +1,97 @@
+import 'package:flutter/material.dart';
+
+/// Lightweight localization without gen-l10n boilerplate.
+/// Add new keys here and provide both English and Russian.
+class AppStrings {
+  AppStrings(this.locale);
+
+  final Locale locale;
+  bool get isRu => locale.languageCode == 'ru';
+
+  static AppStrings of(BuildContext context) {
+    return Localizations.of<AppStrings>(context, AppStrings) ??
+        AppStrings(const Locale('en'));
+  }
+
+  // --- HomePage ---
+  String get setupRequired => isRu ? 'Требуется настройка' : 'Setup Required';
+  String get connecting => isRu ? 'Подключение...' : 'Connecting...';
+  String get connected => isRu ? 'Подключено' : 'Connected';
+  String get readyToConnect => isRu ? 'Готово к подключению' : 'Ready to Connect';
+  String get pleaseAddConfig => isRu ? 'Добавьте конфигурацию' : 'Please add a configuration';
+  String get yourIpIsHidden => isRu ? 'Ваш IP скрыт' : 'Your IP is hidden';
+  String get securityLevelHigh => isRu ? 'Уровень защиты: высокий' : 'Security level: High';
+  String get selectedServer => isRu ? 'Выбранный сервер' : 'Selected Server';
+  String get noServer => isRu ? 'Нет сервера' : 'No Server';
+  String get addAConfiguration => isRu ? 'Добавить конфигурацию' : 'Add a configuration';
+  String get ping => isRu ? 'ПИНГ' : 'PING';
+  String get download => isRu ? 'СКАЧИВАНИЕ' : 'DOWNLOAD';
+  String get upload => isRu ? 'ОТПРАВКА' : 'UPLOAD';
+
+  // --- ServersScreen ---
+  String get myServers => isRu ? 'Мои серверы' : 'My Servers';
+  String get noServersYet => isRu ? 'Серверов пока нет' : 'No Servers Yet';
+  String get addFirstConfigHint => isRu
+      ? 'Добавьте первую конфигурацию или ссылку на подписку.'
+      : 'Add your first configuration or subscription link to get started.';
+  String get addConfig => isRu ? 'Добавить' : 'Add Config';
+
+  // --- AddConfigScreen ---
+  String get addConfiguration => isRu ? 'Добавить конфигурацию' : 'Add Configuration';
+  String get cancel => isRu ? 'Отмена' : 'Cancel';
+  String get add => isRu ? 'Добавить' : 'Add';
+  String get displayName => isRu ? 'НАЗВАНИЕ' : 'DISPLAY NAME';
+  String get displayNameHint => isRu ? 'Напр. Мой Premium VLESS' : 'e.g. My Premium VLESS';
+  String get type => isRu ? 'ТИП' : 'TYPE';
+  String get configOrUrl => isRu ? 'КОНФИГ ИЛИ ССЫЛКА' : 'CONFIG OR URL';
+  String get supportedFormats => isRu
+      ? 'Поддерживаемые форматы: vless://, vmess://, ss://, trojan:// или ссылка на подписку (HTTP/HTTPS).'
+      : 'Supported formats: vless://, vmess://, ss://, trojan:// or a subscription link (HTTP/HTTPS).';
+  String get vlessVmessSs => isRu ? 'VLESS / VMess / SS' : 'VLESS / VMess / SS';
+  String get subscriptionUrl => isRu ? 'Ссылка на подписку' : 'Subscription URL';
+
+  // --- Settings ---
+  String get settings => isRu ? 'Настройки' : 'Settings';
+  String get connection => isRu ? 'ПОДКЛЮЧЕНИЕ' : 'CONNECTION';
+  String get appearance => isRu ? 'ВНЕШНИЙ ВИД' : 'APPEARANCE';
+  String get advanced => isRu ? 'Дополнительно' : 'Advanced';
+  String get about => isRu ? 'О ПРИЛОЖЕНИИ' : 'ABOUT';
+  String get vpnProtocol => isRu ? 'Протокол VPN' : 'VPN Protocol';
+  String get killSwitch => isRu ? 'Kill Switch' : 'Kill Switch';
+  String get connectOnBoot => isRu ? 'Подключать при запуске' : 'Connect on Boot';
+  String get autoLaunch => isRu ? 'Запускать при старте Windows' : 'Launch on startup';
+  String get darkMode => isRu ? 'Тёмная тема' : 'Dark Mode';
+  String get splitTunneling => isRu ? 'Раздельное туннелирование' : 'Split Tunneling';
+  String get customDns => isRu ? 'DNS' : 'Custom DNS';
+  String get proxyMode => isRu ? 'Режим прокси' : 'Proxy Mode';
+  String get vpnMode => isRu ? 'Режим VPN' : 'VPN Mode';
+  String get version => isRu ? 'Версия' : 'Version';
+  String get language => isRu ? 'Язык' : 'Language';
+
+  // --- Settings ---
+  String get basic => isRu ? 'ОБЫЧНЫЕ' : 'BASIC';
+  String get dnsServer => isRu ? 'DNS-сервер' : 'DNS Server';
+  String get proxyPort => isRu ? 'Порт прокси' : 'Proxy Port';
+  String get recommended => isRu ? 'Рекомендуется' : 'Recommended';
+  String get standard => isRu ? 'Стандарт' : 'Standard';
+  String get noAds => isRu ? 'Без рекламы' : 'No ads';
+  String get system => isRu ? 'Системный' : 'System';
+
+  // --- Misc ---
+  String get copy => isRu ? 'Копировать' : 'Copy';
+  String get dismiss => isRu ? 'Закрыть' : 'Dismiss';
+  String get unexpectedError => isRu ? 'Неожиданная ошибка' : 'Unexpected error';
+}
+
+class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {
+  const AppStringsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => ['en', 'ru'].contains(locale.languageCode);
+
+  @override
+  Future<AppStrings> load(Locale locale) async => AppStrings(locale);
+
+  @override
+  bool shouldReload(covariant LocalizationsDelegate<AppStrings> old) => false;
+}

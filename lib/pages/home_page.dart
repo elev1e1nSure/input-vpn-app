@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
@@ -6,11 +8,47 @@ import 'package:flutter/cupertino.dart';
 import 'package:vpn/pages/settings_screen.dart';
 import 'package:vpn/pages/servers_screen.dart';
 import 'package:vpn/functions/country_code_to_emoji.dart';
+import 'package:vpn/l10n/app_strings.dart';
 
 @NowaGenerated()
 class HomePage extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
   const HomePage({super.key});
+
+  Widget _buildModeToggle(BuildContext context, AppState appState) {
+    final theme = Theme.of(context);
+    final s = AppStrings.of(context);
+    final isProxy = appState.isProxyMode;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => appState.setProxyMode(!isProxy),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: theme.dividerTheme.color!),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ModePill(
+                label: s.vpnMode,
+                active: !isProxy,
+                theme: theme,
+              ),
+              _ModePill(
+                label: s.proxyMode,
+                active: isProxy,
+                theme: theme,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildStatItem(
     BuildContext context,
@@ -50,7 +88,7 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('VPN Client'),
+        title: const SizedBox.shrink(),
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.settings),
@@ -72,12 +110,12 @@ class HomePage extends StatelessWidget {
                 const Spacer(flex: 1),
             Text(
               server == null
-                  ? 'Setup Required'
+                  ? AppStrings.of(context).setupRequired
                   : isConnecting
-                  ? 'Connecting...'
+                  ? AppStrings.of(context).connecting
                   : isConnected
-                  ? 'Connected'
-                  : 'Ready to Connect',
+                  ? AppStrings.of(context).connected
+                  : AppStrings.of(context).readyToConnect,
               style: theme.textTheme.titleLarge?.copyWith(
                 color: isConnected
                     ? theme.colorScheme.primary
@@ -88,52 +126,36 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               server == null
-                  ? 'Please add a configuration'
+                  ? AppStrings.of(context).pleaseAddConfig
                   : isConnected
-                  ? 'Your IP is hidden'
-                  : 'Security level: High',
+                  ? AppStrings.of(context).yourIpIsHidden
+                  : AppStrings.of(context).securityLevelHigh,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: isConnected
                     ? theme.colorScheme.primary.withValues(alpha: 0.8)
                     : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
               ),
             ),
-            if (appState.isTestMode) ...[
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () => _showTestModeSheet(context, appState),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.withValues(alpha: 0.6)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(CupertinoIcons.info_circle, size: 14, color: Colors.amber),
-                      const SizedBox(width: 6),
-                      Text('TEST MODE (SOCKS5 :11080)', style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ),
+            if (Platform.isWindows) ...[
+              const SizedBox(height: 16),
+              _buildModeToggle(context, appState),
             ],
             const Spacer(flex: 1),
-            GestureDetector(
-              onTap: () {
-                if (server == null) {
-                  Navigator.of(context).push(
-                    CupertinoPageRoute(
-                      builder: (context) => const ServersScreen(),
-                    ),
-                  );
-                } else {
-                  appState.toggleConnection();
-                }
-              },
-              child: AnimatedContainer(
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () {
+                  if (server == null) {
+                    Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (context) => const ServersScreen(),
+                      ),
+                    );
+                  } else {
+                    appState.toggleConnection();
+                  }
+                },
+                child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 width: 200,
                 height: 200,
@@ -188,7 +210,8 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-            const Spacer(flex: 1),
+          ),
+          const Spacer(flex: 1),
             AnimatedOpacity(
               opacity: isConnected ? 1 : 0,
               duration: const Duration(milliseconds: 300),
@@ -198,19 +221,19 @@ class HomePage extends StatelessWidget {
                       children: [
                         _buildStatItem(
                           context,
-                          'PING',
+                          AppStrings.of(context).ping,
                           '${appState.ping} ms',
                           CupertinoIcons.wifi,
                         ),
                         _buildStatItem(
                           context,
-                          'DOWNLOAD',
+                          AppStrings.of(context).download,
                           appState.downloadSpeed,
                           CupertinoIcons.arrow_down,
                         ),
                         _buildStatItem(
                           context,
-                          'UPLOAD',
+                          AppStrings.of(context).upload,
                           appState.uploadSpeed,
                           CupertinoIcons.arrow_up,
                         ),
@@ -221,15 +244,17 @@ class HomePage extends StatelessWidget {
             const Spacer(flex: 1),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    CupertinoPageRoute(
-                      builder: (context) => const ServersScreen(),
-                    ),
-                  );
-                },
-                child: Container(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (context) => const ServersScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: theme.cardTheme.color ?? theme.colorScheme.surface,
@@ -260,7 +285,7 @@ class HomePage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              server != null ? 'Selected Server' : 'No Server',
+                              server != null ? AppStrings.of(context).selectedServer : AppStrings.of(context).noServer,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 fontSize: 12,
                               ),
@@ -269,7 +294,7 @@ class HomePage extends StatelessWidget {
                             Text(
                               server != null
                                   ? server.name
-                                  : 'Add a configuration',
+                                  : AppStrings.of(context).addAConfiguration,
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontSize: 16,
                               ),
@@ -288,6 +313,7 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+          ),
               ],
             ),
             if (appState.lastError != null)
@@ -304,57 +330,36 @@ class HomePage extends StatelessWidget {
   }
 }
 
-void _showTestModeSheet(BuildContext context, AppState appState) {
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Test mode',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            const Text(
-              'sing-box is running as a local SOCKS5 proxy on '
-              '127.0.0.1:11080. It does NOT touch system routes, so '
-              'another VPN can run at the same time.\n\n'
-              'To send traffic through it:\n'
-              '  • Browser: set proxy to SOCKS5 127.0.0.1:11080\n'
-              '  • Test:  curl --socks5 127.0.0.1:11080 https://ifconfig.me\n\n'
-              'Switch to Full VPN mode when you are ready to route '
-              'all system traffic. It will request admin (UAC) and '
-              'replace any other VPN.',
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Keep test mode'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () async {
-                      Navigator.of(ctx).pop();
-                      await appState.setFullVpnMode(true);
-                    },
-                    child: const Text('Enable Full VPN'),
-                  ),
-                ),
-              ],
-            ),
-          ],
+class _ModePill extends StatelessWidget {
+  const _ModePill({
+    required this.label,
+    required this.active,
+    required this.theme,
+  });
+
+  final String label;
+  final bool active;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: active ? theme.colorScheme.primary.withValues(alpha: 0.15) : null,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: active
+              ? theme.colorScheme.primary
+              : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+          fontWeight: active ? FontWeight.bold : FontWeight.normal,
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ErrorBanner extends StatelessWidget {

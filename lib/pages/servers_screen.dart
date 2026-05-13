@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/functions/country_code_to_emoji.dart';
+import 'package:vpn/l10n/app_strings.dart';
 
 @NowaGenerated()
 class ServersScreen extends StatelessWidget {
@@ -24,10 +25,10 @@ class ServersScreen extends StatelessWidget {
               color: theme.iconTheme.color?.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 24),
-            Text('No Servers Yet', style: theme.textTheme.titleLarge),
+            Text(AppStrings.of(context).noServersYet, style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             Text(
-              'Add your first configuration or subscription link to get started.',
+              AppStrings.of(context).addFirstConfigHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.textTheme.bodyMedium?.color?.withValues(
@@ -36,8 +37,7 @@ class ServersScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            CupertinoButton(
-              color: theme.colorScheme.primary,
+            CupertinoButton.filled(
               borderRadius: BorderRadius.circular(12),
               onPressed: () {
                 Navigator.of(context).push(
@@ -46,7 +46,10 @@ class ServersScreen extends StatelessWidget {
                   ),
                 );
               },
-              child: const Text('Add Config'),
+              child: Text(
+                AppStrings.of(context).addConfig,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
@@ -62,7 +65,7 @@ class ServersScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Servers'),
+        title: Text(AppStrings.of(context).myServers),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back),
           onPressed: () => Navigator.of(context).pop(),

@@ -11,6 +11,7 @@ import 'package:vpn/services/singbox_vpn_service.dart';
 import 'package:vpn/services/subscription_service.dart';
 import 'package:vpn/services/vpn_service.dart';
 import 'package:vpn/services/vpn_url_parser.dart';
+import 'package:vpn/services/windows_startup_manager.dart';
 import 'package:vpn/vpn_server.dart';
 import 'package:vpn/vpn_config.dart';
 import 'package:vpn/config_type.dart';
@@ -19,14 +20,13 @@ import 'package:provider/provider.dart';
 
 /// Choose the real backend on Windows, mock everywhere else.
 ///
-/// On first launch we start in SOCKS-proxy "test mode" so the app can be
-/// safely tested alongside another VPN without taking over system routes
-/// (no UAC prompt either). Once the user confirms everything works, the
-/// "Full VPN mode" switch in Settings turns on TUN mode.
+/// Defaults to Full TUN VPN mode on Windows. A "Proxy mode"
+/// toggle lets users run SOCKS-only (no UAC) instead of full TUN.
 VpnService _defaultVpnBackend() {
   if (!kIsWeb && Platform.isWindows && SingBoxVpnService.isSupported) {
-    final fullVpn = sharedPrefs.getBool('fullVpnMode') ?? false;
-    return SingBoxVpnService(testMode: !fullVpn);
+    // Default to FULL VPN (proxyMode=false) for production use.
+    final proxy = sharedPrefs.getBool('proxyMode') ?? false;
+    return SingBoxVpnService(proxyMode: proxy);
   }
   return MockVpnService();
 }
@@ -40,10 +40,23 @@ class AppState extends ChangeNotifier {
     _vpnProtocol = sharedPrefs.getString('vpnProtocol') ?? 'WireGuard';
     _killSwitch = sharedPrefs.getBool('killSwitch') ?? true;
     _connectOnBoot = sharedPrefs.getBool('connectOnBoot') ?? false;
+    _autoLaunch = sharedPrefs.getBool('autoLaunch') ?? false;
     _customDns = sharedPrefs.getString('customDns') ?? 'Default';
+    _dnsPreset = sharedPrefs.getString('dnsPreset') ?? 'cloudflare';
+    _proxyPort = sharedPrefs.getInt('proxyPort') ?? 11080;
+    _locale = Locale(sharedPrefs.getString('locale') ?? 'en');
 
     _statusSub = _vpn.watchStatus().listen(_onStatus);
     _statsSub = _vpn.watchStats().listen(_onStats);
+
+    // Auto-connect on launch if enabled and a server is available.
+    if (_connectOnBoot && _selectedServer != null) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (!_isConnected && !_isConnecting) {
+          toggleConnection();
+        }
+      });
+    }
   }
 
   final VpnService _vpn;
@@ -64,24 +77,32 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Whether the Windows backend is running in SOCKS-proxy test mode (no
+  /// Whether the Windows backend is running in SOCKS-proxy mode (no
   /// TUN device, no UAC). Returns false on non-Windows or non-singbox backends.
-  bool get isTestMode {
+  bool get isProxyMode {
     final vpn = _vpn;
-    return vpn is SingBoxVpnService ? vpn.testMode : false;
+    return vpn is SingBoxVpnService ? vpn.proxyMode : false;
   }
 
-  bool get isFullVpnMode => !isTestMode &&
-      !kIsWeb && Platform.isWindows && _vpn is SingBoxVpnService;
-
-  /// Switch between SOCKS test mode and full TUN VPN mode.
+  /// Toggle between SOCKS proxy mode and full TUN VPN mode.
   /// Will disconnect first if currently connected.
-  Future<void> setFullVpnMode(bool fullVpn) async {
+  Future<void> setProxyMode(bool enabled) async {
     final vpn = _vpn;
     if (vpn is! SingBoxVpnService) return;
     await vpn.disconnect();
-    vpn.setTestMode(!fullVpn);
-    sharedPrefs.setBool('fullVpnMode', fullVpn);
+    vpn.setProxyMode(enabled);
+    sharedPrefs.setBool('proxyMode', enabled);
+    notifyListeners();
+  }
+
+  Locale _locale = const Locale('en');
+
+  Locale get locale => _locale;
+
+  void setLocale(String languageCode) {
+    if (_locale.languageCode == languageCode) return;
+    _locale = Locale(languageCode);
+    sharedPrefs.setString('locale', languageCode);
     notifyListeners();
   }
 
@@ -150,8 +171,11 @@ class AppState extends ChangeNotifier {
   bool _killSwitch = true;
 
   bool _connectOnBoot = false;
+  bool _autoLaunch = false;
 
   String _customDns = 'Default';
+  String _dnsPreset = 'cloudflare';
+  int _proxyPort = 11080;
 
   bool get isPremium {
     return _isPremium;
@@ -169,8 +193,20 @@ class AppState extends ChangeNotifier {
     return _connectOnBoot;
   }
 
+  bool get autoLaunch {
+    return _autoLaunch;
+  }
+
   String get customDns {
     return _customDns;
+  }
+
+  String get dnsPreset {
+    return _dnsPreset;
+  }
+
+  int get proxyPort {
+    return _proxyPort;
   }
 
   void changeTheme(ThemeData theme) {
@@ -384,9 +420,32 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setAutoLaunch(bool value) {
+    _autoLaunch = value;
+    sharedPrefs.setBool('autoLaunch', value);
+    if (value) {
+      WindowsStartupManager.enable(Platform.resolvedExecutable);
+    } else {
+      WindowsStartupManager.disable();
+    }
+    notifyListeners();
+  }
+
   void setCustomDns(String dns) {
     _customDns = dns;
     sharedPrefs.setString('customDns', dns);
+    notifyListeners();
+  }
+
+  void setDnsPreset(String preset) {
+    _dnsPreset = preset;
+    sharedPrefs.setString('dnsPreset', preset);
+    notifyListeners();
+  }
+
+  void setProxyPort(int port) {
+    _proxyPort = port;
+    sharedPrefs.setInt('proxyPort', port);
     notifyListeners();
   }
 
