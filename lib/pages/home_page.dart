@@ -106,21 +106,21 @@ class _Sidebar extends StatelessWidget {
             const SizedBox(height: 8),
             _SidebarItem(
               expanded: expanded,
-              icon: CupertinoIcons.shield_fill,
+              icon: Icons.shield,
               label: s.vpnLabel,
               selected: selectedIndex == 0,
               onTap: () => onItemSelected(0),
             ),
             _SidebarItem(
               expanded: expanded,
-              icon: CupertinoIcons.globe,
+              icon: Icons.dns,
               label: s.myServers,
               selected: selectedIndex == 1,
               onTap: () => onItemSelected(1),
             ),
             _SidebarItem(
               expanded: expanded,
-              icon: CupertinoIcons.gear,
+              icon: Icons.settings,
               label: s.settings,
               selected: selectedIndex == 2,
               onTap: () => onItemSelected(2),
@@ -136,8 +136,8 @@ class _Sidebar extends StatelessWidget {
                 child: IconButton(
                   icon: Icon(
                     expanded
-                        ? CupertinoIcons.rectangle_compress_vertical
-                        : CupertinoIcons.rectangle_expand_vertical,
+                        ? Icons.menu_open
+                        : Icons.menu,
                     size: 18,
                     color: theme.iconTheme.color?.withValues(alpha: 0.5),
                   ),
@@ -267,13 +267,13 @@ class _HomeTab extends StatelessWidget {
             children: [
               _ModePill(
                 label: s.vpnLabel,
-                icon: CupertinoIcons.shield_fill,
+                icon: Icons.shield,
                 active: !isProxy,
                 theme: theme,
               ),
               _ModePill(
                 label: s.socks5Label,
-                icon: CupertinoIcons.wifi,
+                icon: Icons.wifi_tethering,
                 active: isProxy,
                 theme: theme,
               ),
@@ -324,7 +324,7 @@ class _HomeTab extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
-          CupertinoIcons.lock_fill,
+          Icons.lock,
           size: 10,
           color: muted,
         ),
@@ -338,7 +338,7 @@ class _HomeTab extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Icon(
-          CupertinoIcons.checkmark_shield_fill,
+          Icons.verified_user,
           size: 10,
           color: muted,
         ),
@@ -355,10 +355,10 @@ class _HomeTab extends StatelessWidget {
   }
 
   IconData _mainButtonIcon(AppState appState) {
-    if (appState.selectedServer == null) return CupertinoIcons.add;
-    if (appState.isConnecting) return CupertinoIcons.pause_fill;
-    if (appState.isConnected) return CupertinoIcons.power;
-    return CupertinoIcons.power;
+    if (appState.selectedServer == null) return Icons.add;
+    if (appState.isConnecting) return Icons.pause;
+    if (appState.isConnected) return Icons.power_settings_new;
+    return Icons.power_settings_new;
   }
 
   void _openAddConfig(BuildContext context) {
@@ -395,7 +395,7 @@ class _HomeTab extends StatelessWidget {
           MouseRegion(
             cursor: SystemMouseCursors.click,
             child: IconButton(
-              icon: const Icon(CupertinoIcons.add),
+              icon: const Icon(Icons.add),
               onPressed: () => _openAddConfig(context),
             ),
           ),
@@ -550,19 +550,19 @@ class _HomeTab extends StatelessWidget {
                                 context,
                                 s.ping,
                                 '${appState.ping} ms',
-                                CupertinoIcons.wifi,
+                                Icons.network_check,
                               ),
                               _buildStatItem(
                                 context,
                                 s.download,
                                 appState.downloadSpeed,
-                                CupertinoIcons.arrow_down,
+                                Icons.download,
                               ),
                               _buildStatItem(
                                 context,
                                 s.upload,
                                 appState.uploadSpeed,
-                                CupertinoIcons.arrow_up,
+                                Icons.upload,
                               ),
                             ],
                           )
@@ -639,7 +639,7 @@ class _HomeTab extends StatelessWidget {
                             if (server != null)
                               IconButton(
                                 icon: Icon(
-                                  CupertinoIcons.trash,
+                                  Icons.delete_outline,
                                   size: 18,
                                   color: theme.colorScheme.error
                                       .withValues(alpha: 0.7),
@@ -742,7 +742,7 @@ class _ErrorBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            CupertinoIcons.exclamationmark_triangle_fill,
+            Icons.error,
             color: theme.colorScheme.error,
             size: 18,
           ),
@@ -763,7 +763,7 @@ class _ErrorBanner extends StatelessWidget {
           GestureDetector(
             onTap: () => Clipboard.setData(ClipboardData(text: message)),
             child: Icon(
-              CupertinoIcons.doc_on_clipboard,
+              Icons.content_copy,
               color: theme.colorScheme.error,
               size: 16,
             ),
@@ -772,7 +772,7 @@ class _ErrorBanner extends StatelessWidget {
           GestureDetector(
             onTap: () => AppState.of(context, listen: false).clearError(),
             child: Icon(
-              CupertinoIcons.xmark,
+              Icons.close,
               color: theme.colorScheme.error,
               size: 16,
             ),

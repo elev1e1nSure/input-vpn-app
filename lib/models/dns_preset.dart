@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 /// A user-friendly DNS preset with display metadata and actual server IPs.
 class DnsPreset {
@@ -26,7 +26,7 @@ class DnsPreset {
       labelEn: 'Cloudflare',
       labelRu: 'Cloudflare',
       servers: ['1.1.1.1', '1.0.0.1'],
-      icon: CupertinoIcons.cloud_fill,
+      icon: Icons.cloud,
       recommended: true,
     ),
     DnsPreset(
@@ -34,21 +34,21 @@ class DnsPreset {
       labelEn: 'Google',
       labelRu: 'Google',
       servers: ['8.8.8.8', '8.8.4.4'],
-      icon: CupertinoIcons.search,
+      icon: Icons.search,
     ),
     DnsPreset(
       id: 'adguard',
       labelEn: 'AdGuard',
       labelRu: 'AdGuard',
       servers: ['94.140.14.14', '94.140.15.15'],
-      icon: CupertinoIcons.shield_fill,
+      icon: Icons.shield,
     ),
     DnsPreset(
       id: 'system',
       labelEn: 'System',
       labelRu: 'Системный',
       servers: [],
-      icon: CupertinoIcons.gear,
+      icon: Icons.settings,
     ),
   ];
 

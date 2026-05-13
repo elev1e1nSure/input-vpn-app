@@ -20,7 +20,7 @@ class ServersScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              CupertinoIcons.globe,
+              Icons.dns,
               size: 48,
               color: theme.iconTheme.color?.withValues(alpha: 0.15),
             ),
@@ -75,13 +75,13 @@ class ServersScreen extends StatelessWidget {
         title: Text(AppStrings.of(context).myServers),
         leading: Navigator.of(context).canPop()
             ? IconButton(
-                icon: const Icon(CupertinoIcons.back),
+                icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.of(context).pop(),
               )
             : null,
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.add),
+            icon: const Icon(Icons.add),
             onPressed: () {
               Navigator.of(context).push(
                 CupertinoPageRoute<void>(
@@ -110,7 +110,7 @@ class ServersScreen extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 24),
                     child: const Icon(
-                      CupertinoIcons.trash,
+                      Icons.delete,
                       color: Colors.white,
                     ),
                   ),
@@ -131,7 +131,7 @@ class ServersScreen extends StatelessWidget {
                       ),
                       child: Center(
                         child: Icon(
-                          CupertinoIcons.globe,
+                          Icons.public,
                           size: 18,
                           color: theme.iconTheme.color?.withValues(alpha: 0.4),
                         ),
@@ -158,7 +158,7 @@ class ServersScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          CupertinoIcons.wifi,
+                          Icons.network_check,
                           size: 18,
                           color: server.signalQuality > 80
                               ? theme.colorScheme.primary
@@ -169,7 +169,7 @@ class ServersScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: Icon(
-                            CupertinoIcons.trash,
+                            Icons.delete_outline,
                             size: 18,
                             color: theme.colorScheme.error
                                 .withValues(alpha: 0.7),

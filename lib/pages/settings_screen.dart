@@ -64,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(s.settings),
         leading: Navigator.of(context).canPop()
             ? IconButton(
-                icon: const Icon(CupertinoIcons.back),
+                icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.of(context).pop(),
               )
             : null,
@@ -79,14 +79,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           buildSettingsListTile(
             theme,
             s.language,
-            CupertinoIcons.globe,
+            Icons.language,
             trailingText: appState.locale.languageCode == 'ru' ? 'Русский' : 'English',
             onTap: () => _showLanguageDialog(context, appState),
           ),
           buildSettingsSwitchTile(
             theme,
             s.darkMode,
-            CupertinoIcons.moon_fill,
+            Icons.dark_mode,
             isDark,
             (val) {
               appState.changeTheme(val ? darkTheme : lightTheme);
@@ -95,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           buildSettingsSwitchTile(
             theme,
             s.connectOnBoot,
-            CupertinoIcons.power,
+            Icons.power_settings_new,
             appState.connectOnBoot,
             (val) => appState.setConnectOnBoot(val),
           ),
@@ -103,14 +103,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             buildSettingsSwitchTile(
               theme,
               s.autoLaunch,
-              CupertinoIcons.arrow_up_circle_fill,
+              Icons.launch,
               appState.autoLaunch,
               (val) => appState.setAutoLaunch(val),
             ),
           buildSettingsListTile(
             theme,
             s.advanced,
-            CupertinoIcons.gear_alt_fill,
+            Icons.settings,
             onTap: () {
               Navigator.of(context).push(
                 CupertinoPageRoute<void>(
@@ -124,7 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           buildSettingsSectionHeader(theme, s.about),
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-            leading: Icon(CupertinoIcons.info_circle, color: theme.iconTheme.color),
+            leading: Icon(Icons.info, color: theme.iconTheme.color),
             title: Text(s.version, style: theme.textTheme.bodyLarge),
             subtitle: _latestVersion != null && _latestVersion != _currentVersion
                 ? Text(
@@ -174,7 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isRu = s.language == 'Язык';
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(current?.icon ?? CupertinoIcons.globe, color: theme.iconTheme.color),
+      leading: Icon(current?.icon ?? Icons.language, color: theme.iconTheme.color),
       title: Text(s.dnsServer, style: theme.textTheme.bodyLarge),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -187,7 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 8),
           Icon(
-            CupertinoIcons.chevron_forward,
+            Icons.chevron_right,
             size: 16,
             color: theme.iconTheme.color?.withValues(alpha: 0.3),
           ),
@@ -250,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   subtitle: Text(subtitle),
                   trailing: selected
-                      ? Icon(CupertinoIcons.checkmark_alt,
+                      ? Icon(Icons.check,
                           color: theme.colorScheme.primary)
                       : null,
                   onTap: () {
@@ -278,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: const Text('English'),
               trailing: appState.locale.languageCode == 'en'
-                  ? const Icon(CupertinoIcons.checkmark_alt, color: Colors.blue)
+                  ? const Icon(Icons.check, color: Colors.blue)
                   : null,
               onTap: () {
                 appState.setLocale('en');
@@ -288,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: const Text('Русский'),
               trailing: appState.locale.languageCode == 'ru'
-                  ? const Icon(CupertinoIcons.checkmark_alt, color: Colors.blue)
+                  ? const Icon(Icons.check, color: Colors.blue)
                   : null,
               onTap: () {
                 appState.setLocale('ru');
