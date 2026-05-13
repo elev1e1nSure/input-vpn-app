@@ -3,7 +3,6 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/globals/app_state.dart';
-import 'package:vpn/functions/country_code_to_emoji.dart';
 import 'package:vpn/l10n/app_strings.dart';
 
 @NowaGenerated()
@@ -120,9 +119,20 @@ class ServersScreen extends StatelessWidget {
                       horizontal: 24,
                       vertical: 4,
                     ),
-                    leading: Text(
-                      countryCodeToEmoji(server.flagCode),
-                      style: const TextStyle(fontSize: 28),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: theme.scaffoldBackgroundColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          CupertinoIcons.globe,
+                          size: 18,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.4),
+                        ),
+                      ),
                     ),
                     title: Text(
                       server.name,
@@ -133,7 +143,7 @@ class ServersScreen extends StatelessWidget {
                       ),
                     ),
                     subtitle: Text(
-                      '${server.city}, ${server.country}',
+                      server.country,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 13,
                         color: theme.textTheme.bodyMedium?.color?.withValues(
@@ -146,21 +156,13 @@ class ServersScreen extends StatelessWidget {
                       children: [
                         Icon(
                           CupertinoIcons.wifi,
-                          size: 20,
+                          size: 18,
                           color: server.signalQuality > 80
                               ? theme.colorScheme.primary
                               : server.signalQuality > 50
                               ? Colors.orange
                               : theme.colorScheme.error,
                         ),
-                        if (isSelected) ...[
-                          const SizedBox(width: 16),
-                          Icon(
-                            CupertinoIcons.checkmark_alt,
-                            size: 20,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ],
                         const SizedBox(width: 8),
                         IconButton(
                           icon: Icon(
