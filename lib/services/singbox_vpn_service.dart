@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:vpn/models/connection_failure.dart';
+import 'package:vpn/models/connection_status.dart';
 import 'package:vpn/models/parsed_config.dart';
+import 'package:vpn/models/vpn_stats.dart';
 import 'package:vpn/services/clash_api_client.dart';
 import 'package:vpn/services/singbox_config_builder.dart';
 import 'package:vpn/services/singbox_process.dart';
@@ -27,7 +30,7 @@ class SingBoxVpnService implements VpnService {
     ClashApiClient? clashApi,
     bool proxyMode = false,
   })  : _process = process ?? SingBoxProcess(),
-        _config = configBuilder ?? SingBoxConfigBuilder(testMode: proxyMode),
+        _config = configBuilder ?? SingBoxConfigBuilder(proxyMode: proxyMode),
         _clash = clashApi ?? ClashApiClient(),
         _proxyMode = proxyMode;
 
@@ -43,7 +46,7 @@ class SingBoxVpnService implements VpnService {
   void setProxyMode(bool value) {
     if (_proxyMode == value) return;
     _proxyMode = value;
-    _config = SingBoxConfigBuilder(testMode: value);
+    _config = SingBoxConfigBuilder(proxyMode: value);
   }
 
   final _statusCtrl = StreamController<ConnectionStatus>.broadcast();

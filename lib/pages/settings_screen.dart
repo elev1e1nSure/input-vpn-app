@@ -8,6 +8,7 @@ import 'package:vpn/globals/themes.dart';
 import 'package:vpn/l10n/app_strings.dart';
 import 'package:vpn/models/dns_preset.dart';
 import 'package:vpn/pages/advanced_settings_screen.dart';
+import 'package:vpn/widgets/settings_tiles.dart';
 
 @NowaGenerated()
 class SettingsScreen extends StatefulWidget {
@@ -42,16 +43,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           const SizedBox(height: 8),
           // ── BASIC ──
-          _buildSectionHeader(theme, s.basic),
+          buildSettingsSectionHeader(theme, s.basic),
           _buildDnsTile(context, theme, appState, s),
-          _buildListTile(
+          buildSettingsListTile(
             theme,
             s.language,
             CupertinoIcons.globe,
             trailingText: appState.locale.languageCode == 'ru' ? 'Русский' : 'English',
             onTap: () => _showLanguageDialog(context, appState),
           ),
-          _buildSwitchTile(
+          buildSettingsSwitchTile(
             theme,
             s.darkMode,
             CupertinoIcons.moon_fill,
@@ -60,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               appState.changeTheme(val ? darkTheme : lightTheme);
             },
           ),
-          _buildSwitchTile(
+          buildSettingsSwitchTile(
             theme,
             s.connectOnBoot,
             CupertinoIcons.power,
@@ -68,14 +69,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             (val) => appState.setConnectOnBoot(val),
           ),
           if (Platform.isWindows)
-            _buildSwitchTile(
+            buildSettingsSwitchTile(
               theme,
               s.autoLaunch,
               CupertinoIcons.arrow_up_circle_fill,
               appState.autoLaunch,
               (val) => appState.setAutoLaunch(val),
             ),
-          _buildListTile(
+          buildSettingsListTile(
             theme,
             s.advanced,
             CupertinoIcons.gear_alt_fill,
@@ -89,8 +90,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 24),
           // ── ABOUT ──
-          _buildSectionHeader(theme, s.about),
-          _buildListTile(
+          buildSettingsSectionHeader(theme, s.about),
+          buildSettingsListTile(
             theme,
             s.version,
             CupertinoIcons.info_circle,
@@ -99,72 +100,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSectionHeader(ThemeData theme, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Text(
-        title,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
-          color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildListTile(
-    ThemeData theme,
-    String title,
-    IconData icon, {
-    String? trailingText,
-    required void Function() onTap,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(icon, color: theme.iconTheme.color),
-      title: Text(title, style: theme.textTheme.bodyLarge),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (trailingText != null)
-            Text(
-              trailingText,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.textTheme.bodyMedium?.color?.withValues(
-                  alpha: 0.6,
-                ),
-              ),
-            ),
-          const SizedBox(width: 8),
-          Icon(
-            CupertinoIcons.chevron_forward,
-            size: 16,
-            color: theme.iconTheme.color?.withValues(alpha: 0.3),
-          ),
-        ],
-      ),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildSwitchTile(
-    ThemeData theme,
-    String title,
-    IconData icon,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return ListTile(
-      onTap: () => onChanged(!value),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(icon, color: theme.iconTheme.color),
-      title: Text(title, style: theme.textTheme.bodyLarge),
-      trailing: CupertinoSwitch(value: value, onChanged: onChanged),
     );
   }
 

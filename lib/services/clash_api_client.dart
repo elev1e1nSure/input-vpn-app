@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:vpn/services/dio_factory.dart';
 
 /// Small client for sing-box's built-in Clash API.
 ///
@@ -19,12 +20,7 @@ import 'package:dio/dio.dart';
 ///   https://sing-box.sagernet.org/configuration/experimental/clash-api/
 class ClashApiClient {
   ClashApiClient({this.host = '127.0.0.1', this.port = 9090, Dio? dio})
-      : _dio = dio ?? _defaultDio();
-
-  static Dio _defaultDio() => Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 2),
-        receiveTimeout: const Duration(seconds: 5),
-      ));
+      : _dio = dio ?? DioFactory.forClashApi();
 
   final String host;
   final int port;

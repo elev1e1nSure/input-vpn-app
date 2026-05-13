@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:vpn/models/parsed_config.dart';
+import 'package:vpn/services/dio_factory.dart';
 import 'package:vpn/services/vpn_url_parser.dart';
 
 /// Downloads and parses subscription URLs into a list of [ParsedConfig].
@@ -8,24 +9,7 @@ import 'package:vpn/services/vpn_url_parser.dart';
 /// is preserved. Subscription HTTP headers (`profile-title`, `content-disposition`,
 /// `subscription-userinfo`) are exposed via [SubscriptionResult.headers].
 class SubscriptionService {
-  SubscriptionService({Dio? dio}) : _dio = dio ?? _defaultDio();
-
-  static Dio _defaultDio() {
-    final dio = Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        followRedirects: true,
-        responseType: ResponseType.plain,
-        headers: {
-          // Generic UA — many sub endpoints serve different bodies
-          // depending on User-Agent.
-          'User-Agent': 'InputVPN/1.0',
-        },
-      ),
-    );
-    return dio;
-  }
+  SubscriptionService({Dio? dio}) : _dio = dio ?? DioFactory.forSubscriptions();
 
   final Dio _dio;
 

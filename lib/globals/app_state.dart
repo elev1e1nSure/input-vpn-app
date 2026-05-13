@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:vpn/globals/themes.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:vpn/functions/extract_country_code.dart';
+import 'package:vpn/models/connection_status.dart';
 import 'package:vpn/models/parsed_config.dart';
+import 'package:vpn/models/vpn_stats.dart';
 import 'package:vpn/services/singbox_vpn_service.dart';
 import 'package:vpn/services/subscription_service.dart';
 import 'package:vpn/services/vpn_service.dart';
@@ -15,8 +17,8 @@ import 'package:vpn/services/windows_startup_manager.dart';
 import 'package:vpn/vpn_server.dart';
 import 'package:vpn/vpn_config.dart';
 import 'package:vpn/config_type.dart';
-import 'package:vpn/main.dart';
 import 'package:provider/provider.dart';
+import 'package:vpn/globals/shared_prefs.dart';
 
 /// Choose the real backend on Windows, mock everywhere else.
 ///
@@ -36,9 +38,6 @@ class AppState extends ChangeNotifier {
   AppState({VpnService? vpnService, SubscriptionService? subscriptionService})
       : _vpn = vpnService ?? _defaultVpnBackend(),
         _subs = subscriptionService ?? SubscriptionService() {
-    _isPremium = sharedPrefs.getBool('isPremium') ?? true;
-    _vpnProtocol = sharedPrefs.getString('vpnProtocol') ?? 'WireGuard';
-    _killSwitch = sharedPrefs.getBool('killSwitch') ?? true;
     _connectOnBoot = sharedPrefs.getBool('connectOnBoot') ?? false;
     _autoLaunch = sharedPrefs.getBool('autoLaunch') ?? false;
     _customDns = sharedPrefs.getString('customDns') ?? 'Default';
@@ -51,7 +50,7 @@ class AppState extends ChangeNotifier {
 
     // Auto-connect on launch if enabled and a server is available.
     if (_connectOnBoot && _selectedServer != null) {
-      Future.delayed(const Duration(seconds: 1), () {
+      _autoConnectTimer = Timer(const Duration(seconds: 1), () {
         if (!_isConnected && !_isConnecting) {
           toggleConnection();
         }
@@ -63,6 +62,7 @@ class AppState extends ChangeNotifier {
   final SubscriptionService _subs;
   StreamSubscription<ConnectionStatus>? _statusSub;
   StreamSubscription<VpnStats>? _statsSub;
+  Timer? _autoConnectTimer;
 
   /// Parsed VPN configuration per server.id, populated by [addConfig].
   final Map<String, ParsedConfig> _parsedByServerId = {};
@@ -164,30 +164,12 @@ class AppState extends ChangeNotifier {
     return _uploadSpeed;
   }
 
-  bool _isPremium = true;
-
-  String _vpnProtocol = 'WireGuard';
-
-  bool _killSwitch = true;
-
   bool _connectOnBoot = false;
   bool _autoLaunch = false;
 
   String _customDns = 'Default';
   String _dnsPreset = 'cloudflare';
   int _proxyPort = 11080;
-
-  bool get isPremium {
-    return _isPremium;
-  }
-
-  String get vpnProtocol {
-    return _vpnProtocol;
-  }
-
-  bool get killSwitch {
-    return _killSwitch;
-  }
 
   bool get connectOnBoot {
     return _connectOnBoot;
@@ -396,31 +378,32 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void togglePremium() {
-    _isPremium = !_isPremium;
-    sharedPrefs.setBool('isPremium', _isPremium);
+  void _persistBool(String key, bool Function() getter, void Function(bool) fieldSetter, bool value) {
+    if (getter() == value) return;
+    fieldSetter(value);
+    sharedPrefs.setBool(key, value);
     notifyListeners();
   }
 
-  void setVpnProtocol(String protocol) {
-    _vpnProtocol = protocol;
-    sharedPrefs.setString('vpnProtocol', protocol);
+  void _persistString(String key, String Function() getter, void Function(String) fieldSetter, String value) {
+    if (getter() == value) return;
+    fieldSetter(value);
+    sharedPrefs.setString(key, value);
     notifyListeners();
   }
 
-  void setKillSwitch(bool value) {
-    _killSwitch = value;
-    sharedPrefs.setBool('killSwitch', value);
+  void _persistInt(String key, int Function() getter, void Function(int) fieldSetter, int value) {
+    if (getter() == value) return;
+    fieldSetter(value);
+    sharedPrefs.setInt(key, value);
     notifyListeners();
   }
 
-  void setConnectOnBoot(bool value) {
-    _connectOnBoot = value;
-    sharedPrefs.setBool('connectOnBoot', value);
-    notifyListeners();
-  }
+  void setConnectOnBoot(bool value) =>
+      _persistBool('connectOnBoot', () => _connectOnBoot, (v) => _connectOnBoot = v, value);
 
   void setAutoLaunch(bool value) {
+    if (_autoLaunch == value) return;
     _autoLaunch = value;
     sharedPrefs.setBool('autoLaunch', value);
     if (value) {
@@ -431,26 +414,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCustomDns(String dns) {
-    _customDns = dns;
-    sharedPrefs.setString('customDns', dns);
-    notifyListeners();
-  }
+  void setCustomDns(String dns) =>
+      _persistString('customDns', () => _customDns, (v) => _customDns = v, dns);
 
-  void setDnsPreset(String preset) {
-    _dnsPreset = preset;
-    sharedPrefs.setString('dnsPreset', preset);
-    notifyListeners();
-  }
+  void setDnsPreset(String preset) =>
+      _persistString('dnsPreset', () => _dnsPreset, (v) => _dnsPreset = v, preset);
 
-  void setProxyPort(int port) {
-    _proxyPort = port;
-    sharedPrefs.setInt('proxyPort', port);
-    notifyListeners();
-  }
+  void setProxyPort(int port) =>
+      _persistInt('proxyPort', () => _proxyPort, (v) => _proxyPort = v, port);
 
   @override
   void dispose() {
+    _autoConnectTimer?.cancel();
     _statusSub?.cancel();
     _statsSub?.cancel();
     _vpn.dispose();

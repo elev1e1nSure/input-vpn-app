@@ -21,7 +21,7 @@ class SingBoxConfigBuilder {
     this.tunInterfaceName = 'InputVPNTun',
     this.remoteDnsServer = 'tls://1.1.1.1',
     this.directDnsServer = '8.8.8.8',
-    this.testMode = false,
+    this.proxyMode = false,
     this.socksPort = 11080,
   });
 
@@ -37,9 +37,7 @@ class SingBoxConfigBuilder {
   ///   - Does NOT touch system routes or DNS — other VPNs keep working.
   ///   - Only proxies apps that explicitly use the SOCKS endpoint
   ///     (browser proxy settings, curl --socks5, etc.).
-  /// Use it to validate the parser + sing-box integration without disrupting
-  /// the host network.
-  final bool testMode;
+  final bool proxyMode;
   final int socksPort;
 
   /// Build and return a pretty-printed JSON string ready to be passed to
@@ -54,7 +52,7 @@ class SingBoxConfigBuilder {
   Map<String, dynamic> buildJson(ParsedConfig p, {String? logPath}) {
     final outbound = _buildOutbound(p);
 
-    final inbound = testMode
+    final inbound = proxyMode
         ? <String, dynamic>{
             'type': 'mixed',
             'tag': 'mixed-in',

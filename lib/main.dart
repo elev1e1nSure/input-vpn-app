@@ -5,10 +5,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/globals/router.dart';
+import 'package:vpn/globals/shared_prefs.dart';
 import 'package:vpn/l10n/app_strings.dart';
-
-@NowaGenerated()
-late final SharedPreferences sharedPrefs;
 
 @NowaGenerated()
 main() async {

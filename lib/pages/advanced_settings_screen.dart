@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/l10n/app_strings.dart';
+import 'package:vpn/widgets/settings_tiles.dart';
 
 @NowaGenerated()
 class AdvancedSettingsScreen extends StatelessWidget {
@@ -30,7 +31,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
           if (Platform.isWindows)
-            _buildSwitchTile(
+            buildSettingsSwitchTile(
               theme,
               s.proxyMode,
               CupertinoIcons.arrow_swap,
@@ -38,94 +39,25 @@ class AdvancedSettingsScreen extends StatelessWidget {
               (val) => appState.setProxyMode(val),
             ),
           _buildPortTile(context, theme, appState, s),
-          _buildDisabledListTile(
+          buildSettingsDisabledListTile(
             theme,
             s.vpnProtocol,
             CupertinoIcons.shield_lefthalf_fill,
             trailingText: 'Auto',
           ),
-          _buildDisabledSwitchTile(
+          buildSettingsDisabledSwitchTile(
             theme,
             s.killSwitch,
             CupertinoIcons.lock_shield,
             false,
           ),
-          _buildDisabledListTile(
+          buildSettingsDisabledListTile(
             theme,
             s.splitTunneling,
             CupertinoIcons.arrow_branch,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSwitchTile(
-    ThemeData theme,
-    String title,
-    IconData icon,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return ListTile(
-      onTap: () => onChanged(!value),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(icon, color: theme.iconTheme.color),
-      title: Text(title, style: theme.textTheme.bodyLarge),
-      trailing: CupertinoSwitch(value: value, onChanged: onChanged),
-    );
-  }
-
-  Widget _buildDisabledListTile(
-    ThemeData theme,
-    String title,
-    IconData icon, {
-    String? trailingText,
-  }) {
-    final dimColor =
-        theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.35);
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(icon, color: dimColor),
-      title: Text(
-        title,
-        style: theme.textTheme.bodyLarge?.copyWith(color: dimColor),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (trailingText != null)
-            Text(
-              trailingText,
-              style: theme.textTheme.bodyMedium?.copyWith(color: dimColor),
-            ),
-          const SizedBox(width: 8),
-          Icon(
-            CupertinoIcons.chevron_forward,
-            size: 16,
-            color: dimColor,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDisabledSwitchTile(
-    ThemeData theme,
-    String title,
-    IconData icon,
-    bool value,
-  ) {
-    final dimColor =
-        theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.35);
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(icon, color: dimColor),
-      title: Text(
-        title,
-        style: theme.textTheme.bodyLarge?.copyWith(color: dimColor),
-      ),
-      trailing: CupertinoSwitch(value: value, onChanged: null),
     );
   }
 

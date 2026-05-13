@@ -9,37 +9,50 @@ class WindowsStartupManager {
       r'Software\Microsoft\Windows\CurrentVersion\Run';
   static const _appName = 'InputVPN';
 
-  /// Whether the app is registered to launch on Windows startup.
-  static bool isEnabled() {
+  /// Opens the registry key with [access], executes [action], then closes it.
+  static void _withRegistryKey(int access, void Function(int hKey) action) {
+    final phKey = calloc<HANDLE>();
     try {
-      final phKey = calloc<HANDLE>();
-      final lResult = RegOpenKeyEx(
+      final openResult = RegOpenKeyEx(
         HKEY_CURRENT_USER,
         _runKey.toNativeUtf16(),
         0,
-        KEY_READ,
+        access,
         phKey,
       );
-      if (lResult != ERROR_SUCCESS) {
-        free(phKey);
-        return false;
+      if (openResult != ERROR_SUCCESS) {
+        throw StateError('Failed to open registry key (error $openResult)');
       }
-
-      final pcbData = calloc<DWORD>()..value = 0;
-      final lResult2 = RegQueryValueEx(
-        phKey.value,
-        _appName.toNativeUtf16(),
-        nullptr,
-        nullptr,
-        nullptr,
-        pcbData,
-      );
-
-      RegCloseKey(phKey.value);
+      action(phKey.value);
+    } finally {
+      if (phKey.value != 0) {
+        RegCloseKey(phKey.value);
+      }
       free(phKey);
-      free(pcbData);
+    }
+  }
 
-      return lResult2 == ERROR_SUCCESS;
+  /// Whether the app is registered to launch on Windows startup.
+  static bool isEnabled() {
+    try {
+      final pcbData = calloc<DWORD>();
+      try {
+        var found = false;
+        _withRegistryKey(KEY_READ, (hKey) {
+          final queryResult = RegQueryValueEx(
+            hKey,
+            _appName.toNativeUtf16(),
+            nullptr,
+            nullptr,
+            nullptr,
+            pcbData,
+          );
+          if (queryResult == ERROR_SUCCESS) found = true;
+        });
+        return found;
+      } finally {
+        free(pcbData);
+      }
     } catch (_) {
       return false;
     }
@@ -47,46 +60,32 @@ class WindowsStartupManager {
 
   /// Enable auto-launch on Windows startup.
   static void enable(String exePath) {
-    try {
-      final phKey = calloc<HANDLE>();
-      RegOpenKeyEx(
-        HKEY_CURRENT_USER,
-        _runKey.toNativeUtf16(),
-        0,
-        KEY_WRITE,
-        phKey,
-      );
-
+    _withRegistryKey(KEY_WRITE, (hKey) {
       final value = '"$exePath"'.toNativeUtf16();
-      RegSetValueEx(
-        phKey.value,
+      final setResult = RegSetValueEx(
+        hKey,
         _appName.toNativeUtf16(),
         0,
         REG_SZ,
         value.cast<BYTE>(),
         (value.length + 1) * 2,
       );
-
-      RegCloseKey(phKey.value);
-      free(phKey);
-    } catch (_) {}
+      if (setResult != ERROR_SUCCESS) {
+        throw StateError('Failed to set registry value (error $setResult)');
+      }
+    });
   }
 
   /// Disable auto-launch on Windows startup.
   static void disable() {
-    try {
-      final phKey = calloc<HANDLE>();
-      RegOpenKeyEx(
-        HKEY_CURRENT_USER,
-        _runKey.toNativeUtf16(),
-        0,
-        KEY_WRITE,
-        phKey,
+    _withRegistryKey(KEY_WRITE, (hKey) {
+      final delResult = RegDeleteValue(
+        hKey,
+        _appName.toNativeUtf16(),
       );
-
-      RegDeleteValue(phKey.value, _appName.toNativeUtf16());
-      RegCloseKey(phKey.value);
-      free(phKey);
-    } catch (_) {}
+      if (delResult != ERROR_SUCCESS && delResult != ERROR_FILE_NOT_FOUND) {
+        throw StateError('Failed to delete registry value (error $delResult)');
+      }
+    });
   }
 }

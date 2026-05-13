@@ -56,25 +56,36 @@ class VpnUrlParser {
   }
 
   // ---------------------------------------------------------------------------
+  // Common URI parser used by VLESS, Trojan, and Hysteria2.
+  // ---------------------------------------------------------------------------
+  static ({String host, int port, String remark, Map<String, String> qp})
+      _parseCommonUri(String link, String protocolName) {
+    final uri = Uri.parse(link);
+    final host = uri.host;
+    final port = uri.port == 0 ? 443 : uri.port;
+    if (host.isEmpty) throw FormatException('$protocolName: missing host');
+    return (
+      host: host,
+      port: port,
+      remark: _extractRemark(uri, fallback: host),
+      qp: uri.queryParameters,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // VLESS
   // ---------------------------------------------------------------------------
   // vless://<uuid>@<host>:<port>?type=ws&security=tls&sni=...&path=...#<remark>
   static ParsedConfig _parseVless(String link) {
-    final uri = Uri.parse(link);
-    final uuid = Uri.decodeComponent(uri.userInfo);
-    if (uuid.isEmpty) {
-      throw const FormatException('vless: missing uuid');
-    }
-    final host = uri.host;
-    final port = uri.port == 0 ? 443 : uri.port;
-    if (host.isEmpty) throw const FormatException('vless: missing host');
-
-    final qp = uri.queryParameters;
+    final uuid = Uri.decodeComponent(Uri.parse(link).userInfo);
+    if (uuid.isEmpty) throw const FormatException('vless: missing uuid');
+    final c = _parseCommonUri(link, 'vless');
+    final qp = c.qp;
     return ParsedConfig(
       type: ProxyType.vless,
-      server: host,
-      port: port,
-      remark: _extractRemark(uri, fallback: host),
+      server: c.host,
+      port: c.port,
+      remark: c.remark,
       uuid: uuid,
       network: qp['type'] ?? 'tcp',
       security: qp['security'] ?? 'none',
@@ -140,21 +151,15 @@ class VpnUrlParser {
   // ---------------------------------------------------------------------------
   // trojan://<password>@<host>:<port>?sni=...&type=ws&path=...#<remark>
   static ParsedConfig _parseTrojan(String link) {
-    final uri = Uri.parse(link);
-    final password = Uri.decodeComponent(uri.userInfo);
-    if (password.isEmpty) {
-      throw const FormatException('trojan: missing password');
-    }
-    final host = uri.host;
-    final port = uri.port == 0 ? 443 : uri.port;
-    if (host.isEmpty) throw const FormatException('trojan: missing host');
-
-    final qp = uri.queryParameters;
+    final password = Uri.decodeComponent(Uri.parse(link).userInfo);
+    if (password.isEmpty) throw const FormatException('trojan: missing password');
+    final c = _parseCommonUri(link, 'trojan');
+    final qp = c.qp;
     return ParsedConfig(
       type: ProxyType.trojan,
-      server: host,
-      port: port,
-      remark: _extractRemark(uri, fallback: host),
+      server: c.host,
+      port: c.port,
+      remark: c.remark,
       password: password,
       network: qp['type'] ?? 'tcp',
       security: qp['security'] ?? 'tls',
@@ -257,25 +262,20 @@ class VpnUrlParser {
   // ---------------------------------------------------------------------------
   // hy2://<auth>@<host>:<port>?sni=...&insecure=1#<remark>
   static ParsedConfig _parseHysteria2(String link) {
-    final uri = Uri.parse(link);
-    final auth = Uri.decodeComponent(uri.userInfo);
-    if (auth.isEmpty) {
-      throw const FormatException('hy2: missing auth');
-    }
-    final host = uri.host;
-    final port = uri.port == 0 ? 443 : uri.port;
-    if (host.isEmpty) throw const FormatException('hy2: missing host');
-
-    final qp = uri.queryParameters;
+    final auth = Uri.decodeComponent(Uri.parse(link).userInfo);
+    if (auth.isEmpty) throw const FormatException('hy2: missing auth');
+    final c = _parseCommonUri(link, 'hy2');
+    final qp = c.qp;
     return ParsedConfig(
       type: ProxyType.hysteria2,
-      server: host,
-      port: port,
-      remark: _extractRemark(uri, fallback: host),
+      server: c.host,
+      port: c.port,
+      remark: c.remark,
       password: auth,
-      security: 'tls',
-      sni: qp['sni'],
-      alpn: qp['alpn'],
+      network: 'udp',
+      security: qp['insecure'] == '1' ? 'insecure' : 'tls',
+      sni: qp['sni'] ?? qp['peer'],
+      fingerprint: qp['fp'],
       transport: Map.of(qp),
       raw: link,
     );

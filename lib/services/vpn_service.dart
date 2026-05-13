@@ -1,80 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:vpn/models/connection_status.dart';
 import 'package:vpn/models/parsed_config.dart';
-
-/// Connection lifecycle status states.
-sealed class ConnectionStatus {
-  const ConnectionStatus();
-  bool get isConnected => this is Connected;
-  bool get isConnecting => this is Connecting;
-  bool get isDisconnected => this is Disconnected;
-}
-
-class Disconnected extends ConnectionStatus {
-  const Disconnected({this.failure});
-  final ConnectionFailure? failure;
-}
-
-class Connecting extends ConnectionStatus {
-  const Connecting();
-}
-
-class Connected extends ConnectionStatus {
-  const Connected({required this.since});
-  final DateTime since;
-}
-
-/// Typed connection failure errors.
-sealed class ConnectionFailure {
-  const ConnectionFailure(this.message);
-  final String message;
-  @override
-  String toString() => '$runtimeType($message)';
-}
-
-class NoActiveConfig extends ConnectionFailure {
-  const NoActiveConfig() : super('No active VPN configuration selected.');
-}
-
-class BackendNotImplemented extends ConnectionFailure {
-  const BackendNotImplemented()
-      : super(
-          'Native VPN backend is not yet integrated. '
-          'Connection is simulated for UI testing.',
-        );
-}
-
-class UnexpectedFailure extends ConnectionFailure {
-  const UnexpectedFailure(super.message);
-}
-
-/// Throughput sample exposed by the VPN backend.
-class VpnStats {
-  const VpnStats({
-    required this.downloadBytesPerSec,
-    required this.uploadBytesPerSec,
-    required this.pingMs,
-  });
-  final double downloadBytesPerSec;
-  final double uploadBytesPerSec;
-  final int pingMs;
-
-  static const empty = VpnStats(
-    downloadBytesPerSec: 0,
-    uploadBytesPerSec: 0,
-    pingMs: 0,
-  );
-
-  String get downloadHuman => _humanize(downloadBytesPerSec);
-  String get uploadHuman => _humanize(uploadBytesPerSec);
-
-  static String _humanize(double bps) {
-    if (bps < 1024) return '${bps.toStringAsFixed(0)} B/s';
-    if (bps < 1024 * 1024) return '${(bps / 1024).toStringAsFixed(1)} KB/s';
-    return '${(bps / (1024 * 1024)).toStringAsFixed(1)} MB/s';
-  }
-}
+import 'package:vpn/models/vpn_stats.dart';
 
 /// Backend-agnostic VPN service contract.
 ///

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:vpn/models/connection_failure.dart';
 import 'package:win32/win32.dart';
 
 /// Spawns and manages a `sing-box.exe` child process with admin (UAC)
@@ -164,26 +165,25 @@ class SingBoxProcess {
   Future<void> stop() async {
     final proc = _normalProc;
     if (proc != null) {
-      // Non-elevated mode: direct kill.
+      // Non-elevated mode: proc.kill() defaults to TerminateProcess on Windows.
       try {
-        proc.kill(ProcessSignal.sigterm);
+        proc.kill();
       } catch (_) {}
       try {
         await proc.exitCode.timeout(const Duration(seconds: 2));
       } catch (_) {
         try {
-          proc.kill(ProcessSignal.sigkill);
+          proc.kill();
         } catch (_) {}
       }
       _normalProc = null;
     } else if (_processId != 0) {
-      // Elevated mode: parent is non-elevated so taskkill needs runas; try
-      // both and ignore failures.
+      // Elevated mode: ShellExecuteEx detached the process, so we do not have
+      // a Process handle. Use taskkill (works regardless of our elevation).
       try {
         await Process.run('taskkill', ['/PID', '$_processId', '/T', '/F']);
       } catch (_) {}
-      // Also try killing by name as a fallback (gets the real elevated pid
-      // even if our recorded one was the consent.exe intermediate).
+      // Fallback: kill by image name in case the PID was consent.exe.
       try {
         await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
       } catch (_) {}
@@ -302,11 +302,4 @@ class SingBoxProcess {
       return false;
     }
   }
-}
-
-class SingBoxStartException implements Exception {
-  const SingBoxStartException(this.message);
-  final String message;
-  @override
-  String toString() => 'SingBoxStartException: $message';
 }
