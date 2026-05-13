@@ -1,0 +1,11 @@
+{
+    "version": "3.7.3",
+    "app": {
+        "name": "vpn",
+        "bundleId": "com.example.vpn"
+    },
+    "main": {},
+    "experimental": {
+        "load_packages": true
+    }
+}
