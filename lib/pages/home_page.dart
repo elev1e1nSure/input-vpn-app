@@ -10,6 +10,8 @@ import 'package:vpn/pages/settings_screen.dart';
 import 'package:vpn/pages/servers_screen.dart';
 import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/l10n/app_strings.dart';
+import 'package:vpn/functions/extract_country_code.dart';
+import 'package:vpn/functions/country_code_to_emoji.dart';
 import 'package:window_manager/window_manager.dart';
 
 @NowaGenerated()
@@ -630,11 +632,16 @@ class _HomeTab extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
-                                child: Icon(
-                                  Icons.public,
-                                  size: 20,
-                                  color: theme.iconTheme.color?.withValues(alpha: 0.3),
-                                ),
+                                child: server != null
+                                    ? Text(
+                                        countryCodeToEmoji(extractCountryCode(server.name)),
+                                        style: const TextStyle(fontSize: 24),
+                                      )
+                                    : Icon(
+                                        Icons.public,
+                                        size: 20,
+                                        color: theme.iconTheme.color?.withValues(alpha: 0.3),
+                                      ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -648,7 +655,7 @@ class _HomeTab extends StatelessWidget {
                                         ? s.selectedServer
                                         : s.noServer,
                                     style: theme.textTheme.titleLarge
-                                        ?.copyWith(fontSize: 11, fontWeight: FontWeight.normal),
+                                        ?.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
                                   ),
                                   const SizedBox(height: 2),
                                   if (server != null)

@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/l10n/app_strings.dart';
+import 'package:vpn/functions/extract_country_code.dart';
+import 'package:vpn/functions/country_code_to_emoji.dart';
 
 @NowaGenerated()
 class ServersScreen extends StatelessWidget {
@@ -136,10 +138,9 @@ class ServersScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Center(
-                        child: Icon(
-                          Icons.public,
-                          size: 18,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.4),
+                        child: Text(
+                          countryCodeToEmoji(extractCountryCode(server.name)),
+                          style: const TextStyle(fontSize: 20),
                         ),
                       ),
                     ),
