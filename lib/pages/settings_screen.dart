@@ -4,6 +4,7 @@ import 'package:vpn/globals/app_state.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:vpn/globals/themes.dart';
 import 'package:vpn/l10n/app_strings.dart';
 import 'package:vpn/models/dns_preset.dart';
@@ -23,6 +24,33 @@ class SettingsScreen extends StatefulWidget {
 
 @NowaGenerated()
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const String _currentVersion = '1.0.2';
+  String? _latestVersion;
+  bool _checking = false;
+
+  Future<void> _checkForUpdates() async {
+    setState(() => _checking = true);
+    try {
+      final response = await Dio().get<dynamic>(
+        'https://api.github.com/repos/elev1e1nSure/input-vpn-app/releases/latest',
+        options: Options(
+          headers: {'Accept': 'application/vnd.github.v3+json'},
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
+      final tag = (response.data['tag_name'] as String?)?.replaceFirst('v', '');
+      if (mounted) {
+        setState(() {
+          _latestVersion = tag;
+          _checking = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -32,11 +60,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(s.settings),
-        leading: IconButton(
-          icon: const Icon(CupertinoIcons.back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const Icon(CupertinoIcons.back),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -91,12 +122,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
           // ── ABOUT ──
           buildSettingsSectionHeader(theme, s.about),
-          buildSettingsListTile(
-            theme,
-            s.version,
-            CupertinoIcons.info_circle,
-            trailingText: '1.0.2',
-            onTap: () {},
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+            leading: Icon(CupertinoIcons.info_circle, color: theme.iconTheme.color),
+            title: Text(s.version, style: theme.textTheme.bodyLarge),
+            subtitle: _latestVersion != null && _latestVersion != _currentVersion
+                ? Text(
+                    '${s.updateAvailable}: $_latestVersion',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  )
+                : null,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_checking)
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.primary,
+                    ),
+                  )
+                else if (_latestVersion == _currentVersion)
+                  Text(
+                    s.upToDate,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  )
+                else
+                  Text(
+                    _currentVersion,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                if (!_checking)
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 0),
+                    onPressed: _checkForUpdates,
+                    child: Text(
+                      s.check,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onTap: _checkForUpdates,
           ),
         ],
       ),

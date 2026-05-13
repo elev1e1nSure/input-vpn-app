@@ -21,6 +21,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  bool _sidebarExpanded = true;
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +29,10 @@ class _HomePageState extends State<HomePage> {
     return Row(
       children: [
         _Sidebar(
+          expanded: _sidebarExpanded,
           selectedIndex: _selectedIndex,
           onItemSelected: (i) => setState(() => _selectedIndex = i),
+          onToggleExpand: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
         ),
         VerticalDivider(
           width: 1,
@@ -52,63 +55,103 @@ class _HomePageState extends State<HomePage> {
 
 class _Sidebar extends StatelessWidget {
   const _Sidebar({
+    required this.expanded,
     required this.selectedIndex,
     required this.onItemSelected,
+    required this.onToggleExpand,
   });
 
+  final bool expanded;
   final int selectedIndex;
   final ValueChanged<int> onItemSelected;
+  final VoidCallback onToggleExpand;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
-    return Container(
-      width: 200,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: expanded ? 200 : 64,
       color: theme.colorScheme.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Row(
-                children: [
-                  Icon(
+            if (expanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.shield_fill,
+                      color: theme.colorScheme.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Input VPN',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                child: Center(
+                  child: Icon(
                     CupertinoIcons.shield_fill,
                     color: theme.colorScheme.primary,
                     size: 24,
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Input VPN',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ],
+                ),
               ),
-            ),
             Divider(
               height: 1,
               color: theme.dividerTheme.color,
             ),
             const SizedBox(height: 8),
             _SidebarItem(
+              expanded: expanded,
               icon: CupertinoIcons.shield_fill,
               label: s.vpnLabel,
               selected: selectedIndex == 0,
               onTap: () => onItemSelected(0),
             ),
             _SidebarItem(
+              expanded: expanded,
               icon: CupertinoIcons.globe,
               label: s.myServers,
               selected: selectedIndex == 1,
               onTap: () => onItemSelected(1),
             ),
             _SidebarItem(
+              expanded: expanded,
               icon: CupertinoIcons.gear,
               label: s.settings,
               selected: selectedIndex == 2,
               onTap: () => onItemSelected(2),
+            ),
+            const Spacer(),
+            Divider(
+              height: 1,
+              color: theme.dividerTheme.color,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Center(
+                child: IconButton(
+                  icon: Icon(
+                    expanded
+                        ? CupertinoIcons.chevron_left
+                        : CupertinoIcons.chevron_right,
+                    size: 18,
+                    color: theme.iconTheme.color?.withValues(alpha: 0.5),
+                  ),
+                  onPressed: onToggleExpand,
+                ),
+              ),
             ),
           ],
         ),
@@ -119,12 +162,14 @@ class _Sidebar extends StatelessWidget {
 
 class _SidebarItem extends StatelessWidget {
   const _SidebarItem({
+    required this.expanded,
     required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
+  final bool expanded;
   final IconData icon;
   final String label;
   final bool selected;
@@ -138,37 +183,53 @@ class _SidebarItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          margin: EdgeInsets.symmetric(
+            horizontal: expanded ? 10 : 10,
+            vertical: 2,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: expanded ? 12 : 10,
+            vertical: 10,
+          ),
           decoration: BoxDecoration(
             color: selected
                 ? theme.colorScheme.primary.withValues(alpha: 0.12)
                 : null,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: selected
-                    ? theme.colorScheme.primary
-                    : theme.iconTheme.color?.withValues(alpha: 0.5),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                  color: selected
-                      ? theme.colorScheme.primary
-                      : theme.textTheme.bodyMedium?.color
-                          ?.withValues(alpha: 0.7),
+          child: expanded
+              ? Row(
+                  children: [
+                    Icon(
+                      icon,
+                      size: 18,
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.iconTheme.color?.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      label,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 13,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        color: selected
+                            ? theme.colorScheme.primary
+                            : theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                )
+              : Center(
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: selected
+                        ? theme.colorScheme.primary
+                        : theme.iconTheme.color?.withValues(alpha: 0.5),
+                  ),
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

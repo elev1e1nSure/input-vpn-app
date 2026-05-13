@@ -94,6 +94,10 @@ class AppStrings {
   String get proxyMode => isRu ? 'Режим прокси' : 'Proxy Mode';
   String get vpnMode => isRu ? 'Режим VPN' : 'VPN Mode';
   String get version => isRu ? 'Версия' : 'Version';
+  String get checkForUpdates => isRu ? 'Проверить обновления' : 'Check for Updates';
+  String get upToDate => isRu ? 'Актуальная версия' : 'Up to Date';
+  String get updateAvailable => isRu ? 'Доступно обновление' : 'Update Available';
+  String get check => isRu ? 'Проверить' : 'Check';
   String get language => isRu ? 'Язык' : 'Language';
 
   // --- Settings ---
