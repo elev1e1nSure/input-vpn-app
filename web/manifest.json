@@ -1,11 +1,11 @@
 {
-    "name": "vpn",
-    "short_name": "vpn",
+    "name": "Input VPN",
+    "short_name": "Input VPN",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Input VPN - A secure VPN application.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

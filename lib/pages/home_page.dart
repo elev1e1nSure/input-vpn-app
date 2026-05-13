@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:flutter/cupertino.dart';
@@ -64,9 +65,11 @@ class HomePage extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            const Spacer(flex: 1),
+            Column(
+              children: [
+                const Spacer(flex: 1),
             Text(
               server == null
                   ? 'Setup Required'
@@ -263,8 +266,71 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+              ],
+            ),
+            if (appState.lastError != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _ErrorBanner(message: appState.lastError!),
+              ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(CupertinoIcons.exclamationmark_triangle,
+              color: Colors.red, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: SelectableText(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.red.shade100,
+                fontFamily: 'monospace',
+                fontSize: 11,
+                height: 1.3,
+              ),
+              maxLines: 12,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Copy',
+            icon: const Icon(CupertinoIcons.doc_on_clipboard,
+                color: Colors.red, size: 18),
+            onPressed: () =>
+                Clipboard.setData(ClipboardData(text: message)),
+          ),
+          IconButton(
+            tooltip: 'Dismiss',
+            icon: const Icon(CupertinoIcons.xmark,
+                color: Colors.red, size: 18),
+            onPressed: () =>
+                AppState.of(context, listen: false).clearError(),
+          ),
+        ],
       ),
     );
   }
