@@ -25,25 +25,24 @@ class SingBoxVpnService implements VpnService {
     SingBoxProcess? process,
     SingBoxConfigBuilder? configBuilder,
     ClashApiClient? clashApi,
-    bool testMode = false,
+    bool proxyMode = false,
   })  : _process = process ?? SingBoxProcess(),
-        _config = configBuilder ?? SingBoxConfigBuilder(testMode: testMode),
+        _config = configBuilder ?? SingBoxConfigBuilder(testMode: proxyMode),
         _clash = clashApi ?? ClashApiClient(),
-        _testMode = testMode;
+        _proxyMode = proxyMode;
 
   final SingBoxProcess _process;
   SingBoxConfigBuilder _config;
   final ClashApiClient _clash;
-  bool _testMode;
+  bool _proxyMode;
 
   /// Whether sing-box is configured as a local SOCKS proxy (no TUN, no UAC).
-  /// Useful for testing alongside another VPN.
-  bool get testMode => _testMode;
+  bool get proxyMode => _proxyMode;
 
-  /// Toggle test mode. Takes effect at the NEXT connect().
-  void setTestMode(bool value) {
-    if (_testMode == value) return;
-    _testMode = value;
+  /// Toggle proxy mode. Takes effect at the NEXT connect().
+  void setProxyMode(bool value) {
+    if (_proxyMode == value) return;
+    _proxyMode = value;
     _config = SingBoxConfigBuilder(testMode: value);
   }
 
@@ -88,7 +87,7 @@ class SingBoxVpnService implements VpnService {
       // 2) Generate config and start sing-box. TUN mode needs elevation
       //    (UAC prompt fires here); SOCKS test mode does not.
       final jsonStr = _config.build(config, logPath: ws.logPath);
-      await _process.start(jsonStr, elevated: !_testMode);
+      await _process.start(jsonStr, elevated: !_proxyMode);
 
       // 3) Wait for Clash API to come up, polling process aliveness too so
       //    we fail fast when sing-box exits with a bad config.
@@ -129,10 +128,12 @@ class SingBoxVpnService implements VpnService {
     while (DateTime.now().isBefore(deadline)) {
       // Fail-fast if the child process is gone.
       if (!_process.isProcessAlive()) {
-        final tail = await _process.tailLog();
+        final err = await _process.extractFatalError();
         throw UnexpectedFailure(
-          'sing-box exited before opening the Clash API.\n\n'
-          '--- log tail ---\n$tail',
+          'VPN engine failed to start.\n\n'
+          'Details: $err\n\n'
+          'If this persists, check the full log:\n'
+          '${_process.logFile?.path ?? 'sing-box.log'}',
         );
       }
       if (await _clash.isAlive()) return;

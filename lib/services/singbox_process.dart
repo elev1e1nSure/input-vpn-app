@@ -70,6 +70,20 @@ class SingBoxProcess {
     }
   }
 
+  /// Extract the last `FATAL[...]` or `ERROR[...]` line from the log tail.
+  /// Returns the concise message suitable for UI display.
+  Future<String> extractFatalError({int maxLines = 50}) async {
+    final tail = await tailLog(maxLines: maxLines);
+    // sing-box 1.13 prefixes fatals as: FATAL[0000] start service: ...
+    final match = RegExp(r'(?:FATAL|ERROR)\[[^\]]*\]\s*(.+?)(?:\n|$)')
+        .allMatches(tail)
+        .lastOrNull;
+    if (match != null) return match.group(1)!.trim();
+    // Fallback: first non-empty line
+    final first = tail.split('\n').where((l) => l.trim().isNotEmpty).firstOrNull;
+    return first ?? 'Unknown error (check sing-box.log)';
+  }
+
   /// Find the bundled sing-box.exe next to our own runner exe.
   String _singBoxPath() {
     final exeDir = File(Platform.resolvedExecutable).parent.path;
