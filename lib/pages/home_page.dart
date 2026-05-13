@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:vpn/globals/app_state.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:vpn/pages/settings_screen.dart';
 import 'package:vpn/pages/servers_screen.dart';
-import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/l10n/app_strings.dart';
 import 'package:vpn/functions/extract_country_code.dart';
 import 'package:vpn/functions/country_code_to_emoji.dart';
@@ -89,7 +87,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
             child: KeyedSubtree(
               key: ValueKey<int>(_selectedIndex),
               child: [
-                const _HomeTab(),
+                _HomeTab(onSwitchToServers: () => setState(() => _selectedIndex = 1)),
                 const ServersScreen(),
                 const SettingsScreen(),
               ][_selectedIndex],
@@ -269,7 +267,9 @@ class _SidebarItemState extends State<_SidebarItem> {
 @NowaGenerated()
 class _HomeTab extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const _HomeTab();
+  const _HomeTab({required this.onSwitchToServers});
+
+  final VoidCallback onSwitchToServers;
 
   Widget _buildModeToggle(BuildContext context, AppState appState) {
     final theme = Theme.of(context);
@@ -388,20 +388,8 @@ class _HomeTab extends StatelessWidget {
     return Icons.power_settings_new;
   }
 
-  void _openAddConfig(BuildContext context) {
-    Navigator.of(context).push(
-      CupertinoPageRoute<void>(
-        builder: (context) => const AddConfigScreen(),
-      ),
-    );
-  }
-
-  void _goToServers(BuildContext context) {
-    Navigator.of(context).push(
-      CupertinoPageRoute<void>(
-        builder: (context) => const ServersScreen(),
-      ),
-    );
+  void _goToServers() {
+    onSwitchToServers();
   }
 
   @override
@@ -423,7 +411,7 @@ class _HomeTab extends StatelessWidget {
             cursor: SystemMouseCursors.click,
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => _openAddConfig(context),
+              onPressed: onSwitchToServers,
             ),
           ),
         ],
@@ -477,7 +465,7 @@ class _HomeTab extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () {
                         if (!hasServer) {
-                          _goToServers(context);
+                          _goToServers();
                         } else {
                           appState.toggleConnection();
                         }
@@ -604,11 +592,7 @@ class _HomeTab extends StatelessWidget {
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (context) => const ServersScreen(),
-                          ),
-                        );
+                        onSwitchToServers();
                       },
                       child: Container(
                         padding: const EdgeInsets.all(14),
@@ -655,7 +639,7 @@ class _HomeTab extends StatelessWidget {
                                         ? s.selectedServer
                                         : s.noServer,
                                     style: theme.textTheme.titleLarge
-                                        ?.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
+                                        ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                                   ),
                                   const SizedBox(height: 2),
                                   if (server != null)
