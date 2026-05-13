@@ -89,17 +89,31 @@ class _Sidebar extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(expanded ? 12 : 8, 12, expanded ? 12 : 8, 8),
-              child: IconButton(
-                icon: Icon(
-                  expanded ? Icons.menu_open : Icons.menu,
-                  size: 20,
-                  color: theme.iconTheme.color?.withValues(alpha: 0.6),
+            if (expanded)
+              Center(
+                child: IconButton(
+                  icon: Icon(
+                    Icons.menu_open,
+                    size: 20,
+                    color: theme.iconTheme.color?.withValues(alpha: 0.6),
+                  ),
+                  onPressed: onToggleExpand,
                 ),
-                onPressed: onToggleExpand,
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                child: Center(
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.menu,
+                      size: 20,
+                      color: theme.iconTheme.color?.withValues(alpha: 0.6),
+                    ),
+                    onPressed: onToggleExpand,
+                  ),
+                ),
               ),
-            ),
             Divider(
               height: 1,
               color: theme.dividerTheme.color,
