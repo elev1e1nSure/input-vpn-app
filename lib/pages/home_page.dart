@@ -114,7 +114,7 @@ class HomePage extends StatelessWidget {
                     children: [
                       const Icon(CupertinoIcons.info_circle, size: 14, color: Colors.amber),
                       const SizedBox(width: 6),
-                      Text('TEST MODE (SOCKS5 :1080)', style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber, fontWeight: FontWeight.bold)),
+                      Text('TEST MODE (SOCKS5 :11080)', style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -320,11 +320,11 @@ void _showTestModeSheet(BuildContext context, AppState appState) {
             const SizedBox(height: 12),
             const Text(
               'sing-box is running as a local SOCKS5 proxy on '
-              '127.0.0.1:1080. It does NOT touch system routes, so '
+              '127.0.0.1:11080. It does NOT touch system routes, so '
               'another VPN can run at the same time.\n\n'
               'To send traffic through it:\n'
-              '  • Browser: set proxy to SOCKS5 127.0.0.1:1080\n'
-              '  • Test:  curl --socks5 127.0.0.1:1080 https://ifconfig.me\n\n'
+              '  • Browser: set proxy to SOCKS5 127.0.0.1:11080\n'
+              '  • Test:  curl --socks5 127.0.0.1:11080 https://ifconfig.me\n\n'
               'Switch to Full VPN mode when you are ready to route '
               'all system traffic. It will request admin (UAC) and '
               'replace any other VPN.',

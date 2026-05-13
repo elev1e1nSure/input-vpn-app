@@ -120,12 +120,11 @@ class SingBoxProcess {
     }
 
     // Non-elevated launch: gives us a proper Process handle, stdout/stderr,
-    // exit code, and lets us TerminateProcess directly.
+    // and exitCode access. Default `normal` mode is what we want.
     final proc = await Process.start(
       exe,
       ['run', '-c', configFile.path, '--disable-color'],
       workingDirectory: ws.dir.path,
-      mode: ProcessStartMode.detachedWithStdio,
     );
     // Tee stdout/stderr into the log file (sing-box also writes via log.output,
     // but this captures early panics that happen before the logger is built).

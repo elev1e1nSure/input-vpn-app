@@ -22,7 +22,7 @@ class SingBoxConfigBuilder {
     this.remoteDnsServer = 'tls://1.1.1.1',
     this.directDnsServer = '8.8.8.8',
     this.testMode = false,
-    this.socksPort = 1080,
+    this.socksPort = 11080,
   });
 
   final int clashApiPort;
@@ -66,13 +66,16 @@ class SingBoxConfigBuilder {
             'tag': 'tun-in',
             'interface_name': tunInterfaceName,
             'mtu': tunMtu,
-            'inet4_address': '172.19.0.1/30',
-            'inet6_address': 'fdfe:dcba:9876::1/126',
+            // sing-box 1.12 replaced inet4_address/inet6_address with a single
+            // `address` array. See:
+            // https://sing-box.sagernet.org/migration/#migrate-tun-inbound-fields-from-legacy-form
+            'address': [
+              '172.19.0.1/30',
+              'fdfe:dcba:9876::1/126',
+            ],
             'auto_route': true,
             'strict_route': true,
             'stack': 'mixed',
-            'sniff': true,
-            'sniff_override_destination': false,
           };
 
     return {
@@ -85,6 +88,10 @@ class SingBoxConfigBuilder {
         // sing-box 1.12+ uses typed DNS servers (legacy "address" form is
         // removed in 1.14). See:
         // https://sing-box.sagernet.org/migration/#migrate-to-new-dns-server-formats
+        //
+        // dns-direct uses `local` so it queries the OS resolver — that way we
+        // don't need `detour: direct` (which sing-box 1.13 rejects when the
+        // direct outbound has no extra options).
         'servers': [
           {
             'type': 'tls',
@@ -94,10 +101,8 @@ class SingBoxConfigBuilder {
             'detour': 'proxy',
           },
           {
-            'type': 'udp',
+            'type': 'local',
             'tag': 'dns-direct',
-            'server': _strip(directDnsServer),
-            'detour': 'direct',
           },
         ],
         'rules': [
@@ -123,19 +128,22 @@ class SingBoxConfigBuilder {
         // sing-box 1.13 removed `block`/`dns` outbounds in favor of rule
         // actions. See https://sing-box.sagernet.org/migration/#migrate-to-new-rule-actions
         'rules': [
+          // Sniff TLS/HTTP/QUIC so subsequent rules can match by domain.
+          {'action': 'sniff'},
           // Hijack DNS queries and resolve via the dns block above.
           {'action': 'hijack-dns', 'protocol': 'dns'},
-          // Bypass private networks to avoid breaking LAN access.
+          // CRITICAL: keep traffic to the VPN server itself OUT of the
+          // tunnel — otherwise sing-box's own dial loops back through TUN.
           {
             'action': 'route',
-            'ip_cidr': [
-              '127.0.0.0/8',
-              '10.0.0.0/8',
-              '172.16.0.0/12',
-              '192.168.0.0/16',
-              '169.254.0.0/16',
-              '224.0.0.0/4',
-            ],
+            'domain': [p.server],
+            if (_isIpv4(p.server)) 'ip_cidr': ['${p.server}/32'],
+            'outbound': 'direct',
+          },
+          // Bypass LAN/private networks so local resources still work.
+          {
+            'action': 'route',
+            'ip_is_private': true,
             'outbound': 'direct',
           },
         ],
@@ -159,6 +167,17 @@ class SingBoxConfigBuilder {
   static String _strip(String addr) {
     final i = addr.indexOf('://');
     return i == -1 ? addr : addr.substring(i + 3);
+  }
+
+  /// Whether [s] looks like a literal IPv4 address (4 dotted decimal octets).
+  static bool _isIpv4(String s) {
+    final parts = s.split('.');
+    if (parts.length != 4) return false;
+    for (final p in parts) {
+      final n = int.tryParse(p);
+      if (n == null || n < 0 || n > 255) return false;
+    }
+    return true;
   }
 
   // ---------------------------------------------------------------------------
