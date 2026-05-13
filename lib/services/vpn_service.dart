@@ -3,8 +3,7 @@ import 'dart:math';
 
 import 'package:vpn/models/parsed_config.dart';
 
-/// Connection lifecycle, adapted from hiddify-app's
-/// `lib/features/connection/model/connection_status.dart`.
+/// Connection lifecycle status states.
 sealed class ConnectionStatus {
   const ConnectionStatus();
   bool get isConnected => this is Connected;
@@ -26,7 +25,7 @@ class Connected extends ConnectionStatus {
   final DateTime since;
 }
 
-/// Adapted from hiddify-app's ConnectionFailure typed errors.
+/// Typed connection failure errors.
 sealed class ConnectionFailure {
   const ConnectionFailure(this.message);
   final String message;
@@ -79,11 +78,8 @@ class VpnStats {
 
 /// Backend-agnostic VPN service contract.
 ///
-/// The real implementation will eventually wrap a native engine (hiddify-core,
-/// sing-box, libxray, wireguard-go, ...). For now we only ship a [MockVpnService]
-/// that emulates the lifecycle so the rest of the app stays decoupled.
-///
-/// Pattern mirrors hiddify-app `ConnectionRepository` + `ConnectionNotifier`.
+/// The real implementation wraps a native engine (sing-box).
+/// [MockVpnService] emulates the lifecycle so the rest of the app stays decoupled.
 abstract class VpnService {
   /// Latest known status.
   ConnectionStatus get status;

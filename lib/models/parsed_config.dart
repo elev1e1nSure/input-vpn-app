@@ -2,7 +2,6 @@ import 'package:vpn/models/proxy_type.dart';
 
 /// Structured representation of a parsed VPN proxy URI.
 ///
-/// Adapted (and simplified) from hiddify-app's outbound configuration models.
 /// All transport/TLS specifics are kept in `transport` so we don't tie the
 /// model to any concrete VPN backend yet.
 class ParsedConfig {

@@ -6,7 +6,7 @@ import 'package:vpn/models/proxy_type.dart';
 /// Parses VPN proxy share-links (vless://, vmess://, ss://, trojan://, hy2://)
 /// into a structured [ParsedConfig].
 ///
-/// The parsing logic is adapted from hiddify-app / sing-box client conventions:
+/// The parsing logic follows sing-box client conventions:
 ///   - VMess uses base64(JSON) body.
 ///   - VLESS/Trojan/Hysteria2 follow standard URI: scheme://user@host:port?params#remark
 ///   - Shadowsocks supports legacy base64 form and SIP002 form.
@@ -329,7 +329,7 @@ class VpnUrlParser {
   }
 
   /// Decode base64 input that may be standard or URL-safe and may be missing
-  /// padding. Equivalent helper in hiddify is `safeDecodeBase64`.
+  /// padding.
   static String _decodeBase64Permissive(String input) {
     var s = input.replaceAll('-', '+').replaceAll('_', '/').replaceAll(
           RegExp(r'\s'),

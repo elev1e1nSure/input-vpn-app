@@ -1,7 +1,6 @@
 /// VPN proxy protocol types.
 ///
-/// Adapted from hiddify-app `lib/singbox/model/singbox_proxy_type.dart` and
-/// reduced to protocols that input-vpn-app intends to support initially.
+/// Protocols supported by the sing-box engine.
 enum ProxyType {
   vless('VLESS'),
   vmess('VMess'),

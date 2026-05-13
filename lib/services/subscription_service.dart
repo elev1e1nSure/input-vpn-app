@@ -4,10 +4,8 @@ import 'package:vpn/services/vpn_url_parser.dart';
 
 /// Downloads and parses subscription URLs into a list of [ParsedConfig].
 ///
-/// Adapted from hiddify-app `lib/features/profile/data/profile_parser.dart`:
-/// the same name-extraction hierarchy (HTTP headers → URL fragment → fallback)
-/// is preserved, but without database/Riverpod plumbing. Subscription HTTP
-/// headers (`profile-title`, `content-disposition`,
+/// Name-extraction hierarchy (HTTP headers → URL fragment → fallback)
+/// is preserved. Subscription HTTP headers (`profile-title`, `content-disposition`,
 /// `subscription-userinfo`) are exposed via [SubscriptionResult.headers].
 class SubscriptionService {
   SubscriptionService({Dio? dio}) : _dio = dio ?? _defaultDio();
@@ -20,9 +18,9 @@ class SubscriptionService {
         followRedirects: true,
         responseType: ResponseType.plain,
         headers: {
-          // Common UA to mimic v2rayN/Hiddify behavior — many sub endpoints
-          // serve different bodies depending on User-Agent.
-          'User-Agent': 'Hiddify/4.0',
+          // Generic UA — many sub endpoints serve different bodies
+          // depending on User-Agent.
+          'User-Agent': 'InputVPN/1.0',
         },
       ),
     );
@@ -92,7 +90,7 @@ class SubscriptionService {
     );
   }
 
-  // Header allow-list (from hiddify ProfileParser.allowedProfileHeaders).
+  // Header allow-list for subscription profile metadata.
   static const _allowedProfileHeaders = {
     'profile-title',
     'content-disposition',
@@ -103,7 +101,7 @@ class SubscriptionService {
   };
 
   /// Parse `# key: value` and `// key: value` style lines from the first 10
-  /// lines of the body — same convention as hiddify.
+  /// lines of the body.
   static Map<String, String> _parseHeaderComments(String content) {
     final headers = <String, String>{};
     final lines = content.split(RegExp(r'\r?\n'));
@@ -128,10 +126,9 @@ class SubscriptionService {
   }
 
   /// Derive a human-readable title from headers or URL.
-  /// Order matches hiddify ProfileParser.parse().
   static String? _extractTitle(Map<String, String> headers, String? url) {
     if (headers['profile-title'] case final t? when t.isNotEmpty) {
-      // hiddify allows `base64:...` prefixed titles
+      // Handle `base64:...` prefixed titles
       if (t.startsWith('base64:')) {
         return safeDecodeBase64(t.substring('base64:'.length));
       }
