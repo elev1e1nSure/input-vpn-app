@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
         windowManager.addListener(this);
         final appState = AppState.of(context, listen: false);
         if (appState.minimizeToTray) {
-          TrayManager.init();
+          TrayManager.init(appState);
           _trayInitialized = true;
         }
         // Listen to minimizeToTray changes
@@ -77,17 +77,16 @@ class _HomePageState extends State<HomePage> with WindowListener {
     final appState = AppState.of(context, listen: false);
     debugPrint('onWindowClose triggered, minimizeToTray=${appState.minimizeToTray}');
     
-    // Disconnect VPN before hiding/destroying to ensure TUN adapter cleanup
-    if (appState.isConnected) {
-      debugPrint('Disconnecting VPN before window close');
-      await appState.toggleConnection();
-    }
-    
     try {
       if (appState.minimizeToTray) {
         await windowManager.hide();
-        debugPrint('Window hidden to tray');
+        debugPrint('Window hidden to tray, VPN remains connected');
       } else {
+        // Disconnect VPN only when actually closing the app
+        if (appState.isConnected) {
+          debugPrint('Disconnecting VPN before app close');
+          await appState.toggleConnection();
+        }
         await windowManager.destroy();
         debugPrint('Window destroyed');
       }

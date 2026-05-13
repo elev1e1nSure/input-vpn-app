@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:input_vpn/globals/app_state.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -8,8 +9,10 @@ import 'package:window_manager/window_manager.dart';
 class TrayManager {
   static final SystemTray _systemTray = SystemTray();
   static bool _initialized = false;
+  static AppState? _appState;
 
-  static Future<void> init() async {
+  static Future<void> init([AppState? appState]) async {
+    _appState = appState;
     if (!Platform.isWindows || _initialized) return;
 
     String iconPath;
@@ -63,6 +66,10 @@ class TrayManager {
       MenuItemLabel(
         label: 'Exit',
         onClicked: (menuItem) async {
+          // Disconnect VPN before closing
+          if (_appState?.isConnected ?? false) {
+            await _appState?.toggleConnection();
+          }
           await windowManager.destroy();
         },
       ),
