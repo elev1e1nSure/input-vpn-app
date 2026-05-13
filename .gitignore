@@ -54,6 +54,15 @@ hiddify-app/
 # Windows artifacts
 nul
 cache.db
+iscc
+echo
+
+# IDE metadata
+.metadata
+devtools_options.yaml
+
+# Build outputs
+/Output/
 
 # AI context (local-only)
 AI_CONTEXT.md
