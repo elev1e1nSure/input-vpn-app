@@ -351,13 +351,6 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-  String _mainButtonLabel(AppState appState, AppStrings s) {
-    if (appState.selectedServer == null) return s.addConfigurationBtn;
-    if (appState.isConnecting) return s.connecting;
-    if (appState.isConnected) return s.disconnect;
-    return s.connect;
-  }
-
   IconData _mainButtonIcon(AppState appState) {
     if (appState.selectedServer == null) return CupertinoIcons.add;
     if (appState.isConnecting) return CupertinoIcons.pause_fill;
@@ -399,16 +392,6 @@ class _HomeTab extends StatelessWidget {
           IconButton(
             icon: const Icon(CupertinoIcons.add),
             onPressed: () => _openAddConfig(context),
-          ),
-          IconButton(
-            icon: const Icon(CupertinoIcons.settings),
-            onPressed: () {
-              Navigator.of(context).push(
-                CupertinoPageRoute<void>(
-                  builder: (context) => const SettingsScreen(),
-                ),
-              );
-            },
           ),
         ],
       ),
@@ -545,28 +528,6 @@ class _HomeTab extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            _mainButtonLabel(appState, s),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 12,
-                              color: isConnected
-                                  ? theme.colorScheme.primary
-                                  : theme.textTheme.bodyMedium?.color
-                                      ?.withValues(alpha: 0.6),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (!hasServer) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              s.disconnectedStatus,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontSize: 10,
-                                color: theme.textTheme.bodyMedium?.color
-                                    ?.withValues(alpha: 0.3),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
