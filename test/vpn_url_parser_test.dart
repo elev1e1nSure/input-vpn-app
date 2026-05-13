@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpn/models/proxy_type.dart';
-import 'package:vpn/services/subscription_service.dart';
-import 'package:vpn/services/vpn_url_parser.dart';
+import 'package:input_vpn/models/proxy_type.dart';
+import 'package:input_vpn/services/subscription_service.dart';
+import 'package:input_vpn/services/vpn_url_parser.dart';
 
 void main() {
   group('VpnUrlParser', () {

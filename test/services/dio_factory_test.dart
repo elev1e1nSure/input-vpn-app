@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpn/services/dio_factory.dart';
+import 'package:input_vpn/services/dio_factory.dart';
 
 void main() {
   group('DioFactory', () {

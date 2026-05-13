@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vpn/globals/app_state.dart';
-import 'package:vpn/globals/shared_prefs.dart';
-import 'package:vpn/services/subscription_service.dart';
-import 'package:vpn/services/vpn_service.dart';
+import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/globals/shared_prefs.dart';
+import 'package:input_vpn/services/subscription_service.dart';
+import 'package:input_vpn/services/vpn_service.dart';
 
 class _MockVpnService extends Mock implements VpnService {}
 

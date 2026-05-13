@@ -167,7 +167,7 @@ Future<void> stop() async {
   if (proc != null) {
     // Сначала мягко
     try {
-      proc.kill(ProcessSignal.sigterm);
+      proc.kill();
     } catch (_) {
       proc.kill();
     }
@@ -182,7 +182,7 @@ Future<void> stop() async {
     // Elevated: сначала без /F
     try {
       await Process.run('taskkill', ['/PID', '$_processId', '/T']);
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
     } catch (_) {}
 
     // Проверяем жив ли ещё
