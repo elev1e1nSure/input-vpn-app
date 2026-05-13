@@ -245,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Colors.blueAccent.withValues(alpha: 0.1),
               ),
               child: const Column(
-                children: const [
+                children: [
                   Text(
                     'Pro Plan - \$9.99/mo',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),

@@ -76,10 +76,18 @@ class SingBoxProcess {
     return p.join(exeDir, 'sing-box.exe');
   }
 
+  /// Reference to a non-elevated child Process so we can kill/await it.
+  /// Null when we launched via ShellExecuteEx instead.
+  Process? _normalProc;
+
   /// Start sing-box with the provided JSON config.
   ///
+  /// When [elevated] is true, uses [ShellExecuteEx] with the `runas` verb
+  /// (UAC prompt). Required for TUN mode. Set to false for SOCKS-only mode
+  /// to skip UAC and get proper stdout/stderr + reliable process control.
+  ///
   /// Returns the OS process id. Throws [SingBoxStartException] on failure.
-  Future<int> start(String configJson) async {
+  Future<int> start(String configJson, {required bool elevated}) async {
     if (isRunning) {
       throw const SingBoxStartException(
         'sing-box is already running. Call stop() first.',
@@ -101,28 +109,77 @@ class SingBoxProcess {
     // Truncate previous log.
     await _logFile!.writeAsString('', flush: true);
 
-    final pid = _shellExecuteElevated(
-      exe: exe,
-      args: ['run', '-c', configFile.path, '--disable-color'],
-      workingDir: ws.dir.path,
+    if (elevated) {
+      final pid = _shellExecuteElevated(
+        exe: exe,
+        args: ['run', '-c', configFile.path, '--disable-color'],
+        workingDir: ws.dir.path,
+      );
+      _processId = pid;
+      return pid;
+    }
+
+    // Non-elevated launch: gives us a proper Process handle, stdout/stderr,
+    // exit code, and lets us TerminateProcess directly.
+    final proc = await Process.start(
+      exe,
+      ['run', '-c', configFile.path, '--disable-color'],
+      workingDirectory: ws.dir.path,
+      mode: ProcessStartMode.detachedWithStdio,
     );
-    _processId = pid;
-    return pid;
+    // Tee stdout/stderr into the log file (sing-box also writes via log.output,
+    // but this captures early panics that happen before the logger is built).
+    final logSink = _logFile!.openWrite(mode: FileMode.append);
+    proc.stdout
+        .listen(logSink.add, onError: (_) {}, cancelOnError: false);
+    proc.stderr
+        .listen(logSink.add, onError: (_) {}, cancelOnError: false);
+    _normalProc = proc;
+    _normalProcExited = false;
+    _processId = proc.pid;
+    // Watch for unexpected exits.
+    unawaited(proc.exitCode.then((_) {
+      _normalProcExited = true;
+      try {
+        logSink.close();
+      } catch (_) {}
+    }));
+    return proc.pid;
   }
 
-  /// Gracefully stop the elevated child process.
+  /// Gracefully stop the running sing-box process.
   Future<void> stop() async {
-    if (_processHandle != 0) {
-      // Try graceful shutdown via taskkill first (less likely to crash
-      // the TUN driver).
+    final proc = _normalProc;
+    if (proc != null) {
+      // Non-elevated mode: direct kill.
+      try {
+        proc.kill(ProcessSignal.sigterm);
+      } catch (_) {}
+      try {
+        await proc.exitCode.timeout(const Duration(seconds: 2));
+      } catch (_) {
+        try {
+          proc.kill(ProcessSignal.sigkill);
+        } catch (_) {}
+      }
+      _normalProc = null;
+    } else if (_processId != 0) {
+      // Elevated mode: parent is non-elevated so taskkill needs runas; try
+      // both and ignore failures.
       try {
         await Process.run('taskkill', ['/PID', '$_processId', '/T', '/F']);
       } catch (_) {}
-      // Then close our handle.
-      CloseHandle(_processHandle);
-      _processHandle = 0;
-      _processId = 0;
+      // Also try killing by name as a fallback (gets the real elevated pid
+      // even if our recorded one was the consent.exe intermediate).
+      try {
+        await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
+      } catch (_) {}
     }
+    if (_processHandle != 0) {
+      CloseHandle(_processHandle);
+    }
+    _processHandle = 0;
+    _processId = 0;
   }
 
   /// Launches [exe] with [args] elevated. Returns the new process id.
@@ -191,16 +248,45 @@ class SingBoxProcess {
   }
 
   /// Returns true if the child process is still alive.
+  ///
+  /// For non-elevated launches this is reliable via the Dart Process API.
+  /// For elevated launches via [ShellExecuteEx] our recorded handle is
+  /// typically the (already-dead) UAC consent intermediate, so as a fallback
+  /// we also scan running `sing-box.exe` instances by name.
   bool isProcessAlive() {
-    if (_processHandle == 0) return false;
-    final exitCode = calloc<DWORD>();
+    final proc = _normalProc;
+    if (proc != null) {
+      // Process.kill(signal: 0) is a portable "still alive" probe but Dart's
+      // Process doesn't expose it. Track via cached exitCode future instead.
+      // Until proc.exitCode completes, we treat it as alive.
+      return !_normalProcExited;
+    }
+    if (_processHandle != 0) {
+      final exitCode = calloc<DWORD>();
+      try {
+        final ok = GetExitCodeProcess(_processHandle, exitCode);
+        // STILL_ACTIVE = 259
+        if (ok != 0 && exitCode.value == 259) return true;
+      } finally {
+        calloc.free(exitCode);
+      }
+    }
+    // Fallback: was launched elevated and the recorded handle is dead. Check
+    // by image name. This is best-effort and may yield false positives if
+    // another sing-box.exe is unrelated to us, but in our app that's fine.
+    return _isSingBoxRunningByName();
+  }
+
+  bool _normalProcExited = false;
+
+  bool _isSingBoxRunningByName() {
     try {
-      final ok = GetExitCodeProcess(_processHandle, exitCode);
-      if (ok == 0) return false;
-      // STILL_ACTIVE = 259
-      return exitCode.value == 259;
-    } finally {
-      calloc.free(exitCode);
+      final r = Process.runSync('tasklist',
+          ['/FI', 'IMAGENAME eq sing-box.exe', '/FO', 'CSV', '/NH']);
+      final out = r.stdout.toString();
+      return out.toLowerCase().contains('sing-box.exe');
+    } catch (_) {
+      return false;
     }
   }
 }

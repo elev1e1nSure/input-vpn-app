@@ -25,13 +25,27 @@ class SingBoxVpnService implements VpnService {
     SingBoxProcess? process,
     SingBoxConfigBuilder? configBuilder,
     ClashApiClient? clashApi,
+    bool testMode = false,
   })  : _process = process ?? SingBoxProcess(),
-        _config = configBuilder ?? const SingBoxConfigBuilder(),
-        _clash = clashApi ?? ClashApiClient();
+        _config = configBuilder ?? SingBoxConfigBuilder(testMode: testMode),
+        _clash = clashApi ?? ClashApiClient(),
+        _testMode = testMode;
 
   final SingBoxProcess _process;
-  final SingBoxConfigBuilder _config;
+  SingBoxConfigBuilder _config;
   final ClashApiClient _clash;
+  bool _testMode;
+
+  /// Whether sing-box is configured as a local SOCKS proxy (no TUN, no UAC).
+  /// Useful for testing alongside another VPN.
+  bool get testMode => _testMode;
+
+  /// Toggle test mode. Takes effect at the NEXT connect().
+  void setTestMode(bool value) {
+    if (_testMode == value) return;
+    _testMode = value;
+    _config = SingBoxConfigBuilder(testMode: value);
+  }
 
   final _statusCtrl = StreamController<ConnectionStatus>.broadcast();
   final _statsCtrl = StreamController<VpnStats>.broadcast();
@@ -71,9 +85,10 @@ class SingBoxVpnService implements VpnService {
       //    (ShellExecuteEx detaches stdout, so without this we'd be blind).
       final ws = await _process.prepareWorkDir();
 
-      // 2) Generate config and start sing-box (UAC prompt fires here).
+      // 2) Generate config and start sing-box. TUN mode needs elevation
+      //    (UAC prompt fires here); SOCKS test mode does not.
       final jsonStr = _config.build(config, logPath: ws.logPath);
-      await _process.start(jsonStr);
+      await _process.start(jsonStr, elevated: !_testMode);
 
       // 3) Wait for Clash API to come up, polling process aliveness too so
       //    we fail fast when sing-box exits with a bad config.

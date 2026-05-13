@@ -98,6 +98,28 @@ class HomePage extends StatelessWidget {
                     : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
               ),
             ),
+            if (appState.isTestMode) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => _showTestModeSheet(context, appState),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.6)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(CupertinoIcons.info_circle, size: 14, color: Colors.amber),
+                      const SizedBox(width: 6),
+                      Text('TEST MODE (SOCKS5 :1080)', style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const Spacer(flex: 1),
             GestureDetector(
               onTap: () {
@@ -226,7 +248,7 @@ class HomePage extends StatelessWidget {
                         child: Center(
                           child: Text(
                             server != null
-                                ? countryCodeToEmoji(server!.flagCode)
+                                ? countryCodeToEmoji(server.flagCode)
                                 : '?',
                             style: const TextStyle(fontSize: 24),
                           ),
@@ -246,7 +268,7 @@ class HomePage extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               server != null
-                                  ? server!.name
+                                  ? server.name
                                   : 'Add a configuration',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontSize: 16,
@@ -280,6 +302,59 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showTestModeSheet(BuildContext context, AppState appState) {
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Test mode',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            const Text(
+              'sing-box is running as a local SOCKS5 proxy on '
+              '127.0.0.1:1080. It does NOT touch system routes, so '
+              'another VPN can run at the same time.\n\n'
+              'To send traffic through it:\n'
+              '  • Browser: set proxy to SOCKS5 127.0.0.1:1080\n'
+              '  • Test:  curl --socks5 127.0.0.1:1080 https://ifconfig.me\n\n'
+              'Switch to Full VPN mode when you are ready to route '
+              'all system traffic. It will request admin (UAC) and '
+              'replace any other VPN.',
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Keep test mode'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () async {
+                      Navigator.of(ctx).pop();
+                      await appState.setFullVpnMode(true);
+                    },
+                    child: const Text('Enable Full VPN'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _ErrorBanner extends StatelessWidget {

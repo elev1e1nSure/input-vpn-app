@@ -18,9 +18,15 @@ import 'package:vpn/main.dart';
 import 'package:provider/provider.dart';
 
 /// Choose the real backend on Windows, mock everywhere else.
+///
+/// On first launch we start in SOCKS-proxy "test mode" so the app can be
+/// safely tested alongside another VPN without taking over system routes
+/// (no UAC prompt either). Once the user confirms everything works, the
+/// "Full VPN mode" switch in Settings turns on TUN mode.
 VpnService _defaultVpnBackend() {
   if (!kIsWeb && Platform.isWindows && SingBoxVpnService.isSupported) {
-    return SingBoxVpnService();
+    final fullVpn = sharedPrefs.getBool('fullVpnMode') ?? false;
+    return SingBoxVpnService(testMode: !fullVpn);
   }
   return MockVpnService();
 }
@@ -58,6 +64,27 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Whether the Windows backend is running in SOCKS-proxy test mode (no
+  /// TUN device, no UAC). Returns false on non-Windows or non-singbox backends.
+  bool get isTestMode {
+    final vpn = _vpn;
+    return vpn is SingBoxVpnService ? vpn.testMode : false;
+  }
+
+  bool get isFullVpnMode => !isTestMode &&
+      !kIsWeb && Platform.isWindows && _vpn is SingBoxVpnService;
+
+  /// Switch between SOCKS test mode and full TUN VPN mode.
+  /// Will disconnect first if currently connected.
+  Future<void> setFullVpnMode(bool fullVpn) async {
+    final vpn = _vpn;
+    if (vpn is! SingBoxVpnService) return;
+    await vpn.disconnect();
+    vpn.setTestMode(!fullVpn);
+    sharedPrefs.setBool('fullVpnMode', fullVpn);
+    notifyListeners();
+  }
+
   factory AppState.of(BuildContext context, {bool listen = true}) {
     return Provider.of<AppState>(context, listen: listen);
   }
@@ -86,13 +113,13 @@ class AppState extends ChangeNotifier {
     return _selectedServer;
   }
 
-  List<VpnConfig> _userConfigs = [];
+  final List<VpnConfig> _userConfigs = [];
 
   List<VpnConfig> get userConfigs {
     return _userConfigs;
   }
 
-  List<VpnServer> _userServers = [];
+  final List<VpnServer> _userServers = [];
 
   List<VpnServer> get userServers {
     return _userServers;

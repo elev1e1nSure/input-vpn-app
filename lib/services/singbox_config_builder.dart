@@ -21,6 +21,8 @@ class SingBoxConfigBuilder {
     this.tunInterfaceName = 'InputVPNTun',
     this.remoteDnsServer = 'tls://1.1.1.1',
     this.directDnsServer = '8.8.8.8',
+    this.testMode = false,
+    this.socksPort = 1080,
   });
 
   final int clashApiPort;
@@ -28,6 +30,17 @@ class SingBoxConfigBuilder {
   final String tunInterfaceName;
   final String remoteDnsServer;
   final String directDnsServer;
+
+  /// If true, generate a config with a local SOCKS5 inbound on [socksPort]
+  /// instead of a TUN device. This mode:
+  ///   - Does NOT require admin/UAC (no kernel driver).
+  ///   - Does NOT touch system routes or DNS — other VPNs keep working.
+  ///   - Only proxies apps that explicitly use the SOCKS endpoint
+  ///     (browser proxy settings, curl --socks5, etc.).
+  /// Use it to validate the parser + sing-box integration without disrupting
+  /// the host network.
+  final bool testMode;
+  final int socksPort;
 
   /// Build and return a pretty-printed JSON string ready to be passed to
   /// `sing-box run -c config.json`.
@@ -41,6 +54,27 @@ class SingBoxConfigBuilder {
   Map<String, dynamic> buildJson(ParsedConfig p, {String? logPath}) {
     final outbound = _buildOutbound(p);
 
+    final inbound = testMode
+        ? <String, dynamic>{
+            'type': 'mixed',
+            'tag': 'mixed-in',
+            'listen': '127.0.0.1',
+            'listen_port': socksPort,
+          }
+        : <String, dynamic>{
+            'type': 'tun',
+            'tag': 'tun-in',
+            'interface_name': tunInterfaceName,
+            'mtu': tunMtu,
+            'inet4_address': '172.19.0.1/30',
+            'inet6_address': 'fdfe:dcba:9876::1/126',
+            'auto_route': true,
+            'strict_route': true,
+            'stack': 'mixed',
+            'sniff': true,
+            'sniff_override_destination': false,
+          };
+
     return {
       'log': {
         'level': 'info',
@@ -48,21 +82,22 @@ class SingBoxConfigBuilder {
         if (logPath != null) 'output': logPath,
       },
       'dns': {
+        // sing-box 1.12+ uses typed DNS servers (legacy "address" form is
+        // removed in 1.14). See:
+        // https://sing-box.sagernet.org/migration/#migrate-to-new-dns-server-formats
         'servers': [
           {
+            'type': 'tls',
             'tag': 'dns-remote',
-            'address': remoteDnsServer,
-            'address_resolver': 'dns-direct',
+            'server': _strip(remoteDnsServer),
+            'domain_resolver': 'dns-direct',
             'detour': 'proxy',
           },
           {
+            'type': 'udp',
             'tag': 'dns-direct',
-            'address': directDnsServer,
+            'server': _strip(directDnsServer),
             'detour': 'direct',
-          },
-          {
-            'tag': 'dns-block',
-            'address': 'rcode://success',
           },
         ],
         'rules': [
@@ -76,32 +111,23 @@ class SingBoxConfigBuilder {
         'strategy': 'prefer_ipv4',
         'disable_cache': false,
       },
-      'inbounds': [
-        {
-          'type': 'tun',
-          'tag': 'tun-in',
-          'interface_name': tunInterfaceName,
-          'mtu': tunMtu,
-          'inet4_address': '172.19.0.1/30',
-          'inet6_address': 'fdfe:dcba:9876::1/126',
-          'auto_route': true,
-          'strict_route': true,
-          'stack': 'mixed',
-          'sniff': true,
-          'sniff_override_destination': false,
-        },
-      ],
+      'inbounds': [inbound],
       'outbounds': [
         outbound,
         {'type': 'direct', 'tag': 'direct'},
-        {'type': 'block', 'tag': 'block'},
-        {'type': 'dns', 'tag': 'dns-out'},
       ],
       'route': {
+        // sing-box 1.12+ requires a default DNS resolver for outbound dial.
+        // See https://sing-box.sagernet.org/migration/#migrate-outbound-dns-rule-items-to-domain-resolver
+        'default_domain_resolver': {'server': 'dns-direct'},
+        // sing-box 1.13 removed `block`/`dns` outbounds in favor of rule
+        // actions. See https://sing-box.sagernet.org/migration/#migrate-to-new-rule-actions
         'rules': [
-          {'protocol': 'dns', 'outbound': 'dns-out'},
+          // Hijack DNS queries and resolve via the dns block above.
+          {'action': 'hijack-dns', 'protocol': 'dns'},
           // Bypass private networks to avoid breaking LAN access.
           {
+            'action': 'route',
             'ip_cidr': [
               '127.0.0.0/8',
               '10.0.0.0/8',
@@ -126,6 +152,13 @@ class SingBoxConfigBuilder {
         },
       },
     };
+  }
+
+  /// Strip a URL-style scheme prefix from a DNS address (e.g. `tls://1.1.1.1`
+  /// -> `1.1.1.1`). The new sing-box DNS format puts the protocol in `type`.
+  static String _strip(String addr) {
+    final i = addr.indexOf('://');
+    return i == -1 ? addr : addr.substring(i + 3);
   }
 
   // ---------------------------------------------------------------------------
