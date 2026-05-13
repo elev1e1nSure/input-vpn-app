@@ -22,6 +22,20 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
 
   final TextEditingController _configController = TextEditingController();
 
+  Widget _buildLabel(ThemeData theme, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        text,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField(
     ThemeData theme,
     TextEditingController controller,
@@ -141,6 +155,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildLabel(theme, s.displayName),
             _buildTextField(
               theme,
               _nameController,
@@ -179,6 +194,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
               ],
             ),
             const SizedBox(height: 24),
+            _buildLabel(theme, s.configOrUrl),
             _buildTextField(
               theme,
               _configController,

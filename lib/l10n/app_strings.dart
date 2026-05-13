@@ -67,10 +67,10 @@ class AppStrings {
   String get add => isRu ? 'Добавить' : 'Add';
   String get importFromFile => isRu ? 'Импорт' : 'Import';
   String get scanQRCode => isRu ? 'Скан QR' : 'Scan QR';
-  String get displayName => isRu ? 'НАЗВАНИЕ' : 'DISPLAY NAME';
+  String get displayName => isRu ? 'Название' : 'Name';
   String get displayNameHint => isRu ? 'Напр. Мой Premium VLESS' : 'e.g. My Premium VLESS';
-  String get type => isRu ? 'ТИП' : 'TYPE';
-  String get configOrUrl => isRu ? 'КОНФИГ ИЛИ ССЫЛКА' : 'CONFIG OR URL';
+  String get type => isRu ? 'Тип' : 'Type';
+  String get configOrUrl => isRu ? 'Конфиг или ссылка' : 'Config or link';
   String get supportedFormats => isRu
       ? 'Поддерживаемые форматы: vless://, vmess://, ss://, trojan:// или ссылка на подписку (HTTP/HTTPS).'
       : 'Supported formats: vless://, vmess://, ss://, trojan:// or a subscription link (HTTP/HTTPS).';
