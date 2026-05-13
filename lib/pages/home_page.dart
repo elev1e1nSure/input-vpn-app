@@ -87,164 +87,11 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickAction({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: theme.dividerTheme.color ??
-                    theme.colorScheme.onSurface.withValues(alpha: 0.1),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: theme.textTheme.labelSmall?.copyWith(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    final s = AppStrings.of(context);
-    return Row(
-      children: [
-        _buildQuickAction(
-          context: context,
-          icon: CupertinoIcons.arrow_down_doc,
-          label: s.importConfig,
-          onTap: () => _goToAddConfig(context),
-        ),
-        const SizedBox(width: 10),
-        _buildQuickAction(
-          context: context,
-          icon: CupertinoIcons.qrcode,
-          label: s.scanQR,
-          onTap: () => _goToAddConfig(context),
-        ),
-        const SizedBox(width: 10),
-        _buildQuickAction(
-          context: context,
-          icon: CupertinoIcons.link,
-          label: s.getConfig,
-          onTap: () => _goToAddConfig(context),
-        ),
-      ],
-    );
-  }
-
   void _goToAddConfig(BuildContext context) {
     Navigator.of(context).push(
       CupertinoPageRoute<void>(
         builder: (context) => const ServersScreen(),
       ),
-    );
-  }
-
-  Widget _buildMockServerRow(
-    BuildContext context, {
-    required String flag,
-    required String city,
-    required String status,
-    required Color statusColor,
-  }) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.dividerTheme.color ??
-              theme.colorScheme.onSurface.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(flag, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              city,
-              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
-            ),
-          ),
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: statusColor,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            status,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontSize: 11,
-              color: statusColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMockServers(BuildContext context) {
-    final s = AppStrings.of(context);
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Servers',
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontSize: 11,
-            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-          ),
-        ),
-        const SizedBox(height: 8),
-        _buildMockServerRow(
-          context,
-          flag: countryCodeToEmoji('DE'),
-          city: 'Frankfurt',
-          status: s.offline,
-          statusColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-        ),
-        const SizedBox(height: 8),
-        _buildMockServerRow(
-          context,
-          flag: countryCodeToEmoji('NL'),
-          city: 'Amsterdam',
-          status: s.notConfigured,
-          statusColor: Colors.orange.withValues(alpha: 0.7),
-        ),
-      ],
     );
   }
 
@@ -367,13 +214,9 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (!hasServer) ...[
-                    _buildQuickActions(context),
-                    const SizedBox(height: 16),
-                  ],
                   if (Platform.isWindows) ...[
                     _buildModeToggle(context, appState),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                   ],
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
@@ -522,10 +365,8 @@ class HomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   if (!hasServer) ...[
-                    _buildMockServers(context),
-                    const SizedBox(height: 12),
                     _buildTrustInfo(context),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                   ],
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
@@ -581,15 +422,14 @@ class HomePage extends StatelessWidget {
                                         ?.copyWith(fontSize: 11),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    server != null
-                                        ? server.name
-                                        : s.addAConfiguration,
-                                    style: theme.textTheme.titleLarge
-                                        ?.copyWith(fontSize: 15),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  if (server != null)
+                                    Text(
+                                      server.name,
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(fontSize: 15),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                 ],
                               ),
                             ),

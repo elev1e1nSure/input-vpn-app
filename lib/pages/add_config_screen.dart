@@ -22,8 +22,6 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
 
   final TextEditingController _configController = TextEditingController();
 
-  ConfigType _selectedType = ConfigType.vless;
-
   Widget _buildLabel(ThemeData theme, String text) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
@@ -65,34 +63,67 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
     );
   }
 
-  Widget _buildTypeItem(ConfigType type, String label) {
+  Widget _buildActionChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     final theme = Theme.of(context);
-    final isSelected = _selectedType == type;
-    return ListTile(
-      onTap: () => setState(() => _selectedType = type),
-      title: Text(label, style: theme.textTheme.bodyLarge),
-      trailing: isSelected
-          ? Icon(CupertinoIcons.checkmark_alt, color: theme.colorScheme.primary)
-          : null,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.dividerTheme.color ??
+                  theme.colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+
+  void _submit(BuildContext context) {
+    final appState = AppState.of(context, listen: false);
+    appState.addConfig(
+      _nameController.text,
+      _configController.text,
+      ConfigType.vless,
+    );
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appState = AppState.of(context, listen: false);
+    final s = AppStrings.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(AppStrings.of(context).addConfiguration),
-        leading: TextButton(
+        title: Text(s.addConfiguration),
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back),
           onPressed: () => Navigator.pop(context),
-          child: Text(
-            AppStrings.of(context).cancel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14),
-          ),
         ),
         actions: [
           ValueListenableBuilder<TextEditingValue>(
@@ -103,27 +134,15 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                 builder: (context, configValue, child) {
                   final bool canAdd = nameValue.text.isNotEmpty &&
                       configValue.text.isNotEmpty;
-                  return TextButton(
-                    onPressed: canAdd
-                        ? () {
-                            appState.addConfig(
-                              _nameController.text,
-                              _configController.text,
-                              _selectedType,
-                            );
-                            Navigator.pop(context);
-                          }
-                        : null,
-                    child: Text(
-                      AppStrings.of(context).add,
-                      style: TextStyle(
-                        color: canAdd
-                            ? theme.colorScheme.primary
-                            : theme.textTheme.bodyMedium?.color
-                                ?.withValues(alpha: 0.3),
-                        fontWeight: FontWeight.bold,
-                      ),
+                  return IconButton(
+                    icon: Icon(
+                      CupertinoIcons.checkmark_alt,
+                      color: canAdd
+                          ? theme.colorScheme.primary
+                          : theme.textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.3),
                     ),
+                    onPressed: canAdd ? () => _submit(context) : null,
                   );
                 },
               );
@@ -136,39 +155,56 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel(theme, AppStrings.of(context).displayName),
-            _buildTextField(theme, _nameController, AppStrings.of(context).displayNameHint),
-            const SizedBox(height: 24),
-            _buildLabel(theme, AppStrings.of(context).type),
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  _buildTypeItem(ConfigType.vless, AppStrings.of(context).vlessVmessSs),
-                  Divider(
-                    height: 1,
-                    color: theme.dividerTheme.color,
-                    indent: 16,
-                  ),
-                  _buildTypeItem(ConfigType.subscription, AppStrings.of(context).subscriptionUrl),
-                ],
-              ),
+            _buildLabel(theme, s.displayName),
+            _buildTextField(
+              theme,
+              _nameController,
+              s.displayNameHint,
             ),
             const SizedBox(height: 24),
-            _buildLabel(theme, AppStrings.of(context).configOrUrl),
+            Row(
+              children: [
+                _buildActionChip(
+                  icon: CupertinoIcons.arrow_down_doc,
+                  label: s.importFromFile,
+                  onTap: () {
+                    // TODO: implement file import
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('File import coming soon'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                _buildActionChip(
+                  icon: CupertinoIcons.qrcode,
+                  label: s.scanQRCode,
+                  onTap: () {
+                    // TODO: implement QR scan
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('QR scan coming soon'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildLabel(theme, s.configOrUrl),
             _buildTextField(
               theme,
               _configController,
-              AppStrings.of(context).configOrUrl,
+              s.configOrUrl,
               maxLines: 5,
             ),
             const SizedBox(height: 40),
             Center(
               child: Text(
-                AppStrings.of(context).supportedFormats,
+                s.supportedFormats,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: 13,
                   color: theme.textTheme.bodyMedium?.color?.withValues(

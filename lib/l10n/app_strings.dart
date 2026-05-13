@@ -65,6 +65,8 @@ class AppStrings {
   String get addConfiguration => isRu ? 'Добавить конфигурацию' : 'Add Configuration';
   String get cancel => isRu ? 'Отмена' : 'Cancel';
   String get add => isRu ? 'Добавить' : 'Add';
+  String get importFromFile => isRu ? 'Импорт' : 'Import';
+  String get scanQRCode => isRu ? 'Скан QR' : 'Scan QR';
   String get displayName => isRu ? 'НАЗВАНИЕ' : 'DISPLAY NAME';
   String get displayNameHint => isRu ? 'Напр. Мой Premium VLESS' : 'e.g. My Premium VLESS';
   String get type => isRu ? 'ТИП' : 'TYPE';
