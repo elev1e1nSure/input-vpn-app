@@ -39,13 +39,24 @@ class _HomePageState extends State<HomePage> {
           color: theme.dividerTheme.color,
         ),
         Expanded(
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: const [
-              _HomeTab(),
-              ServersScreen(),
-              SettingsScreen(),
-            ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeInOut,
+            switchOutCurve: Curves.easeInOut,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            child: KeyedSubtree(
+              key: ValueKey<int>(_selectedIndex),
+              child: [
+                const _HomeTab(),
+                const ServersScreen(),
+                const SettingsScreen(),
+              ][_selectedIndex],
+            ),
           ),
         ),
       ],
@@ -81,32 +92,13 @@ class _Sidebar extends StatelessWidget {
             if (expanded)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child: Row(
-                  children: [
-                    Icon(
-                      CupertinoIcons.shield_fill,
-                      color: theme.colorScheme.primary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Input VPN',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ],
+                child: Text(
+                  'Input VPN',
+                  style: theme.textTheme.titleMedium,
                 ),
               )
             else
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Center(
-                  child: Icon(
-                    CupertinoIcons.shield_fill,
-                    color: theme.colorScheme.primary,
-                    size: 24,
-                  ),
-                ),
-              ),
+              const SizedBox(height: 56),
             Divider(
               height: 1,
               color: theme.dividerTheme.color,
@@ -144,8 +136,8 @@ class _Sidebar extends StatelessWidget {
                 child: IconButton(
                   icon: Icon(
                     expanded
-                        ? CupertinoIcons.chevron_left
-                        : CupertinoIcons.chevron_right,
+                        ? CupertinoIcons.rectangle_compress_vertical
+                        : CupertinoIcons.rectangle_expand_vertical,
                     size: 18,
                     color: theme.iconTheme.color?.withValues(alpha: 0.5),
                   ),
@@ -178,58 +170,69 @@ class _SidebarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hoverNotifier = ValueNotifier<bool>(false);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
+      onEnter: (_) => hoverNotifier.value = true,
+      onExit: (_) => hoverNotifier.value = false,
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          margin: EdgeInsets.symmetric(
-            horizontal: expanded ? 10 : 10,
-            vertical: 2,
-          ),
-          padding: EdgeInsets.symmetric(
-            horizontal: expanded ? 12 : 10,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            color: selected
-                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                : null,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: expanded
-              ? Row(
-                  children: [
-                    Icon(
-                      icon,
-                      size: 18,
-                      color: selected
-                          ? theme.colorScheme.primary
-                          : theme.iconTheme.color?.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      label,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 13,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                        color: selected
-                            ? theme.colorScheme.primary
-                            : theme.textTheme.bodyMedium?.color
-                                ?.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
-                )
-              : Center(
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: selected
-                        ? theme.colorScheme.primary
-                        : theme.iconTheme.color?.withValues(alpha: 0.5),
-                  ),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: hoverNotifier,
+          builder: (context, hovered, child) {
+            return AnimatedScale(
+              scale: hovered ? 1.03 : 1.0,
+              duration: const Duration(milliseconds: 150),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: expanded ? 12 : 10,
+                  vertical: 10,
                 ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                      : hovered
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
+                          : null,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: expanded
+                    ? Row(
+                        children: [
+                          Icon(
+                            icon,
+                            size: 18,
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : theme.iconTheme.color?.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            label,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 13,
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                              color: selected
+                                  ? theme.colorScheme.primary
+                                  : theme.textTheme.bodyMedium?.color
+                                      ?.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Center(
+                        child: Icon(
+                          icon,
+                          size: 20,
+                          color: selected
+                              ? theme.colorScheme.primary
+                              : theme.iconTheme.color?.withValues(alpha: 0.5),
+                        ),
+                      ),
+              ),
+            );
+          },
         ),
       ),
     );

@@ -133,12 +133,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: theme.colorScheme.error,
                     ),
                   )
-                : null,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_checking)
-                  SizedBox(
+                : Text(
+                    s.checkForUpdates,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
+                    ),
+                  ),
+            trailing: _checking
+                ? SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
@@ -146,36 +148,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: theme.colorScheme.primary,
                     ),
                   )
-                else if (_latestVersion == _currentVersion)
-                  Text(
-                    s.upToDate,
+                : Text(
+                    _latestVersion == _currentVersion ? s.upToDate : _currentVersion,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                    ),
-                  )
-                else
-                  Text(
-                    _currentVersion,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                      color: _latestVersion == _currentVersion
+                          ? theme.colorScheme.primary
+                          : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                     ),
                   ),
-                const SizedBox(width: 8),
-                if (!_checking)
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 0),
-                    onPressed: _checkForUpdates,
-                    child: Text(
-                      s.check,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
             onTap: _checkForUpdates,
           ),
         ],
