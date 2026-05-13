@@ -119,94 +119,111 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(s.addConfiguration),
-        leading: IconButton(
-          icon: const Icon(CupertinoIcons.back),
-          onPressed: widget.onBack,
-        ),
-        actions: [
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _nameController,
-            builder: (context, nameValue, child) {
-              return ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _configController,
-                builder: (context, configValue, child) {
-                  final bool canAdd = nameValue.text.isNotEmpty &&
-                      configValue.text.isNotEmpty;
-                  return IconButton(
-                    icon: Icon(
-                      CupertinoIcons.checkmark_alt,
-                      color: canAdd
-                          ? theme.colorScheme.primary
-                          : theme.textTheme.bodyMedium?.color
-                              ?.withValues(alpha: 0.3),
-                    ),
-                    onPressed: canAdd ? () => _submit(context) : null,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: IconButton(
+                  icon: const Icon(CupertinoIcons.back),
+                  onPressed: widget.onBack,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                s.addConfiguration,
+                style: theme.textTheme.titleLarge,
+              ),
+              const Spacer(),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _nameController,
+                builder: (context, nameValue, child) {
+                  return ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _configController,
+                    builder: (context, configValue, child) {
+                      final bool canAdd = nameValue.text.isNotEmpty &&
+                          configValue.text.isNotEmpty;
+                      return MouseRegion(
+                        cursor: canAdd ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
+                        child: IconButton(
+                          icon: Icon(
+                            CupertinoIcons.checkmark_alt,
+                            color: canAdd
+                                ? theme.colorScheme.primary
+                                : theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.3),
+                          ),
+                          onPressed: canAdd ? () => _submit(context) : null,
+                        ),
+                      );
+                    },
                   );
                 },
-              );
-            },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLabel(theme, s.displayName),
-            _buildTextField(
-              theme,
-              _nameController,
-              s.displayNameHint,
-            ),
-            const SizedBox(height: 24),
-            Row(
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildActionChip(
-                  icon: CupertinoIcons.arrow_down_doc,
-                  label: s.importFromFile,
-                  onTap: () {
-                    // TODO: implement file import
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('File import coming soon'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
+                _buildLabel(theme, s.displayName),
+                _buildTextField(
+                  theme,
+                  _nameController,
+                  s.displayNameHint,
                 ),
-                const SizedBox(width: 10),
-                _buildActionChip(
-                  icon: CupertinoIcons.qrcode,
-                  label: s.scanQRCode,
-                  onTap: () {
-                    // TODO: implement QR scan
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('QR scan coming soon'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    _buildActionChip(
+                      icon: CupertinoIcons.arrow_down_doc,
+                      label: s.importFromFile,
+                      onTap: () {
+                        // TODO: implement file import
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('File import coming soon'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    _buildActionChip(
+                      icon: CupertinoIcons.qrcode,
+                      label: s.scanQRCode,
+                      onTap: () {
+                        // TODO: implement QR scan
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('QR scan coming soon'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 24),
+                _buildLabel(theme, s.configOrUrl),
+                _buildTextField(
+                  theme,
+                  _configController,
+                  'vless://user@host:443?security=tls...',
+                  maxLines: 5,
+                ),
+                const SizedBox(height: 40),
               ],
             ),
-            const SizedBox(height: 24),
-            _buildLabel(theme, s.configOrUrl),
-            _buildTextField(
-              theme,
-              _configController,
-              'vless://user@host:443?security=tls...',
-              maxLines: 5,
-            ),
-            const SizedBox(height: 40),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
