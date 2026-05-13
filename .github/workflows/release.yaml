@@ -15,15 +15,27 @@ jobs:
           channel: stable
       - run: flutter pub get
       - run: flutter build windows --release
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build Installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
       - name: Zip Release
         shell: pwsh
         run: |
           $out = "input-vpn-windows-${env:GITHUB_REF_NAME}.zip"
           Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $out
           echo "ASSET_PATH=$out" >> $env:GITHUB_ENV
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ASSET_PATH }}
+          files: |
+            ${{ env.ASSET_PATH }}
+            Output\InputVPN-Setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
