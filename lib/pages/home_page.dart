@@ -165,12 +165,9 @@ class _SidebarItem extends StatelessWidget {
             return AnimatedScale(
               scale: hovered ? 1.03 : 1.0,
               duration: const Duration(milliseconds: 150),
-              child: Container(
+                child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                padding: EdgeInsets.symmetric(
-                  horizontal: expanded ? 12 : 10,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
                   color: selected
                       ? theme.colorScheme.primary.withValues(alpha: 0.12)
@@ -179,31 +176,11 @@ class _SidebarItem extends StatelessWidget {
                           : null,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: expanded
-                    ? Row(
-                        children: [
-                          Icon(
-                            icon,
-                            size: 18,
-                            color: selected
-                                ? theme.colorScheme.primary
-                                : theme.iconTheme.color?.withValues(alpha: 0.5),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            label,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 13,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                              color: selected
-                                  ? theme.colorScheme.primary
-                                  : theme.textTheme.bodyMedium?.color
-                                      ?.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Center(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      child: Center(
                         child: Icon(
                           icon,
                           size: 20,
@@ -212,6 +189,33 @@ class _SidebarItem extends StatelessWidget {
                               : theme.iconTheme.color?.withValues(alpha: 0.5),
                         ),
                       ),
+                    ),
+                    AnimatedOpacity(
+                      opacity: expanded ? 1 : 0,
+                      duration: const Duration(milliseconds: 120),
+                      child: SizedBox(
+                        width: expanded ? null : 0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(width: 8),
+                            Text(
+                              label,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 13,
+                                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                                color: selected
+                                    ? theme.colorScheme.primary
+                                    : theme.textTheme.bodyMedium?.color
+                                        ?.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
