@@ -3,8 +3,7 @@
 > A lightweight Windows desktop VPN client built with **Flutter** and powered by **sing-box**.
 
 <p align="center">
-  <!-- TODO: replace with real app screenshot -->
-  <img src="assets/images/app_icon.png" width="120" alt="Input VPN Logo" />
+  <img src="screenshots/main.png" width="400" alt="Input VPN Screenshot" />
 </p>
 
 <p align="center">
@@ -30,6 +29,13 @@
 - **Tray mode** — minimize to system tray instead of closing.
 - **Themes & language** — dark / light mode, Russian / English interface.
 - **Auto update check** — built-in check for new releases via GitHub.
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/main.png" width="320" alt="Main screen" />
+  <img src="screenshots/servers.png" width="320" alt="Servers list" />
+</p>
 
 ## Download & Install
 

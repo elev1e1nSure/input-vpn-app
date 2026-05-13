@@ -3,8 +3,7 @@
 > Лёгкий VPN-клиент для Windows, построенный на **Flutter** и **sing-box**.
 
 <p align="center">
-  <!-- TODO: заменить на реальный скриншот приложения -->
-  <img src="assets/images/app_icon.png" width="120" alt="Логотип Input VPN" />
+  <img src="screenshots/main.png" width="400" alt="Скриншот Input VPN" />
 </p>
 
 <p align="center">
@@ -30,6 +29,13 @@
 - **Режим трея** — сворачивание в системный трей вместо закрытия.
 - **Темы и язык** — тёмная/светлая тема, интерфейс на русском и английском.
 - **Проверка обновлений** — встроенная проверка новых релизов через GitHub.
+
+## Скриншоты
+
+<p align="center">
+  <img src="screenshots/main.png" width="320" alt="Главный экран" />
+  <img src="screenshots/servers.png" width="320" alt="Список серверов" />
+</p>
 
 ## Скачать и установить
 
