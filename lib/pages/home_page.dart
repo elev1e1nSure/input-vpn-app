@@ -445,12 +445,6 @@ class HomePage extends StatelessWidget {
                                   appState.removeConfig(server.configId);
                                 },
                               ),
-                            Icon(
-                              CupertinoIcons.chevron_forward,
-                              size: 18,
-                              color: theme.iconTheme.color
-                                  ?.withValues(alpha: 0.4),
-                            ),
                           ],
                         ),
                       ),
