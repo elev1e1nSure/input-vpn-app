@@ -1,4 +1,5 @@
 # Input VPN
+[Русский](README.ru.md) | English
 
 > A lightweight Windows desktop VPN client built with **Flutter** and powered by **sing-box**.
 
