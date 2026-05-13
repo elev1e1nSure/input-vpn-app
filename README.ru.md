@@ -1,5 +1,5 @@
 # Input VPN
-Русский | [English](README.md)
+[<kbd>  Read in English  </kbd>](README.md)
 
 > Лёгкий VPN-клиент для Windows, построенный на **Flutter** и **sing-box**.
 
