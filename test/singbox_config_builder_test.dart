@@ -78,7 +78,7 @@ void main() {
       ));
       // Re-parse to confirm valid JSON.
       final reparsed = jsonDecode(cfg);
-      expect(reparsed, isA<Map>());
+      expect(reparsed, isA<Map<String, dynamic>>());
     });
   });
 }

@@ -12,7 +12,7 @@ import 'package:win32/win32.dart';
 /// elevation, needed for the TUN device to function on Windows.
 ///
 /// Layout (after `flutter build windows`):
-///   <runner.exe>
+///   [runner.exe]
 ///   sing-box.exe       <- bundled by CMake post-build
 ///   wintun.dll         <- bundled by CMake post-build
 ///

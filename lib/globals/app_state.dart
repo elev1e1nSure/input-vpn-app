@@ -91,7 +91,7 @@ class AppState extends ChangeNotifier {
     if (vpn is! SingBoxVpnService) return;
     await vpn.disconnect();
     vpn.setProxyMode(enabled);
-    sharedPrefs.setBool('proxyMode', enabled);
+    await sharedPrefs.setBool('proxyMode', enabled);
     notifyListeners();
   }
 

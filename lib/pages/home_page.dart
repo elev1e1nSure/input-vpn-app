@@ -80,7 +80,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = AppState.of(context, listen: true);
+    final appState = AppState.of(context);
     final theme = Theme.of(context);
     final bool isConnected = appState.isConnected;
     final bool isConnecting = appState.isConnecting;
@@ -94,7 +94,7 @@ class HomePage extends StatelessWidget {
             icon: const Icon(CupertinoIcons.settings),
             onPressed: () {
               Navigator.of(context).push(
-                CupertinoPageRoute(
+                CupertinoPageRoute<void>(
                   builder: (context) => const SettingsScreen(),
                 ),
               );
@@ -107,7 +107,7 @@ class HomePage extends StatelessWidget {
           children: [
             Column(
               children: [
-                const Spacer(flex: 1),
+                const Spacer(),
             Text(
               server == null
                   ? AppStrings.of(context).setupRequired
@@ -140,14 +140,14 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 16),
               _buildModeToggle(context, appState),
             ],
-            const Spacer(flex: 1),
+            const Spacer(),
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
                   if (server == null) {
                     Navigator.of(context).push(
-                      CupertinoPageRoute(
+                      CupertinoPageRoute<void>(
                         builder: (context) => const ServersScreen(),
                       ),
                     );
@@ -211,7 +211,7 @@ class HomePage extends StatelessWidget {
               ),
             ),
           ),
-          const Spacer(flex: 1),
+          const Spacer(),
             AnimatedOpacity(
               opacity: isConnected ? 1 : 0,
               duration: const Duration(milliseconds: 300),
@@ -241,7 +241,7 @@ class HomePage extends StatelessWidget {
                     )
                   : const SizedBox(height: 68),
             ),
-            const Spacer(flex: 1),
+            const Spacer(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: MouseRegion(
@@ -249,7 +249,7 @@ class HomePage extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
-                      CupertinoPageRoute(
+                      CupertinoPageRoute<void>(
                         builder: (context) => const ServersScreen(),
                       ),
                     );

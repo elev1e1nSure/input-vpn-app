@@ -140,7 +140,7 @@ class SingBoxVpnService implements VpnService {
         );
       }
       if (await _clash.isAlive()) return;
-      await Future.delayed(const Duration(milliseconds: 400));
+      await Future<void>.delayed(const Duration(milliseconds: 400));
     }
     throw TimeoutException(
       'Clash API at ${_clash.base} did not answer within $overall',
@@ -160,7 +160,7 @@ class SingBoxVpnService implements VpnService {
   }
 
   Future<void> _hardStop() async {
-    _trafficSub?.cancel();
+    await _trafficSub?.cancel();
     _liveCheckTimer?.cancel();
     _latencyTimer?.cancel();
     _trafficSub = null;

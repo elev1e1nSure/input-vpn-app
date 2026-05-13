@@ -41,7 +41,7 @@ class ServersScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               onPressed: () {
                 Navigator.of(context).push(
-                  CupertinoPageRoute(
+                  CupertinoPageRoute<void>(
                     builder: (context) => const AddConfigScreen(),
                   ),
                 );
@@ -59,7 +59,7 @@ class ServersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = AppState.of(context, listen: true);
+    final appState = AppState.of(context);
     final theme = Theme.of(context);
     final servers = appState.userServers;
     return Scaffold(
@@ -75,7 +75,7 @@ class ServersScreen extends StatelessWidget {
             icon: const Icon(CupertinoIcons.add),
             onPressed: () {
               Navigator.of(context).push(
-                CupertinoPageRoute(
+                CupertinoPageRoute<void>(
                   builder: (context) => const AddConfigScreen(),
                 ),
               );

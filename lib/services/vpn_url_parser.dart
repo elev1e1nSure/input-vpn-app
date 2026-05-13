@@ -242,7 +242,7 @@ class VpnUrlParser {
     }
 
     if (host.isEmpty || port == 0) {
-      throw FormatException('ss: missing host or port');
+      throw const FormatException('ss: missing host or port');
     }
 
     return ParsedConfig(

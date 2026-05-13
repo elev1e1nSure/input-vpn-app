@@ -14,7 +14,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appState = AppState.of(context, listen: true);
+    final appState = AppState.of(context);
     final s = AppStrings.of(context);
 
     return Scaffold(
@@ -95,7 +95,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
   void _showPortDialog(BuildContext context, AppState appState, AppStrings s) {
     final controller =
         TextEditingController(text: appState.proxyPort.toString());
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(s.proxyPort),

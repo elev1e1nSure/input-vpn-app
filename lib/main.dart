@@ -9,7 +9,7 @@ import 'package:vpn/globals/shared_prefs.dart';
 import 'package:vpn/l10n/app_strings.dart';
 
 @NowaGenerated()
-main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
 

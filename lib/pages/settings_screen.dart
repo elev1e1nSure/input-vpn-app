@@ -26,7 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appState = AppState.of(context, listen: true);
+    final appState = AppState.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
     final s = AppStrings.of(context);
     return Scaffold(
@@ -82,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             CupertinoIcons.gear_alt_fill,
             onTap: () {
               Navigator.of(context).push(
-                CupertinoPageRoute(
+                CupertinoPageRoute<void>(
                   builder: (_) => const AdvancedSettingsScreen(),
                 ),
               );
@@ -140,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showDnsPicker(BuildContext context, AppState appState, AppStrings s) {
     final theme = Theme.of(context);
     final isRu = s.language == 'Язык';
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -208,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showLanguageDialog(BuildContext context, AppState appState) {
     final s = AppStrings.of(context);
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(s.language),

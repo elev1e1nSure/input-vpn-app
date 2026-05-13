@@ -14,7 +14,7 @@ import 'package:vpn/services/dio_factory.dart';
 ///   - `GET /version` -> {"version":"...", "premium":true}
 ///       Reliable readiness probe: returns 200 once sing-box is fully up.
 ///   - `GET /traffic` (streaming chunked JSON, one line per second)
-///       {"up": <bytes/s>, "down": <bytes/s>}
+///       {"up": [bytes/s], "down": [bytes/s]}
 ///
 /// Reference:
 ///   https://sing-box.sagernet.org/configuration/experimental/clash-api/
@@ -46,7 +46,7 @@ class ClashApiClient {
       } catch (e) {
         lastErr = e;
       }
-      await Future.delayed(retry);
+      await Future<void>.delayed(retry);
     }
     throw TimeoutException(
       'Clash API at $base did not become ready within $timeout (last error: $lastErr)',
@@ -93,7 +93,7 @@ class ClashApiClient {
         }
       } catch (_) {
         // Connection dropped — wait and retry.
-        await Future.delayed(const Duration(seconds: 1));
+        await Future<void>.delayed(const Duration(seconds: 1));
       }
     }
   }

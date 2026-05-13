@@ -17,7 +17,6 @@ final ThemeData darkTheme = ThemeData(
     surface: Color(0xFF1C1C1E),
     error: Color(0xFFFF453A),
     onPrimary: Colors.white,
-    onSurface: Colors.white,
   ),
   appBarTheme: const AppBarTheme(
     backgroundColor: Colors.transparent,
