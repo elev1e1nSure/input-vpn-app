@@ -89,7 +89,11 @@ class _HomePageState extends State<HomePage> with WindowListener {
               key: ValueKey<int>(_selectedIndex),
               child: [
                 _HomeTab(onSwitchToServers: () => setState(() => _selectedIndex = 1)),
-                ServersScreen(onSwitchToAddConfig: () => setState(() => _selectedIndex = 3)),
+                ServersScreen(
+                  onSwitchToAddConfig: () => setState(() => _selectedIndex = 3),
+                  onServerSelected: () => setState(() => _selectedIndex = 0),
+                  onBack: () => setState(() => _selectedIndex = 0),
+                ),
                 const SettingsScreen(),
                 AddConfigScreen(onBack: () => setState(() => _selectedIndex = 1)),
               ][_selectedIndex],

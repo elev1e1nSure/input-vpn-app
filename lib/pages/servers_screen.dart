@@ -9,9 +9,11 @@ import 'package:vpn/functions/country_code_to_emoji.dart';
 @NowaGenerated()
 class ServersScreen extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const ServersScreen({super.key, required this.onSwitchToAddConfig});
+  const ServersScreen({super.key, required this.onSwitchToAddConfig, required this.onServerSelected, required this.onBack});
 
   final VoidCallback onSwitchToAddConfig;
+  final VoidCallback onServerSelected;
+  final VoidCallback onBack;
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
@@ -70,15 +72,13 @@ class ServersScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(AppStrings.of(context).myServers),
-        leading: Navigator.of(context).canPop()
-            ? MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              )
-            : null,
+        leading: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: onBack,
+          ),
+        ),
         actions: [
           MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -181,7 +181,7 @@ class ServersScreen extends StatelessWidget {
                     ),
                     onTap: () {
                       appState.selectServer(server);
-                      Navigator.of(context).pop();
+                      onServerSelected();
                     },
                   ),
                 );
