@@ -23,4 +23,22 @@ class VpnConfig {
   final DateTime addedAt;
 
   final String? subUrl;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'rawConfig': rawConfig,
+    'type': type.name,
+    'addedAt': addedAt.toIso8601String(),
+    if (subUrl != null) 'subUrl': subUrl,
+  };
+
+  factory VpnConfig.fromJson(Map<String, dynamic> json) => VpnConfig(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    rawConfig: json['rawConfig'] as String,
+    type: ConfigType.values.byName(json['type'] as String),
+    addedAt: DateTime.parse(json['addedAt'] as String),
+    subUrl: json['subUrl'] as String?,
+  );
 }

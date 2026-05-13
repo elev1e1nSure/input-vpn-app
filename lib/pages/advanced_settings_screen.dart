@@ -9,7 +9,9 @@ import 'package:vpn/widgets/settings_tiles.dart';
 
 @NowaGenerated()
 class AdvancedSettingsScreen extends StatelessWidget {
-  const AdvancedSettingsScreen({super.key});
+  const AdvancedSettingsScreen({super.key, this.onBack});
+
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
         title: Text(s.advanced),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: onBack ?? () => Navigator.of(context).pop(),
         ),
       ),
       body: ListView(

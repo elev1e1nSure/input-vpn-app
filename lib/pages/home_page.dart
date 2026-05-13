@@ -9,9 +9,8 @@ import 'package:vpn/pages/settings_screen.dart';
 import 'package:vpn/pages/servers_screen.dart';
 import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/l10n/app_strings.dart';
-import 'package:vpn/functions/extract_country_code.dart';
-import 'package:vpn/functions/country_code_to_emoji.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:vpn/services/tray_manager.dart';
 
 @NowaGenerated()
 class HomePage extends StatefulWidget {
@@ -25,6 +24,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WindowListener {
   int _selectedIndex = 0;
   bool _sidebarExpanded = true;
+  bool _trayInitialized = false;
 
   @override
   void initState() {
@@ -32,7 +32,13 @@ class _HomePageState extends State<HomePage> with WindowListener {
     if (!kIsWeb && Platform.isWindows) {
       try {
         windowManager.addListener(this);
-        windowManager.setPreventClose(true);
+        final appState = AppState.of(context, listen: false);
+        if (appState.minimizeToTray) {
+          TrayManager.init();
+          _trayInitialized = true;
+        }
+        // Listen to minimizeToTray changes
+        appState.addListener(_onMinimizeToTrayChanged);
       } catch (_) {}
     }
   }
@@ -42,21 +48,50 @@ class _HomePageState extends State<HomePage> with WindowListener {
     if (!kIsWeb && Platform.isWindows) {
       try {
         windowManager.removeListener(this);
+        AppState.of(context, listen: false).removeListener(_onMinimizeToTrayChanged);
+        if (_trayInitialized) {
+          TrayManager.destroy();
+        }
       } catch (_) {}
     }
     super.dispose();
   }
 
+  void _onMinimizeToTrayChanged() {
+    final appState = AppState.of(context, listen: false);
+    if (!kIsWeb && Platform.isWindows) {
+      if (appState.minimizeToTray && !_trayInitialized) {
+        TrayManager.init();
+        _trayInitialized = true;
+      } else if (!appState.minimizeToTray && _trayInitialized) {
+        TrayManager.destroy();
+        _trayInitialized = false;
+      }
+    }
+  }
+
   @override
   void onWindowClose() async {
     final appState = AppState.of(context, listen: false);
+    debugPrint('onWindowClose triggered, minimizeToTray=${appState.minimizeToTray}');
+    
+    // Disconnect VPN before hiding/destroying to ensure TUN adapter cleanup
+    if (appState.isConnected) {
+      debugPrint('Disconnecting VPN before window close');
+      await appState.toggleConnection();
+    }
+    
     try {
       if (appState.minimizeToTray) {
         await windowManager.hide();
+        debugPrint('Window hidden to tray');
       } else {
         await windowManager.destroy();
+        debugPrint('Window destroyed');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('onWindowClose error: $e');
+    }
   }
 
   @override
@@ -317,76 +352,6 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(
-    BuildContext context,
-    String label,
-    String value,
-    IconData icon,
-  ) {
-    final theme = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: theme.iconTheme.color?.withValues(alpha: 0.5),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTrustInfo(BuildContext context) {
-    final s = AppStrings.of(context);
-    final theme = Theme.of(context);
-    final muted = theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.lock,
-          size: 10,
-          color: muted,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          s.configsStoredLocally,
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontSize: 10,
-            color: muted,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Icon(
-          Icons.verified_user,
-          size: 10,
-          color: muted,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          s.supportsWireGuardOpenVPN,
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontSize: 10,
-            color: muted,
-          ),
-        ),
-      ],
-    );
-  }
-
   IconData _mainButtonIcon(AppState appState) {
     if (appState.selectedServer == null) return Icons.add;
     if (appState.isConnecting) return Icons.pause;
@@ -411,7 +376,15 @@ class _HomeTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const SizedBox.shrink(),
+        title: Text(
+          hasServer
+              ? (isConnecting
+                  ? s.connecting
+                  : isConnected
+                      ? s.connected
+                      : s.readyToConnect)
+              : s.connectInOneMinute,
+        ),
         actions: [
           MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -425,48 +398,39 @@ class _HomeTab extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    hasServer
-                        ? (isConnecting
-                            ? s.connecting
-                            : isConnected
-                                ? s.connected
-                                : s.readyToConnect)
-                        : s.connectInOneMinute,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: isConnected
-                          ? theme.colorScheme.primary
-                          : theme.textTheme.titleLarge?.color,
-                      fontSize: 20,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    hasServer
-                        ? (isConnected
-                            ? s.yourIpIsHidden
-                            : s.securityLevelHigh)
-                        : s.emptyStateSubtitle,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isConnected
-                          ? theme.colorScheme.primary.withValues(alpha: 0.8)
-                          : theme.textTheme.bodyMedium?.color
-                              ?.withValues(alpha: 0.5),
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (Platform.isWindows) ...[
-                    _buildModeToggle(context, appState),
-                    const SizedBox(height: 24),
-                  ],
-                  MouseRegion(
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 90,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SizedBox(
+                      height: constraints.maxHeight,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 8),
+                          if (hasServer)
+                            Text(
+                              appState.publicIp != null
+                                  ? 'IP: ${appState.publicIp}'
+                                  : 'IP: ---',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.5),
+                                fontSize: 13,
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          if (Platform.isWindows) ...[
+                            _buildModeToggle(context, appState),
+                            const SizedBox(height: 24),
+                          ],
+                          MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
                       onTap: () {
@@ -560,132 +524,101 @@ class _HomeTab extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  AnimatedOpacity(
-                    opacity: isConnected ? 1 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: isConnected
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildStatItem(
-                                context,
-                                s.ping,
-                                '${appState.ping} ms',
-                                Icons.network_check,
-                              ),
-                              _buildStatItem(
-                                context,
-                                s.download,
-                                appState.downloadSpeed,
-                                Icons.download,
-                              ),
-                              _buildStatItem(
-                                context,
-                                s.upload,
-                                appState.uploadSpeed,
-                                Icons.upload,
-                              ),
-                            ],
-                          )
-                        : const SizedBox(height: 52),
-                  ),
+                  // Stats hidden temporarily
                   const SizedBox(height: 20),
-                  if (!hasServer) ...[
-                    _buildTrustInfo(context),
-                    const SizedBox(height: 20),
-                  ],
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () {
-                        onSwitchToServers();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: theme.cardTheme.color ??
-                              theme.colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: theme.dividerTheme.color ??
-                                theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: theme.scaffoldBackgroundColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: server != null
-                                    ? Text(
-                                        countryCodeToEmoji(extractCountryCode(server.name)),
-                                        style: const TextStyle(fontSize: 24),
-                                      )
-                                    : Icon(
-                                        Icons.public,
-                                        size: 20,
-                                        color: theme.iconTheme.color?.withValues(alpha: 0.3),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    server != null
-                                        ? s.selectedServer
-                                        : s.noServer,
-                                    style: theme.textTheme.titleLarge
-                                        ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  if (server != null)
-                                    Text(
-                                      server.name,
-                                      style: theme.textTheme.titleLarge
-                                          ?.copyWith(fontSize: 15),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
-                              ),
-                            ),
-                            if (server != null)
-                              MouseRegion(
-                                cursor: SystemMouseCursors.click,
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline,
-                                    size: 18,
-                                    color: theme.colorScheme.error
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                  onPressed: () {
-                                    appState.removeConfig(server.configId);
-                                  },
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
+          );
+        },
+      ),
+    ),
+    Positioned(
+              bottom: 12,
+              left: 24,
+              right: 24,
+              child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: onSwitchToServers,
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: theme.cardTheme.color ??
+                            theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.dividerTheme.color ??
+                              theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: theme.scaffoldBackgroundColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.public,
+                                size: 20,
+                                color: theme.iconTheme.color?.withValues(alpha: 0.3),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  server != null
+                                      ? s.selectedServer
+                                      : s.noServer,
+                                  style: theme.textTheme.titleLarge
+                                      ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 2),
+                                if (server != null)
+                                  Text(
+                                    server.name,
+                                    style: theme.textTheme.titleLarge
+                                        ?.copyWith(fontSize: 15),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (server != null)
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: theme.colorScheme.error
+                                      .withValues(alpha: 0.7),
+                                ),
+                                onPressed: () {
+                                  appState.removeConfig(server.configId);
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             if (appState.lastError != null)
               Positioned(
-                bottom: 12,
+                bottom: 110,
                 left: 16,
                 right: 16,
                 child: _ErrorBanner(message: appState.lastError!),

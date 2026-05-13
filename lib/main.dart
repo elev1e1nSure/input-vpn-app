@@ -11,23 +11,38 @@ import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/globals/router.dart';
 import 'package:vpn/globals/shared_prefs.dart';
 import 'package:vpn/l10n/app_strings.dart';
-import 'package:vpn/services/tray_manager.dart';
 
 @NowaGenerated()
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
 
+  // Cleanup any orphaned sing-box processes from previous runs
+  if (Platform.isWindows) {
+    await _cleanupSingBoxProcesses();
+  }
+
   if (!kIsWeb && Platform.isWindows) {
     try {
       await windowManager.ensureInitialized();
-      await TrayManager.init();
-    } catch (_) {
+      await windowManager.setPreventClose(true);
+    } catch (e) {
       // Plugin unavailable during hot restart or unsupported platform.
+      debugPrint('Window init failed: $e');
     }
   }
 
   runApp(const MyApp());
+}
+
+/// Kill any orphaned sing-box.exe processes to clean up TUN adapters.
+Future<void> _cleanupSingBoxProcesses() async {
+  try {
+    await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
+    debugPrint('Cleaned up orphaned sing-box processes');
+  } catch (_) {
+    // No sing-box processes running or taskkill failed - that's OK
+  }
 }
 
 @NowaGenerated({'visibleInNowa': false})

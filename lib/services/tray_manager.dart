@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -11,11 +12,43 @@ class TrayManager {
   static Future<void> init() async {
     if (!Platform.isWindows || _initialized) return;
 
-    await _systemTray.initSystemTray(
-      title: 'Input VPN',
-      iconPath: Platform.isWindows ? '' : 'assets/images/app_icon.png',
-      toolTip: 'Input VPN',
-    );
+    String iconPath;
+    if (Platform.isWindows) {
+      final exeDir = File(Platform.resolvedExecutable).parent.path;
+      final pngPath = '$exeDir\\data\\flutter_assets\\assets\\images\\app_icon.png';
+      final icoPath = '$exeDir\\app_icon.ico';
+
+      // Try ICO first, then PNG as fallback
+      if (File(icoPath).existsSync()) {
+        iconPath = icoPath;
+        debugPrint('Tray init: using ICO at $iconPath');
+      } else if (File(pngPath).existsSync()) {
+        iconPath = pngPath;
+        debugPrint('Tray init: using PNG at $iconPath');
+      } else {
+        iconPath = pngPath;
+        debugPrint('Tray init: neither ICO nor PNG found, trying PNG path anyway');
+      }
+    } else {
+      iconPath = 'assets/images/app_icon.png';
+    }
+
+    debugPrint('Tray init: iconPath=$iconPath');
+
+  final file = File(iconPath);
+  debugPrint('Tray init: file exists=${file.existsSync()}, path=$iconPath');
+
+    try {
+      await _systemTray.initSystemTray(
+        title: 'Input VPN',
+        iconPath: iconPath,
+        toolTip: 'Input VPN',
+      );
+      debugPrint('Tray init: success');
+    } catch (e) {
+      debugPrint('Tray init failed: $e');
+      return;
+    }
 
     final Menu menu = Menu();
     await menu.buildFrom([
@@ -30,7 +63,7 @@ class TrayManager {
       MenuItemLabel(
         label: 'Exit',
         onClicked: (menuItem) async {
-          await windowManager.close();
+          await windowManager.destroy();
         },
       ),
     ]);

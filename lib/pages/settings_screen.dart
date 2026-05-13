@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:vpn/globals/app_state.dart';
-import 'package:flutter/cupertino.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -27,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static const String _currentVersion = '1.0.2';
   String? _latestVersion;
   bool _checking = false;
+  bool _showAdvanced = false;
 
   Future<void> _checkForUpdates() async {
     setState(() => _checking = true);
@@ -57,6 +57,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final appState = AppState.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
     final s = AppStrings.of(context);
+    if (_showAdvanced) {
+      return AdvancedSettingsScreen(
+        onBack: () => setState(() => _showAdvanced = false),
+      );
+    }
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -119,13 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             theme,
             s.advanced,
             Icons.settings,
-            onTap: () {
-              Navigator.of(context).push(
-                CupertinoPageRoute<void>(
-                  builder: (_) => const AdvancedSettingsScreen(),
-                ),
-              );
-            },
+            onTap: () => setState(() => _showAdvanced = true),
           ),
           const SizedBox(height: 24),
           // ── ABOUT ──
@@ -182,13 +181,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isRu = s.language == 'Язык';
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(current?.icon ?? Icons.language, color: theme.iconTheme.color),
+      leading: Icon(Icons.cloud, color: theme.iconTheme.color),
       title: Text(s.dnsServer, style: theme.textTheme.bodyLarge),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            current?.label(isRu) ?? '',
+            current != null && current.servers.isNotEmpty
+                ? current.servers.join(', ')
+                : current?.label(isRu) ?? '',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
             ),
@@ -244,19 +245,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : (isRu ? 'По умолчанию системы' : 'System default');
                 return ListTile(
                   leading: Icon(
-                    preset.icon,
+                    Icons.cloud,
                     color: selected
                         ? theme.colorScheme.primary
                         : theme.iconTheme.color,
                   ),
                   title: Text(
-                    preset.label(isRu),
+                    subtitle,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: selected ? theme.colorScheme.primary : null,
                       fontWeight: selected ? FontWeight.bold : null,
                     ),
                   ),
-                  subtitle: Text(subtitle),
+                  subtitle: Text(preset.label(isRu)),
                   trailing: selected
                       ? Icon(Icons.check,
                           color: theme.colorScheme.primary)

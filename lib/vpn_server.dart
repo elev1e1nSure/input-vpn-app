@@ -28,4 +28,26 @@ class VpnServer {
   final String rawConfig;
 
   final String configId;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'country': country,
+    'city': city,
+    'flagCode': flagCode,
+    'signalQuality': signalQuality,
+    'rawConfig': rawConfig,
+    'configId': configId,
+  };
+
+  factory VpnServer.fromJson(Map<String, dynamic> json) => VpnServer(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    country: json['country'] as String,
+    city: json['city'] as String,
+    flagCode: json['flagCode'] as String,
+    signalQuality: json['signalQuality'] as int,
+    rawConfig: json['rawConfig'] as String,
+    configId: json['configId'] as String,
+  );
 }

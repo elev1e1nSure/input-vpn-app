@@ -132,7 +132,31 @@ class ParsedConfig {
     if (host != null) 'host': host,
     if (headerType != null) 'header_type': headerType,
     if (transport.isNotEmpty) 'transport': transport,
+    'raw': raw,
   };
+
+  factory ParsedConfig.fromJson(Map<String, dynamic> json) => ParsedConfig(
+    type: ProxyType.values.byName(json['type'] as String),
+    server: json['server'] as String,
+    port: json['port'] as int,
+    remark: json['remark'] as String,
+    uuid: json['uuid'] as String?,
+    password: json['password'] as String?,
+    method: json['method'] as String?,
+    network: json['network'] as String?,
+    security: json['security'] as String?,
+    sni: json['sni'] as String?,
+    alpn: json['alpn'] as String?,
+    flow: json['flow'] as String?,
+    publicKey: json['public_key'] as String?,
+    shortId: json['short_id'] as String?,
+    fingerprint: json['fingerprint'] as String?,
+    path: json['path'] as String?,
+    host: json['host'] as String?,
+    headerType: json['header_type'] as String?,
+    transport: (json['transport'] as Map<String, dynamic>?) ?? const {},
+    raw: json['raw'] as String? ?? '',
+  );
 
   @override
   String toString() =>

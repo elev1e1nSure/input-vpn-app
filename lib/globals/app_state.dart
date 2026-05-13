@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -15,6 +16,7 @@ import 'package:vpn/services/vpn_service.dart';
 import 'package:vpn/services/vpn_url_parser.dart';
 import 'package:vpn/services/tray_manager.dart';
 import 'package:vpn/services/windows_startup_manager.dart';
+import 'package:vpn/services/ip_service.dart';
 import 'package:vpn/vpn_server.dart';
 import 'package:vpn/vpn_config.dart';
 import 'package:vpn/config_type.dart';
@@ -46,6 +48,8 @@ class AppState extends ChangeNotifier {
     _dnsPreset = sharedPrefs.getString('dnsPreset') ?? 'cloudflare';
     _proxyPort = sharedPrefs.getInt('proxyPort') ?? 11080;
     _locale = Locale(sharedPrefs.getString('locale') ?? 'en');
+
+    _loadPersistedState();
 
     _statusSub = _vpn.watchStatus().listen(_onStatus);
     _statsSub = _vpn.watchStats().listen(_onStats);
@@ -174,6 +178,15 @@ class AppState extends ChangeNotifier {
     return _uploadSpeed;
   }
 
+  String? _publicIp;
+
+  String? get publicIp => _publicIp;
+
+  Future<void> refreshPublicIp() async {
+    _publicIp = await IpService.fetchPublicIp();
+    notifyListeners();
+  }
+
   bool _connectOnBoot = false;
   bool _autoLaunch = false;
   bool _minimizeToTray = false;
@@ -213,9 +226,11 @@ class AppState extends ChangeNotifier {
 
   void selectServer(VpnServer server) {
     _selectedServer = server;
+    _savePersistedState();
     if (_isConnected) {
       _vpn.disconnect();
     }
+    refreshPublicIp();
     notifyListeners();
   }
 
@@ -271,12 +286,13 @@ class AppState extends ChangeNotifier {
         name: name,
         country: 'Unknown',
         city: '—',
-        flagCode: 'UN',
+        flagCode: extractCountryCode(name),
         signalQuality: 0,
         rawConfig: link,
         configId: id,
       ));
     }
+    _savePersistedState();
     notifyListeners();
   }
 
@@ -324,6 +340,7 @@ class AppState extends ChangeNotifier {
       _lastError = 'Failed to load subscription "$name": $e';
       _scheduleErrorClear();
     } finally {
+      _savePersistedState();
       notifyListeners();
     }
   }
@@ -350,6 +367,7 @@ class AppState extends ChangeNotifier {
       _selectedServer = _userServers.isNotEmpty ? _userServers.first : null;
       _vpn.disconnect();
     }
+    _savePersistedState();
     notifyListeners();
   }
 
@@ -455,12 +473,76 @@ class AppState extends ChangeNotifier {
   void setProxyPort(int port) =>
       _persistInt('proxyPort', () => _proxyPort, (v) => _proxyPort = v, port);
 
+  void _loadPersistedState() {
+    try {
+      final configsJson = sharedPrefs.getString('userConfigs');
+      if (configsJson != null && configsJson.isNotEmpty) {
+        final list = jsonDecode(configsJson) as List<dynamic>;
+        for (final item in list) {
+          final config = VpnConfig.fromJson(item as Map<String, dynamic>);
+          _userConfigs.add(config);
+        }
+      }
+
+      final serversJson = sharedPrefs.getString('userServers');
+      if (serversJson != null && serversJson.isNotEmpty) {
+        final list = jsonDecode(serversJson) as List<dynamic>;
+        for (final item in list) {
+          final server = VpnServer.fromJson(item as Map<String, dynamic>);
+          _userServers.add(server);
+        }
+      }
+
+      final selectedId = sharedPrefs.getString('selectedServerId');
+      if (selectedId != null && selectedId.isNotEmpty) {
+        _selectedServer = _userServers.cast<VpnServer?>().firstWhere(
+          (s) => s?.id == selectedId,
+          orElse: () => null,
+        );
+      }
+
+      final parsedJson = sharedPrefs.getString('parsedByServerId');
+      if (parsedJson != null && parsedJson.isNotEmpty) {
+        final map = jsonDecode(parsedJson) as Map<String, dynamic>;
+        for (final entry in map.entries) {
+          _parsedByServerId[entry.key] =
+              ParsedConfig.fromJson(entry.value as Map<String, dynamic>);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to load persisted state: $e');
+    }
+  }
+
+  void _savePersistedState() {
+    try {
+      final configsJson = jsonEncode(_userConfigs.map((c) => c.toJson()).toList());
+      sharedPrefs.setString('userConfigs', configsJson);
+
+      final serversJson = jsonEncode(_userServers.map((s) => s.toJson()).toList());
+      sharedPrefs.setString('userServers', serversJson);
+
+      sharedPrefs.setString('selectedServerId', _selectedServer?.id ?? '');
+
+      final parsedJson = jsonEncode(
+        _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
+      );
+      sharedPrefs.setString('parsedByServerId', parsedJson);
+    } catch (e) {
+      debugPrint('Failed to save persisted state: $e');
+    }
+  }
+
   @override
   void dispose() {
     _errorTimer?.cancel();
     _autoConnectTimer?.cancel();
     _statusSub?.cancel();
     _statsSub?.cancel();
+    // Disconnect VPN to ensure TUN adapter cleanup on app exit
+    if (_isConnected) {
+      _vpn.disconnect().ignore();
+    }
     _vpn.dispose();
     super.dispose();
   }

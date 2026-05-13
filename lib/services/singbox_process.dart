@@ -162,37 +162,43 @@ class SingBoxProcess {
   }
 
   /// Gracefully stop the running sing-box process.
-  Future<void> stop() async {
-    final proc = _normalProc;
-    if (proc != null) {
-      // Non-elevated mode: proc.kill() defaults to TerminateProcess on Windows.
-      try {
-        proc.kill();
-      } catch (_) {}
-      try {
-        await proc.exitCode.timeout(const Duration(seconds: 2));
-      } catch (_) {
-        try {
-          proc.kill();
-        } catch (_) {}
-      }
-      _normalProc = null;
-    } else if (_processId != 0) {
-      // Elevated mode: ShellExecuteEx detached the process, so we do not have
-      // a Process handle. Use taskkill (works regardless of our elevation).
+Future<void> stop() async {
+  final proc = _normalProc;
+  if (proc != null) {
+    // Сначала мягко
+    try {
+      proc.kill(ProcessSignal.sigterm);
+    } catch (_) {
+      proc.kill();
+    }
+    try {
+      await proc.exitCode.timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Не вышел за 5 сек — force kill
+      try { proc.kill(); } catch (_) {}
+    }
+    _normalProc = null;
+  } else if (_processId != 0) {
+    // Elevated: сначала без /F
+    try {
+      await Process.run('taskkill', ['/PID', '$_processId', '/T']);
+      await Future.delayed(const Duration(seconds: 4));
+    } catch (_) {}
+
+    // Проверяем жив ли ещё
+    if (_isSingBoxRunningByName()) {
       try {
         await Process.run('taskkill', ['/PID', '$_processId', '/T', '/F']);
       } catch (_) {}
-      // Fallback: kill by image name in case the PID was consent.exe.
       try {
         await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
       } catch (_) {}
     }
-    if (_processHandle != 0) {
-      CloseHandle(_processHandle);
-    }
-    _processHandle = 0;
-    _processId = 0;
+  }
+
+  if (_processHandle != 0) CloseHandle(_processHandle);
+  _processHandle = 0;
+  _processId = 0;
   }
 
   /// Launches [exe] with [args] elevated. Returns the new process id.

@@ -3,8 +3,6 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/l10n/app_strings.dart';
-import 'package:vpn/functions/extract_country_code.dart';
-import 'package:vpn/functions/country_code_to_emoji.dart';
 
 @NowaGenerated()
 class ServersScreen extends StatelessWidget {
@@ -72,13 +70,6 @@ class ServersScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(AppStrings.of(context).myServers),
-        leading: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: onBack,
-          ),
-        ),
         actions: [
           MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -127,9 +118,10 @@ class ServersScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Center(
-                        child: Text(
-                          countryCodeToEmoji(extractCountryCode(server.name)),
-                          style: const TextStyle(fontSize: 20),
+                        child: Icon(
+                          Icons.public,
+                          size: 20,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.3),
                         ),
                       ),
                     ),
@@ -150,34 +142,19 @@ class ServersScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.network_check,
+                    trailing: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.delete_outline,
                           size: 18,
-                          color: server.signalQuality > 80
-                              ? theme.colorScheme.primary
-                              : server.signalQuality > 50
-                              ? Colors.orange
-                              : theme.colorScheme.error,
+                          color: theme.colorScheme.error
+                              .withValues(alpha: 0.7),
                         ),
-                        const SizedBox(width: 8),
-                        MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: theme.colorScheme.error
-                                  .withValues(alpha: 0.7),
-                            ),
-                            onPressed: () {
-                              appState.removeConfig(server.configId);
-                            },
-                          ),
-                        ),
-                      ],
+                        onPressed: () {
+                          appState.removeConfig(server.configId);
+                        },
+                      ),
                     ),
                     onTap: () {
                       appState.selectServer(server);

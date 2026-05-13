@@ -55,3 +55,14 @@ foreach(VPN_BIN "sing-box.exe" "wintun.dll")
     message(WARNING "VPN backend binary missing: ${VPN_RESOURCES_DIR}/${VPN_BIN}")
   endif()
 endforeach()
+
+# Copy tray icon next to runner so system_tray can load it on Windows.
+set(TRAY_ICON "${VPN_RESOURCES_DIR}/app_icon.ico")
+if(EXISTS "${TRAY_ICON}")
+  add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${TRAY_ICON}"
+      "$<TARGET_FILE_DIR:${BINARY_NAME}>/app_icon.ico"
+    COMMENT "Copying tray icon next to runner"
+  )
+endif()
