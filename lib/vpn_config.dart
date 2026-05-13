@@ -1,4 +1,4 @@
-import 'package:vpn/config_type.dart';
+import 'package:input_vpn/config_type.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 
 @NowaGenerated()
@@ -10,6 +10,10 @@ class VpnConfig {
     required this.type,
     required this.addedAt,
     this.subUrl,
+    this.subUpload,
+    this.subDownload,
+    this.subTotal,
+    this.subExpire,
   });
 
   final String id;
@@ -23,6 +27,29 @@ class VpnConfig {
   final DateTime addedAt;
 
   final String? subUrl;
+  
+  // Subscription stats (bytes)
+  final int? subUpload;
+  final int? subDownload;
+  final int? subTotal;
+  // Unix timestamp
+  final int? subExpire;
+
+  bool get hasSubStats => subUpload != null || subDownload != null;
+  int get subUsed => (subUpload ?? 0) + (subDownload ?? 0);
+  int get subRemaining => subTotal != null ? subTotal! - subUsed : 0;
+  bool get hasUnlimitedTraffic => subTotal == null || subTotal == 0;
+  
+  String get subUsedHuman => _bytesToHuman(subUsed);
+  String get subTotalHuman => hasUnlimitedTraffic ? '∞' : _bytesToHuman(subTotal!);
+  String get subRemainingHuman => hasUnlimitedTraffic ? '∞' : _bytesToHuman(subRemaining);
+  
+  static String _bytesToHuman(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -31,6 +58,10 @@ class VpnConfig {
     'type': type.name,
     'addedAt': addedAt.toIso8601String(),
     if (subUrl != null) 'subUrl': subUrl,
+    if (subUpload != null) 'subUpload': subUpload,
+    if (subDownload != null) 'subDownload': subDownload,
+    if (subTotal != null) 'subTotal': subTotal,
+    if (subExpire != null) 'subExpire': subExpire,
   };
 
   factory VpnConfig.fromJson(Map<String, dynamic> json) => VpnConfig(
@@ -40,5 +71,9 @@ class VpnConfig {
     type: ConfigType.values.byName(json['type'] as String),
     addedAt: DateTime.parse(json['addedAt'] as String),
     subUrl: json['subUrl'] as String?,
+    subUpload: json['subUpload'] as int?,
+    subDownload: json['subDownload'] as int?,
+    subTotal: json['subTotal'] as int?,
+    subExpire: json['subExpire'] as int?,
   );
 }

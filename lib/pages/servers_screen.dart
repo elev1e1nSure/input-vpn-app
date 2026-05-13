@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:vpn/globals/app_state.dart';
-import 'package:vpn/l10n/app_strings.dart';
+import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/l10n/app_strings.dart';
+import 'package:input_vpn/vpn_server.dart';
 
 @NowaGenerated()
 class ServersScreen extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const ServersScreen({super.key, required this.onSwitchToAddConfig, required this.onServerSelected, required this.onBack});
+  const ServersScreen({
+    super.key,
+    required this.onSwitchToAddConfig,
+    required this.onServerSelected,
+    required this.onBack,
+    required this.onEditServer,
+  });
 
   final VoidCallback onSwitchToAddConfig;
   final VoidCallback onServerSelected;
   final VoidCallback onBack;
+  final void Function(VpnServer) onEditServer;
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
@@ -60,6 +68,64 @@ class ServersScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSubtitle(BuildContext context, AppState appState, VpnServer server) {
+    final theme = Theme.of(context);
+    final configs = appState.userConfigs.where((c) => c.id == server.configId).toList();
+    if (configs.isEmpty) {
+      return Text(
+        server.country,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontSize: 13,
+          color: theme.textTheme.bodyMedium?.color?.withValues(
+            alpha: 0.7,
+          ),
+        ),
+      );
+    }
+    
+    final config = configs.first;
+    debugPrint('_buildSubtitle: config.type=${config.type.name}, hasSubStats=${config.hasSubStats}, subUpload=${config.subUpload}, subDownload=${config.subDownload}');
+    // Check if this is a subscription with stats
+    if (config.type.name == 'subscription' && config.hasSubStats) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            server.country,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontSize: 13,
+              color: theme.textTheme.bodyMedium?.color?.withValues(
+                alpha: 0.7,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${config.subUsedHuman} / ${config.subTotalHuman}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 11,
+              color: config.hasUnlimitedTraffic || config.subRemaining > 0 
+                  ? theme.colorScheme.primary 
+                  : theme.colorScheme.error,
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // Default: just show country
+    return Text(
+      server.country,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        fontSize: 13,
+        color: theme.textTheme.bodyMedium?.color?.withValues(
+          alpha: 0.7,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = AppState.of(context);
@@ -82,7 +148,16 @@ class ServersScreen extends StatelessWidget {
       ),
       body: servers.isEmpty
           ? _buildEmptyState(context)
-          : ListView.separated(
+          : RefreshIndicator(
+              onRefresh: () async {
+                // Refresh stats for all subscription configs
+                for (final config in appState.userConfigs) {
+                  if (config.subUrl != null) {
+                    await appState.refreshSubscriptionStats(config.id);
+                  }
+                }
+              },
+              child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 16),
               itemCount: servers.length,
               separatorBuilder: (context, index) =>
@@ -133,28 +208,36 @@ class ServersScreen extends StatelessWidget {
                             : FontWeight.normal,
                       ),
                     ),
-                    subtitle: Text(
-                      server.country,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 13,
-                        color: theme.textTheme.bodyMedium?.color?.withValues(
-                          alpha: 0.7,
+                    subtitle: _buildSubtitle(context, appState, server),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: theme.iconTheme.color?.withValues(alpha: 0.5),
+                            ),
+                            onPressed: () => onEditServer(server),
+                          ),
                         ),
-                      ),
-                    ),
-                    trailing: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.delete_outline,
-                          size: 18,
-                          color: theme.colorScheme.error
-                              .withValues(alpha: 0.7),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: theme.colorScheme.error
+                                  .withValues(alpha: 0.7),
+                            ),
+                            onPressed: () {
+                              appState.removeConfig(server.configId);
+                            },
+                          ),
                         ),
-                        onPressed: () {
-                          appState.removeConfig(server.configId);
-                        },
-                      ),
+                      ],
                     ),
                     onTap: () {
                       appState.selectServer(server);
@@ -164,6 +247,7 @@ class ServersScreen extends StatelessWidget {
                 );
               },
             ),
+          ),
     );
   }
 }

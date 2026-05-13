@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:vpn/globals/app_state.dart';
+import 'package:input_vpn/globals/app_state.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:vpn/globals/themes.dart';
-import 'package:vpn/l10n/app_strings.dart';
-import 'package:vpn/models/dns_preset.dart';
-import 'package:vpn/pages/advanced_settings_screen.dart';
-import 'package:vpn/widgets/settings_tiles.dart';
+import 'package:input_vpn/globals/themes.dart';
+import 'package:input_vpn/l10n/app_strings.dart';
+import 'package:input_vpn/models/dns_preset.dart';
+import 'package:input_vpn/pages/advanced_settings_screen.dart';
+import 'package:input_vpn/widgets/settings_tiles.dart';
 
 @NowaGenerated()
 class SettingsScreen extends StatefulWidget {
@@ -244,12 +244,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? preset.servers.join(', ')
                     : (isRu ? 'По умолчанию системы' : 'System default');
                 return ListTile(
-                  leading: Icon(
-                    Icons.cloud,
-                    color: selected
-                        ? theme.colorScheme.primary
-                        : theme.iconTheme.color,
-                  ),
                   title: Text(
                     subtitle,
                     style: theme.textTheme.bodyLarge?.copyWith(

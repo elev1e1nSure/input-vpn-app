@@ -1,5 +1,5 @@
 import 'package:go_router/go_router.dart';
-import 'package:vpn/pages/home_page.dart';
+import 'package:input_vpn/pages/home_page.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 
 @NowaGenerated()

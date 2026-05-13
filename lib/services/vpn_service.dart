@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:vpn/models/connection_status.dart';
-import 'package:vpn/models/parsed_config.dart';
-import 'package:vpn/models/vpn_stats.dart';
+import 'package:input_vpn/models/connection_status.dart';
+import 'package:input_vpn/models/parsed_config.dart';
+import 'package:input_vpn/models/vpn_stats.dart';
 
 /// Backend-agnostic VPN service contract.
 ///

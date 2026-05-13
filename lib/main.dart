@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:vpn/globals/app_state.dart';
-import 'package:vpn/globals/router.dart';
-import 'package:vpn/globals/shared_prefs.dart';
-import 'package:vpn/l10n/app_strings.dart';
+import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/globals/router.dart';
+import 'package:input_vpn/globals/shared_prefs.dart';
+import 'package:input_vpn/l10n/app_strings.dart';
 
 @NowaGenerated()
 void main() async {

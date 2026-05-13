@@ -21,6 +21,7 @@ class AppStrings {
       : 'Import a config, scan a QR code, or paste a link';
   String get connecting => isRu ? 'Подключение...' : 'Connecting...';
   String get connected => isRu ? 'Подключено' : 'Connected';
+  String get disconnecting => isRu ? 'Отключение...' : 'Disconnecting...';
   String get readyToConnect => isRu ? 'Готово к подключению' : 'Ready to Connect';
   String get pleaseAddConfig => isRu ? 'Добавьте конфигурацию' : 'Please add a configuration';
   String get yourIpIsHidden => isRu ? 'Ваш IP скрыт' : 'Your IP is hidden';
@@ -64,6 +65,7 @@ class AppStrings {
 
   // --- AddConfigScreen ---
   String get addConfiguration => isRu ? 'Добавить конфигурацию' : 'Add Configuration';
+  String get editConfiguration => isRu ? 'Изменить конфигурацию' : 'Edit Configuration';
   String get cancel => isRu ? 'Отмена' : 'Cancel';
   String get add => isRu ? 'Добавить' : 'Add';
   String get importFromFile => isRu ? 'Импорт' : 'Import';

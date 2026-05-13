@@ -1,4 +1,4 @@
-import 'package:vpn/models/connection_failure.dart';
+import 'package:input_vpn/models/connection_failure.dart';
 
 /// Connection lifecycle status states.
 sealed class ConnectionStatus {

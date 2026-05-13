@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:vpn/models/parsed_config.dart';
-import 'package:vpn/models/proxy_type.dart';
+import 'package:input_vpn/models/parsed_config.dart';
+import 'package:input_vpn/models/proxy_type.dart';
 
 /// Parses VPN proxy share-links (vless://, vmess://, ss://, trojan://, hy2://)
 /// into a structured [ParsedConfig].

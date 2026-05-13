@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:vpn/models/connection_failure.dart';
+import 'package:input_vpn/models/connection_failure.dart';
 import 'package:win32/win32.dart';
 
 /// Spawns and manages a `sing-box.exe` child process with admin (UAC)
@@ -182,7 +182,7 @@ Future<void> stop() async {
     // Elevated: сначала без /F
     try {
       await Process.run('taskkill', ['/PID', '$_processId', '/T']);
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(seconds: 1));
     } catch (_) {}
 
     // Проверяем жив ли ещё

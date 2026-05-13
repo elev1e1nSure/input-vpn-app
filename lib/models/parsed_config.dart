@@ -1,4 +1,4 @@
-import 'package:vpn/models/proxy_type.dart';
+import 'package:input_vpn/models/proxy_type.dart';
 
 /// Structured representation of a parsed VPN proxy URI.
 ///

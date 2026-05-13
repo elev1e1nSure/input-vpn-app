@@ -4,24 +4,24 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:vpn/globals/themes.dart';
+import 'package:input_vpn/globals/themes.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:vpn/functions/extract_country_code.dart';
-import 'package:vpn/models/connection_status.dart';
-import 'package:vpn/models/parsed_config.dart';
-import 'package:vpn/models/vpn_stats.dart';
-import 'package:vpn/services/singbox_vpn_service.dart';
-import 'package:vpn/services/subscription_service.dart';
-import 'package:vpn/services/vpn_service.dart';
-import 'package:vpn/services/vpn_url_parser.dart';
-import 'package:vpn/services/tray_manager.dart';
-import 'package:vpn/services/windows_startup_manager.dart';
-import 'package:vpn/services/ip_service.dart';
-import 'package:vpn/vpn_server.dart';
-import 'package:vpn/vpn_config.dart';
-import 'package:vpn/config_type.dart';
+import 'package:input_vpn/functions/extract_country_code.dart';
+import 'package:input_vpn/models/connection_status.dart';
+import 'package:input_vpn/models/parsed_config.dart';
+import 'package:input_vpn/models/vpn_stats.dart';
+import 'package:input_vpn/services/singbox_vpn_service.dart';
+import 'package:input_vpn/services/subscription_service.dart';
+import 'package:input_vpn/services/vpn_service.dart';
+import 'package:input_vpn/services/vpn_url_parser.dart';
+import 'package:input_vpn/services/tray_manager.dart';
+import 'package:input_vpn/services/windows_startup_manager.dart';
+import 'package:input_vpn/services/ip_service.dart';
+import 'package:input_vpn/vpn_server.dart';
+import 'package:input_vpn/vpn_config.dart';
+import 'package:input_vpn/config_type.dart';
 import 'package:provider/provider.dart';
-import 'package:vpn/globals/shared_prefs.dart';
+import 'package:input_vpn/globals/shared_prefs.dart';
 
 /// Choose the real backend on Windows, mock everywhere else.
 ///
@@ -136,6 +136,10 @@ class AppState extends ChangeNotifier {
     return _isConnected;
   }
 
+  bool _isDisconnecting = false;
+
+  bool get isDisconnecting => _isDisconnecting;
+
   bool _isConnecting = false;
 
   bool get isConnecting {
@@ -182,8 +186,14 @@ class AppState extends ChangeNotifier {
 
   String? get publicIp => _publicIp;
 
+  String? _countryCode;
+
+  String? get countryCode => _countryCode;
+
   Future<void> refreshPublicIp() async {
     _publicIp = await IpService.fetchPublicIp();
+    _countryCode = await IpService.fetchCountryCode();
+    debugPrint('AppState: publicIp=$_publicIp, countryCode=$_countryCode');
     notifyListeners();
   }
 
@@ -319,14 +329,37 @@ class AppState extends ChangeNotifier {
       }
       final displayTitle =
           (name.isEmpty ? (result.title ?? 'Subscription') : name);
+      
+      // Get subscription stats
+      final info = result.info;
+      debugPrint('Subscription stats: upload=${info?.upload}, download=${info?.download}, total=${info?.total}, expire=${info?.expire}');
+      final configIndex = _userConfigs.indexWhere((c) => c.id == id);
+      if (configIndex != -1 && info != null) {
+        _userConfigs[configIndex] = VpnConfig(
+          id: id,
+          name: displayTitle,
+          rawConfig: url,
+          type: ConfigType.subscription,
+          addedAt: DateTime.now(),
+          subUrl: url,
+          subUpload: info.upload,
+          subDownload: info.download,
+          subTotal: info.total,
+          subExpire: info.expire != null 
+              ? info.expire!.millisecondsSinceEpoch ~/ 1000 
+              : null,
+        );
+      }
+      
       for (var i = 0; i < result.configs.length; i++) {
         final p = result.configs[i];
         final serverId = 's_${id}_$i';
+        debugPrint('Subscription server $i: name=${p.remark}, server=${p.server}, port=${p.port}');
         _userServers.add(VpnServer(
           id: serverId,
           name: p.remark.isNotEmpty ? p.remark : '$displayTitle ${i + 1}',
-          country: p.server,
-          city: '${p.server}:${p.port}',
+          country: p.server.isNotEmpty ? p.server : displayTitle,
+          city: p.server.isNotEmpty ? '${p.server}:${p.port}' : displayTitle,
           flagCode: extractCountryCode(p.remark),
           signalQuality: _estimateSignal(p),
           rawConfig: p.raw,
@@ -371,11 +404,104 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Update a config's name and raw config.
+  void updateConfig(String configId, String newName, String newRawConfig) {
+    final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
+    if (configIndex == -1) return;
+
+    final oldConfig = _userConfigs[configIndex];
+    _userConfigs[configIndex] = VpnConfig(
+      id: oldConfig.id,
+      name: newName,
+      rawConfig: newRawConfig,
+      type: oldConfig.type,
+      addedAt: oldConfig.addedAt,
+      subUrl: oldConfig.subUrl,
+    );
+
+    // Re-parse the config and update servers
+    final parsed = VpnUrlParser.tryParse(newRawConfig);
+    final serverIndices = _userServers.asMap().entries.where((e) => e.value.configId == configId).map((e) => e.key).toList();
+
+    for (final serverIndex in serverIndices) {
+      final oldServer = _userServers[serverIndex];
+      if (parsed != null) {
+        _userServers[serverIndex] = VpnServer(
+          id: oldServer.id,
+          name: newName.isNotEmpty ? newName : (parsed.remark.isNotEmpty ? parsed.remark : newName),
+          country: parsed.server,
+          city: '${parsed.server}:${parsed.port}',
+          flagCode: extractCountryCode(parsed.remark),
+          signalQuality: _estimateSignal(parsed),
+          rawConfig: newRawConfig,
+          configId: configId,
+        );
+        _parsedByServerId[oldServer.id] = parsed;
+      } else {
+        _userServers[serverIndex] = VpnServer(
+          id: oldServer.id,
+          name: newName,
+          country: 'Unknown',
+          city: '—',
+          flagCode: extractCountryCode(newName),
+          signalQuality: 0,
+          rawConfig: newRawConfig,
+          configId: configId,
+        );
+      }
+      if (_selectedServer?.id == oldServer.id) {
+        _selectedServer = _userServers[serverIndex];
+      }
+    }
+
+    _savePersistedState();
+    notifyListeners();
+  }
+
+  /// Refresh subscription stats (upload/download/expire) from the server.
+  Future<void> refreshSubscriptionStats(String configId) async {
+    final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
+    if (configIndex == -1) return;
+    
+    final config = _userConfigs[configIndex];
+    if (config.subUrl == null) return;
+    
+    try {
+      final result = await _subs.fetch(config.subUrl!);
+      final info = result.info;
+      if (info != null) {
+        _userConfigs[configIndex] = VpnConfig(
+          id: config.id,
+          name: config.name,
+          rawConfig: config.rawConfig,
+          type: config.type,
+          addedAt: config.addedAt,
+          subUrl: config.subUrl,
+          subUpload: info.upload,
+          subDownload: info.download,
+          subTotal: info.total,
+          subExpire: info.expire != null 
+              ? info.expire!.millisecondsSinceEpoch ~/ 1000 
+              : null,
+        );
+        _savePersistedState();
+        notifyListeners();
+      }
+    } catch (e) {
+      // Silently fail - stats are best-effort
+      debugPrint('Failed to refresh subscription stats: $e');
+    }
+  }
+
   Future<void> toggleConnection() async {
     final server = _selectedServer;
     if (server == null) return;
     if (_isConnected) {
+      _isDisconnecting = true;
+      notifyListeners();
       await _vpn.disconnect();
+      _isDisconnecting = false;
+      notifyListeners();
       return;
     }
     if (_isConnecting) return;
@@ -399,8 +525,11 @@ class AppState extends ChangeNotifier {
         _isConnecting = false;
         _isConnected = true;
         TrayManager.updateTooltip('Connected');
+        // Задержка 2 сек для установления туннеля
+        Future.delayed(const Duration(seconds: 2), () => refreshPublicIp());
       case Disconnected(failure: final f):
         _isConnecting = false;
+        _isDisconnecting = false;
         _isConnected = false;
         if (f != null) {
           _lastError = f.message;
@@ -410,6 +539,8 @@ class AppState extends ChangeNotifier {
         _downloadSpeed = '0.0 KB/s';
         _uploadSpeed = '0.0 KB/s';
         TrayManager.updateTooltip('Disconnected');
+        // Задержка 1 сек для восстановления сети
+        Future.delayed(const Duration(seconds: 1), () => refreshPublicIp());
     }
     notifyListeners();
   }

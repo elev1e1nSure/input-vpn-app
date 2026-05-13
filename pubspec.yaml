@@ -1,4 +1,4 @@
-name: vpn
+name: input_vpn
 description: "Input VPN - A secure VPN application."
 publish_to: 'none'
 

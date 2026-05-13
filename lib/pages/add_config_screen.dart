@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:vpn/config_type.dart';
+import 'package:input_vpn/config_type.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:vpn/globals/app_state.dart';
-import 'package:vpn/l10n/app_strings.dart';
+import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/l10n/app_strings.dart';
+import 'package:input_vpn/services/vpn_url_parser.dart';
 
 @NowaGenerated()
 class AddConfigScreen extends StatefulWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const AddConfigScreen({super.key, required this.onBack});
+  const AddConfigScreen({
+    super.key,
+    required this.onBack,
+    this.initialName,
+    this.initialConfig,
+    this.configId,
+  });
 
   final VoidCallback onBack;
+  final String? initialName;
+  final String? initialConfig;
+  final String? configId;
 
   @override
   State<AddConfigScreen> createState() {
@@ -20,9 +30,22 @@ class AddConfigScreen extends StatefulWidget {
 
 @NowaGenerated()
 class _AddConfigScreenState extends State<AddConfigScreen> {
-  final TextEditingController _nameController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _configController;
 
-  final TextEditingController _configController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName ?? '');
+    _configController = TextEditingController(text: widget.initialConfig ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _configController.dispose();
+    super.dispose();
+  }
 
   Widget _buildLabel(ThemeData theme, String text) {
     return Padding(
@@ -105,13 +128,35 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
     );
   }
 
+  String _getEffectiveName() {
+    final userName = _nameController.text.trim();
+    if (userName.isNotEmpty) return userName;
+    
+    final parsed = VpnUrlParser.tryParse(_configController.text.trim());
+    if (parsed != null && parsed.remark.isNotEmpty) return parsed.remark;
+    
+    return '';
+  }
+
   void _submit(BuildContext context) {
     final appState = AppState.of(context, listen: false);
-    appState.addConfig(
-      _nameController.text,
-      _configController.text,
-      ConfigType.vless,
-    );
+    final effectiveName = _getEffectiveName();
+    
+    if (widget.configId != null) {
+      // Edit mode
+      appState.updateConfig(
+        widget.configId!,
+        effectiveName,
+        _configController.text,
+      );
+    } else {
+      // Add mode
+      appState.addConfig(
+        effectiveName,
+        _configController.text,
+        ConfigType.vless,
+      );
+    }
     widget.onBack();
   }
 
@@ -136,7 +181,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  s.addConfiguration,
+                  widget.configId != null ? s.editConfiguration : s.addConfiguration,
                   style: theme.textTheme.titleLarge,
                 ),
                 const Spacer(),
@@ -146,8 +191,15 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                     return ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _configController,
                       builder: (context, configValue, child) {
-                        final bool canAdd = nameValue.text.isNotEmpty &&
-                            configValue.text.isNotEmpty;
+                        // Check if config has a name in the URL
+                        final parsed = VpnUrlParser.tryParse(configValue.text.trim());
+                        final configHasName = parsed != null && parsed.remark.isNotEmpty;
+                        final userHasName = nameValue.text.trim().isNotEmpty;
+                        
+                        // Can add if: config is not empty AND (user provided name OR config has name)
+                        final bool canAdd = configValue.text.trim().isNotEmpty && 
+                            (userHasName || configHasName);
+                        
                         return MouseRegion(
                           cursor: canAdd ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
                           child: IconButton(

@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:vpn/models/connection_failure.dart';
-import 'package:vpn/models/connection_status.dart';
-import 'package:vpn/models/parsed_config.dart';
-import 'package:vpn/models/vpn_stats.dart';
-import 'package:vpn/services/clash_api_client.dart';
-import 'package:vpn/services/singbox_config_builder.dart';
-import 'package:vpn/services/singbox_process.dart';
-import 'package:vpn/services/vpn_service.dart';
+import 'package:input_vpn/models/connection_failure.dart';
+import 'package:input_vpn/models/connection_status.dart';
+import 'package:input_vpn/models/parsed_config.dart';
+import 'package:input_vpn/models/vpn_stats.dart';
+import 'package:input_vpn/services/clash_api_client.dart';
+import 'package:input_vpn/services/singbox_config_builder.dart';
+import 'package:input_vpn/services/singbox_process.dart';
+import 'package:input_vpn/services/vpn_service.dart';
 
 /// Real VPN backend for Windows: wraps `sing-box.exe` with a TUN device.
 ///

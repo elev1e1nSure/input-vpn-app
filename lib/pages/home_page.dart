@@ -4,13 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:vpn/globals/app_state.dart';
-import 'package:vpn/pages/settings_screen.dart';
-import 'package:vpn/pages/servers_screen.dart';
-import 'package:vpn/pages/add_config_screen.dart';
-import 'package:vpn/l10n/app_strings.dart';
+import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/pages/settings_screen.dart';
+import 'package:input_vpn/pages/servers_screen.dart';
+import 'package:input_vpn/pages/add_config_screen.dart';
+import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:vpn/services/tray_manager.dart';
+import 'package:input_vpn/services/tray_manager.dart';
+import 'package:input_vpn/vpn_server.dart';
 
 @NowaGenerated()
 class HomePage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
   int _selectedIndex = 0;
   bool _sidebarExpanded = true;
   bool _trayInitialized = false;
+  VpnServer? _editingServer;
 
   @override
   void initState() {
@@ -128,9 +130,21 @@ class _HomePageState extends State<HomePage> with WindowListener {
                   onSwitchToAddConfig: () => setState(() => _selectedIndex = 3),
                   onServerSelected: () => setState(() => _selectedIndex = 0),
                   onBack: () => setState(() => _selectedIndex = 0),
+                  onEditServer: (server) {
+                    setState(() {
+                      _editingServer = server;
+                      _selectedIndex = 4;
+                    });
+                  },
                 ),
                 const SettingsScreen(),
                 AddConfigScreen(onBack: () => setState(() => _selectedIndex = 1)),
+                AddConfigScreen(
+                  onBack: () => setState(() => _selectedIndex = 1),
+                  initialName: _editingServer?.name,
+                  initialConfig: _editingServer?.rawConfig,
+                  configId: _editingServer?.configId,
+                ),
               ][_selectedIndex],
             ),
           ),
@@ -380,9 +394,11 @@ class _HomeTab extends StatelessWidget {
           hasServer
               ? (isConnecting
                   ? s.connecting
-                  : isConnected
-                      ? s.connected
-                      : s.readyToConnect)
+                  : appState.isDisconnecting
+                      ? s.disconnecting
+                      : isConnected
+                          ? s.connected
+                          : s.readyToConnect)
               : s.connectInOneMinute,
         ),
         actions: [
@@ -413,23 +429,6 @@ class _HomeTab extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const SizedBox(height: 8),
-                          if (hasServer)
-                            Text(
-                              appState.publicIp != null
-                                  ? 'IP: ${appState.publicIp}'
-                                  : 'IP: ---',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.textTheme.bodyMedium?.color
-                                    ?.withValues(alpha: 0.5),
-                                fontSize: 13,
-                              ),
-                            ),
-                          const SizedBox(height: 16),
-                          if (Platform.isWindows) ...[
-                            _buildModeToggle(context, appState),
-                            const SizedBox(height: 24),
-                          ],
                           MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
@@ -497,7 +496,7 @@ class _HomeTab extends StatelessWidget {
                                         child: child,
                                       );
                                     },
-                                    child: isConnecting
+                                    child: isConnecting || appState.isDisconnecting
                                         ? const SizedBox(
                                             width: 32,
                                             height: 32,
@@ -518,11 +517,29 @@ class _HomeTab extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
                   ),
+                  if (Platform.isWindows) ...[
+                    const SizedBox(height: 12),
+                    _buildModeToggle(context, appState),
+                  ],
+                  if (hasServer) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      appState.publicIp != null
+                          ? 'IP: ${appState.publicIp}'
+                          : 'IP: ---',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.textTheme.bodyMedium?.color
+                            ?.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   // Stats hidden temporarily
                   const SizedBox(height: 20),
@@ -595,21 +612,6 @@ class _HomeTab extends StatelessWidget {
                               ],
                             ),
                           ),
-                          if (server != null)
-                            MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  size: 18,
-                                  color: theme.colorScheme.error
-                                      .withValues(alpha: 0.7),
-                                ),
-                                onPressed: () {
-                                  appState.removeConfig(server.configId);
-                                },
-                              ),
-                            ),
                         ],
                       ),
                     ),

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:vpn/models/parsed_config.dart';
-import 'package:vpn/services/dio_factory.dart';
-import 'package:vpn/services/vpn_url_parser.dart';
+import 'package:input_vpn/models/parsed_config.dart';
+import 'package:input_vpn/services/dio_factory.dart';
+import 'package:input_vpn/services/vpn_url_parser.dart';
 
 /// Downloads and parses subscription URLs into a list of [ParsedConfig].
 ///
@@ -129,11 +129,28 @@ class SubscriptionService {
           return Uri.decodeComponent(uri.fragment);
         }
         if (uri.pathSegments.isNotEmpty) {
-          final last = uri.pathSegments.last;
-          if (last.isNotEmpty) {
-            return last.replaceFirst(
-                RegExp(r'\.(json|yaml|yml|txt)$'), '');
+          final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+          if (segments.isEmpty) return null;
+          
+          // Helper to check if string looks like a token (long random string without separators)
+          bool looksLikeToken(String s) {
+            // Token: long (>15 chars) or contains only alphanumeric without underscores/hyphens
+            if (s.length > 20) return true;
+            if (s.length < 5) return false;
+            // If has no separators, likely a token
+            return !s.contains('_') && !s.contains('-') && !s.contains(' ');
           }
+          
+          String result;
+          if (segments.length >= 2 && looksLikeToken(segments.last)) {
+            // Use second-to-last if last looks like a token (e.g., /name/uuid)
+            result = segments[segments.length - 2];
+          } else {
+            // Use last segment
+            result = segments.last;
+          }
+          
+          return result.replaceFirst(RegExp(r'\.(json|yaml|yml|txt)$'), '');
         }
       }
     }

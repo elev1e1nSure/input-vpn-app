@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:vpn/models/parsed_config.dart';
-import 'package:vpn/models/proxy_type.dart';
+import 'package:input_vpn/models/parsed_config.dart';
+import 'package:input_vpn/models/proxy_type.dart';
 
 /// Builds a sing-box JSON configuration from a [ParsedConfig].
 ///

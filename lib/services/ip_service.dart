@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
-/// Service for fetching the current public IP address.
+/// Service for fetching the current public IP address and country code.
 class IpService {
   static final Dio _dio = Dio();
 
@@ -19,6 +20,26 @@ class IpService {
       if (ip != null && ip.isNotEmpty) return ip;
     } catch (_) {
       // Silently fail — IP is best-effort.
+    }
+    return null;
+  }
+
+  /// Returns the country code (ISO-3166 alpha-2) for the current public IP,
+  /// or null on failure.
+  static Future<String?> fetchCountryCode() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        'http://ip-api.com/json/',
+        options: Options(
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
+      final countryCode = response.data?['countryCode'] as String?;
+      debugPrint('IpService: countryCode response: $countryCode, full data: ${response.data}');
+      if (countryCode != null && countryCode.isNotEmpty) return countryCode;
+    } catch (e) {
+      debugPrint('IpService: Failed to fetch country code: $e');
     }
     return null;
   }

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:vpn/services/dio_factory.dart';
+import 'package:input_vpn/services/dio_factory.dart';
 
 /// Small client for sing-box's built-in Clash API.
 ///
