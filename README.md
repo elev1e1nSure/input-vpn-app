@@ -1,106 +1,88 @@
-# Input VPN — Windows Desktop Client
+# Input VPN
 
-Flutter + sing-box VPN client for Windows. Supports VLESS, VMess, Trojan, Shadowsocks (incl. REALITY). Defaults to full TUN system VPN mode.
+> A lightweight Windows desktop VPN client built with **Flutter** and powered by **sing-box**.
 
-## Prerequisites
+<p align="center">
+  <!-- TODO: replace with real app screenshot -->
+  <img src="assets/images/app_icon.png" width="120" alt="Input VPN Logo" />
+</p>
 
-- Windows 10/11
-- [Flutter SDK](https://docs.flutter.dev/get-started/install/windows/desktop) (stable channel, desktop support enabled)
-- [Visual Studio 2022](https://visualstudio.microsoft.com/) with "Desktop development with C++" workload
-- sing-box `v1.13.x` Windows x64 binary (`sing-box.exe`)
+<p align="center">
+  <a href="https://github.com/elev1e1nSure/input-vpn-app/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Latest%20Release-blue?style=for-the-badge&logo=github" alt="Download" />
+  </a>
+</p>
 
-## Project Structure
+## Overview
 
-```
-lib/
-  main.dart                        # Entry point
-  globals/
-    app_state.dart                 # App-wide state (Provider)
-    themes.dart                    # Dark/light themes
-  pages/
-    home_page.dart                 # Main screen (connect toggle, stats, error banner)
-    servers_screen.dart            # Server list & selection
-    add_config_screen.dart         # Add single link or subscription
-    settings_screen.dart           # Settings incl. SOCKS debug mode
-  services/
-    singbox_vpn_service.dart       # Real VPN backend (TUN + SOCKS modes)
-    singbox_process.dart           # sing-box.exe process management (UAC aware)
-    singbox_config_builder.dart    # sing-box 1.13 JSON config generation
-    clash_api_client.dart          # Traffic & latency via Clash API
-    vpn_url_parser.dart            # vless/vmess/ss/trojan link parser
-    subscription_service.dart      # Base64 + plain subscription fetcher
-test/                              # Unit tests (config builder, URL parser)
-windows/                           # Native runner (portrait 420x820)
-```
+**Input VPN** is a free, open-source VPN client for Windows 10/11. It connects using the modern **sing-box** core and supports the most popular proxy protocols out of the box. No extra software required — just add your config and connect.
 
-## Build Instructions
+## Features
 
-### 1. Place sing-box.exe
+- **Protocols** — VLESS, VMess, Trojan, Shadowsocks (incl. REALITY).
+- **System VPN (TUN)** — full-system tunnel, requires one-time UAC elevation.
+- **SOCKS5 Proxy mode** — local proxy on `127.0.0.1:11080` without UAC (great for testing or split setups).
+- **Subscriptions** — add a single link or an entire subscription URL (Base64 / plain text).
+- **Server management** — latency display, selection, rename, edit, delete.
+- **Live stats** — real-time upload / download speed and total traffic via Clash API.
+- **Split tunneling** — choose which apps bypass the VPN (Windows settings).
+- **DNS presets** — switch between Cloudflare, Google, Quad9, or custom DNS.
+- **Tray mode** — minimize to system tray instead of closing.
+- **Themes & language** — dark / light mode, Russian / English interface.
+- **Auto update check** — built-in check for new releases via GitHub.
 
-Copy `sing-box.exe` (v1.13.x) into the project root. The build script will bundle it next to the app binary:
+## Download & Install
 
-```powershell
-copy C:\Path\To\sing-box.exe C:\projects\input-vpn-app\windows\runner\sing-box.exe
-```
+1. Go to **[Releases](https://github.com/elev1e1nSure/input-vpn-app/releases/latest)**.
+2. Download `InputVPN-Setup.exe` (or the portable `.zip`).
+3. Run the installer and follow the prompts.
+4. Launch **Input VPN** from the Start Menu or Desktop.
 
-> Or place it anywhere and update `lib/services/singbox_process.dart` `_singBoxPath()`.
+> **Portable users:** unpack the ZIP and run `input_vpn.exe` directly. No installation required.
 
-### 2. Get Flutter dependencies
+## Quick Start
 
-```powershell
-flutter pub get
-```
+1. **Add a server**
+   - Open the **Servers** tab.
+   - Paste a single link (`vless://...`, `vmess://...`, `ss://...`, `trojan://...`) or a subscription URL.
+2. **Select & connect**
+   - Tap the server you want to use.
+   - Press the big **power button** on the home screen.
+   - First TUN connection will show a **UAC prompt** — this is normal.
+3. **Done!**
+   - The top bar shows your IP, ping, and live traffic stats.
 
-### 3. Build Windows release
+## Settings
 
-```powershell
-flutter build windows --release
-```
-
-The executable will be at:
-```
-build\windows\x64\runner\Release\vpn.exe
-```
-
-### 4. Run in development mode
-
-```powershell
-flutter run -d windows
-```
-
-## First-Time Setup
-
-1. Launch the app.
-2. Tap the **+** button or go to **My Servers**.
-3. Paste a configuration:
-   - Single link: `vless://...`, `vmess://...`, `ss://...`, `trojan://...`
-   - Subscription URL: any HTTP(S) link with base64/plaintext configs.
-4. Select a server and tap the big power button to connect.
-
-> **First connection** will trigger a **UAC prompt** because full TUN mode requires administrator rights.
-
-## Debug / SOCKS Mode
-
-If you need to test without taking over system routes (e.g., alongside another VPN):
-
-1. Open **Settings**.
-2. Scroll to **Advanced** → enable **SOCKS Debug Mode**.
-3. sing-box will run as a local SOCKS5 proxy on `127.0.0.1:11080` (no UAC).
+| Setting | What it does |
+|---------|-------------|
+| **SOCKS Debug Mode** | Runs sing-box as a local SOCKS5 proxy instead of system TUN. No UAC needed. |
+| **Minimize to Tray** | Closing the window hides the app to the system tray instead of quitting. |
+| **Split Tunneling** | Pick apps that should bypass the VPN tunnel. |
+| **DNS** | Choose a preset (Cloudflare, Google, Quad9) or enter custom DNS servers. |
+| **Auto-Update Subscription** | Periodically refreshes your subscription URL in the background. |
+| **Dark Mode** | Toggle between light and dark themes. |
+| **Language** | Switch between English and Русский. |
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| "VPN engine failed to start" | Check `sing-box.exe` is present and v1.13+. See log path in error message. |
-| UAC prompt every time | Expected for full VPN. To avoid it, enable SOCKS Debug Mode in Settings. |
-| No traffic / 0 KB/s | Server may be down or config has wrong SNI/UUID. Verify with another client. |
-| App crashes on startup | Delete `%APPDATA%\com.example\Input VPN\singbox\` to clear stale state. |
+| "VPN engine failed to start" | Make sure `sing-box.exe` is bundled with the app (it ships inside the installer). If using a portable build, ensure the binary is next to `input_vpn.exe`. |
+| UAC prompt every time | Expected for full TUN mode. Enable **SOCKS Debug Mode** in Settings if you want to avoid it. |
+| No traffic / 0 KB/s | The server may be offline or the config has an invalid UUID/SNI. Test the same config in another client. |
+| App won't start / crashes on launch | Delete `%APPDATA%\com.example\Input VPN\` to clear corrupted local state. |
+| Latency shows "—" | The server is unreachable or the ICMP ping is blocked by the remote host. |
 
-## Tests
+## System Requirements
 
-```powershell
-flutter test
-```
+- Windows 10 version 1809+ or Windows 11
+- 64-bit (x64) architecture
+- Administrator rights (only for TUN mode)
+
+## For Developers
+
+If you want to build from source, see [`README_длядебила.md`](./README_длядебила.md) (Russian) for build instructions, dependencies, and Inno Setup packaging.
 
 ## License
 
