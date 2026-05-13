@@ -5,6 +5,10 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 final ThemeData lightTheme = ThemeData(
   colorScheme: const ColorScheme.light(),
   textTheme: const TextTheme(),
+  switchTheme: SwitchThemeData(
+    trackOutlineWidth: const WidgetStatePropertyAll(0),
+    trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+  ),
 );
 
 @NowaGenerated()
@@ -44,6 +48,10 @@ final ThemeData darkTheme = ThemeData(
     bodyMedium: TextStyle(color: Color(0xFFEBEBF5)),
   ),
   iconTheme: const IconThemeData(color: Colors.white),
+  switchTheme: SwitchThemeData(
+    trackOutlineWidth: const WidgetStatePropertyAll(0),
+    trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+  ),
   dividerTheme: const DividerThemeData(
     color: Color(0xFF38383A),
     thickness: 0.5,
