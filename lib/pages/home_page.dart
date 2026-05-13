@@ -7,13 +7,178 @@ import 'package:vpn/globals/app_state.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:vpn/pages/settings_screen.dart';
 import 'package:vpn/pages/servers_screen.dart';
-import 'package:vpn/functions/country_code_to_emoji.dart';
+import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/l10n/app_strings.dart';
 
 @NowaGenerated()
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        _Sidebar(
+          selectedIndex: _selectedIndex,
+          onItemSelected: (i) => setState(() => _selectedIndex = i),
+        ),
+        VerticalDivider(
+          width: 1,
+          color: theme.dividerTheme.color,
+        ),
+        Expanded(
+          child: IndexedStack(
+            index: _selectedIndex,
+            children: const [
+              _HomeTab(),
+              ServersScreen(),
+              SettingsScreen(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Sidebar extends StatelessWidget {
+  const _Sidebar({
+    required this.selectedIndex,
+    required this.onItemSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onItemSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = AppStrings.of(context);
+    return Container(
+      width: 200,
+      color: theme.colorScheme.surface,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: Row(
+                children: [
+                  Icon(
+                    CupertinoIcons.shield_fill,
+                    color: theme.colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Input VPN',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: theme.dividerTheme.color,
+            ),
+            const SizedBox(height: 8),
+            _SidebarItem(
+              icon: CupertinoIcons.shield_fill,
+              label: s.vpnLabel,
+              selected: selectedIndex == 0,
+              onTap: () => onItemSelected(0),
+            ),
+            _SidebarItem(
+              icon: CupertinoIcons.globe,
+              label: s.myServers,
+              selected: selectedIndex == 1,
+              onTap: () => onItemSelected(1),
+            ),
+            _SidebarItem(
+              icon: CupertinoIcons.gear,
+              label: s.settings,
+              selected: selectedIndex == 2,
+              onTap: () => onItemSelected(2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarItem extends StatelessWidget {
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                : null,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.iconTheme.color?.withValues(alpha: 0.5),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+@NowaGenerated()
+class _HomeTab extends StatelessWidget {
+  @NowaGenerated({'loader': 'auto-constructor'})
+  const _HomeTab();
 
   Widget _buildModeToggle(BuildContext context, AppState appState) {
     final theme = Theme.of(context);
@@ -87,14 +252,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void _goToAddConfig(BuildContext context) {
-    Navigator.of(context).push(
-      CupertinoPageRoute<void>(
-        builder: (context) => const ServersScreen(),
-      ),
-    );
-  }
-
   Widget _buildTrustInfo(BuildContext context) {
     final s = AppStrings.of(context);
     final theme = Theme.of(context);
@@ -147,6 +304,22 @@ class HomePage extends StatelessWidget {
     return CupertinoIcons.power;
   }
 
+  void _openAddConfig(BuildContext context) {
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (context) => const AddConfigScreen(),
+      ),
+    );
+  }
+
+  void _goToServers(BuildContext context) {
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (context) => const ServersScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = AppState.of(context);
@@ -162,6 +335,10 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const SizedBox.shrink(),
         actions: [
+          IconButton(
+            icon: const Icon(CupertinoIcons.add),
+            onPressed: () => _openAddConfig(context),
+          ),
           IconButton(
             icon: const Icon(CupertinoIcons.settings),
             onPressed: () {
@@ -223,7 +400,7 @@ class HomePage extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () {
                         if (!hasServer) {
-                          _goToAddConfig(context);
+                          _goToServers(context);
                         } else {
                           appState.toggleConnection();
                         }
@@ -401,9 +578,7 @@ class HomePage extends StatelessWidget {
                               ),
                               child: Center(
                                 child: Text(
-                                  server != null
-                                      ? countryCodeToEmoji(server.flagCode)
-                                      : '🌍',
+                                  server != null ? '🌍' : '🌍',
                                   style: const TextStyle(fontSize: 20),
                                 ),
                               ),
