@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/l10n/app_strings.dart';
 import 'package:vpn/functions/extract_country_code.dart';
@@ -10,7 +9,9 @@ import 'package:vpn/functions/country_code_to_emoji.dart';
 @NowaGenerated()
 class ServersScreen extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const ServersScreen({super.key});
+  const ServersScreen({super.key, required this.onSwitchToAddConfig});
+
+  final VoidCallback onSwitchToAddConfig;
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
@@ -43,13 +44,7 @@ class ServersScreen extends StatelessWidget {
             CupertinoButton.filled(
               borderRadius: BorderRadius.circular(12),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              onPressed: () {
-                Navigator.of(context).push(
-                  CupertinoPageRoute<void>(
-                    builder: (context) => const AddConfigScreen(),
-                  ),
-                );
-              },
+              onPressed: onSwitchToAddConfig,
               child: Text(
                 s.addConfig,
                 style: const TextStyle(
@@ -89,13 +84,7 @@ class ServersScreen extends StatelessWidget {
             cursor: SystemMouseCursors.click,
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.of(context).push(
-                  CupertinoPageRoute<void>(
-                    builder: (context) => const AddConfigScreen(),
-                  ),
-                );
-              },
+              onPressed: onSwitchToAddConfig,
             ),
           ),
         ],

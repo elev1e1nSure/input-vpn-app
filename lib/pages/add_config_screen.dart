@@ -8,7 +8,9 @@ import 'package:vpn/l10n/app_strings.dart';
 @NowaGenerated()
 class AddConfigScreen extends StatefulWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const AddConfigScreen({super.key});
+  const AddConfigScreen({super.key, required this.onBack});
+
+  final VoidCallback onBack;
 
   @override
   State<AddConfigScreen> createState() {
@@ -110,7 +112,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
       _configController.text,
       ConfigType.vless,
     );
-    Navigator.pop(context);
+    widget.onBack();
   }
 
   @override
@@ -123,7 +125,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
         title: Text(s.addConfiguration),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: widget.onBack,
         ),
         actions: [
           ValueListenableBuilder<TextEditingValue>(

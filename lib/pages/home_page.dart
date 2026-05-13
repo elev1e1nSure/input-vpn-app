@@ -7,6 +7,7 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:vpn/pages/settings_screen.dart';
 import 'package:vpn/pages/servers_screen.dart';
+import 'package:vpn/pages/add_config_screen.dart';
 import 'package:vpn/l10n/app_strings.dart';
 import 'package:vpn/functions/extract_country_code.dart';
 import 'package:vpn/functions/country_code_to_emoji.dart';
@@ -88,8 +89,9 @@ class _HomePageState extends State<HomePage> with WindowListener {
               key: ValueKey<int>(_selectedIndex),
               child: [
                 _HomeTab(onSwitchToServers: () => setState(() => _selectedIndex = 1)),
-                const ServersScreen(),
+                ServersScreen(onSwitchToAddConfig: () => setState(() => _selectedIndex = 3)),
                 const SettingsScreen(),
+                AddConfigScreen(onBack: () => setState(() => _selectedIndex = 1)),
               ][_selectedIndex],
             ),
           ),
