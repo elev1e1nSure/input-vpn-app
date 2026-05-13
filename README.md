@@ -34,11 +34,9 @@
 ## Download & Install
 
 1. Go to **[Releases](https://github.com/elev1e1nSure/input-vpn-app/releases/latest)**.
-2. Download `InputVPN-Setup.exe` (or the portable `.zip`).
+2. Download `InputVPN-Setup.exe`.
 3. Run the installer and follow the prompts.
 4. Launch **Input VPN** from the Start Menu or Desktop.
-
-> **Portable users:** unpack the ZIP and run `input_vpn.exe` directly. No installation required.
 
 ## Quick Start
 
@@ -68,7 +66,7 @@
 
 | Symptom | Fix |
 |---------|-----|
-| "VPN engine failed to start" | Make sure `sing-box.exe` is bundled with the app (it ships inside the installer). If using a portable build, ensure the binary is next to `input_vpn.exe`. |
+| "VPN engine failed to start" | Make sure `sing-box.exe` is bundled with the app (it ships inside the installer). |
 | UAC prompt every time | Expected for full TUN mode. Enable **SOCKS Debug Mode** in Settings if you want to avoid it. |
 | No traffic / 0 KB/s | The server may be offline or the config has an invalid UUID/SNI. Test the same config in another client. |
 | App won't start / crashes on launch | Delete `%APPDATA%\com.example\Input VPN\` to clear corrupted local state. |
