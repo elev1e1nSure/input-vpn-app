@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:vpn/globals/app_state.dart';
 import 'package:flutter/cupertino.dart';
+import 'dart:io';
+
 import 'package:vpn/globals/themes.dart';
-import 'package:vpn/pages/split_tunneling_screen.dart';
+import 'package:vpn/l10n/app_strings.dart';
+import 'package:vpn/models/dns_preset.dart';
+import 'package:vpn/pages/advanced_settings_screen.dart';
 
 @NowaGenerated()
 class SettingsScreen extends StatefulWidget {
@@ -23,10 +27,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final appState = AppState.of(context, listen: true);
     final bool isDark = theme.brightness == Brightness.dark;
+    final s = AppStrings.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(s.settings),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back),
           onPressed: () => Navigator.of(context).pop(),
@@ -35,88 +40,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
-          _buildSectionHeader(theme, 'ACCOUNT'),
+          const SizedBox(height: 8),
+          // ── BASIC ──
+          _buildSectionHeader(theme, s.basic),
+          _buildDnsTile(context, theme, appState, s),
           _buildListTile(
             theme,
-            'Premium Status',
-            CupertinoIcons.star_fill,
-            trailingText: appState.isPremium ? 'Active' : 'Inactive',
-            onTap: () => _showPremiumDialog(context, appState),
-          ),
-          _buildListTile(
-            theme,
-            'Manage Subscription',
-            CupertinoIcons.creditcard,
-            onTap: () => _showManageSubscription(context),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader(theme, 'CONNECTION'),
-          _buildListTile(
-            theme,
-            'VPN Protocol',
-            CupertinoIcons.shield_lefthalf_fill,
-            trailingText: appState.vpnProtocol,
-            onTap: () => _showProtocolDialog(context, appState),
+            s.language,
+            CupertinoIcons.globe,
+            trailingText: appState.locale.languageCode == 'ru' ? 'Русский' : 'English',
+            onTap: () => _showLanguageDialog(context, appState),
           ),
           _buildSwitchTile(
             theme,
-            'Kill Switch',
-            CupertinoIcons.lock_shield,
-            appState.killSwitch,
-            (val) => appState.setKillSwitch(val),
-          ),
-          _buildSwitchTile(
-            theme,
-            'Connect on Boot',
-            CupertinoIcons.power,
-            appState.connectOnBoot,
-            (val) => appState.setConnectOnBoot(val),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader(theme, 'APPEARANCE'),
-          _buildSwitchTile(
-            theme,
-            'Dark Mode',
+            s.darkMode,
             CupertinoIcons.moon_fill,
             isDark,
             (val) {
               appState.changeTheme(val ? darkTheme : lightTheme);
             },
           ),
-          const SizedBox(height: 24),
-          _buildSectionHeader(theme, 'ADVANCED'),
-          _buildListTile(
+          _buildSwitchTile(
             theme,
-            'Split Tunneling',
-            CupertinoIcons.arrow_branch,
-            onTap: () => Navigator.of(context).push(
-              CupertinoPageRoute(builder: (_) => const SplitTunnelingScreen()),
+            s.connectOnBoot,
+            CupertinoIcons.power,
+            appState.connectOnBoot,
+            (val) => appState.setConnectOnBoot(val),
+          ),
+          if (Platform.isWindows)
+            _buildSwitchTile(
+              theme,
+              s.autoLaunch,
+              CupertinoIcons.arrow_up_circle_fill,
+              appState.autoLaunch,
+              (val) => appState.setAutoLaunch(val),
             ),
-          ),
           _buildListTile(
             theme,
-            'Custom DNS',
-            CupertinoIcons.globe,
-            trailingText: appState.customDns,
-            onTap: () => _showDnsDialog(context, appState),
+            s.advanced,
+            CupertinoIcons.gear_alt_fill,
+            onTap: () {
+              Navigator.of(context).push(
+                CupertinoPageRoute(
+                  builder: (_) => const AdvancedSettingsScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 24),
-          _buildSectionHeader(theme, 'ABOUT'),
+          // ── ABOUT ──
+          _buildSectionHeader(theme, s.about),
           _buildListTile(
             theme,
-            'Help & Support',
-            CupertinoIcons.question_circle,
-            onTap: () => _showHelpDialog(context),
-          ),
-          _buildListTile(
-            theme,
-            'Privacy Policy',
-            CupertinoIcons.doc_text,
-            onTap: () => _showPrivacyDialog(context),
-          ),
-          _buildListTile(
-            theme,
-            'Version',
+            s.version,
             CupertinoIcons.info_circle,
             trailingText: '1.0.2',
             onTap: () {},
@@ -192,204 +168,140 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showPremiumDialog(BuildContext context, AppState appState) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Premium Status'),
-        content: Text(
-          appState.isPremium
-              ? 'Your premium subscription is active. Do you want to mock downgrading to free?'
-              : 'You are on a free plan. Mock upgrading to premium?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+  // ── DNS PRESET TILE ──
+  Widget _buildDnsTile(
+    BuildContext context,
+    ThemeData theme,
+    AppState appState,
+    AppStrings s,
+  ) {
+    final current = DnsPreset.byId(appState.dnsPreset);
+    final isRu = s.language == 'Язык';
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+      leading: Icon(current?.icon ?? CupertinoIcons.globe, color: theme.iconTheme.color),
+      title: Text(s.dnsServer, style: theme.textTheme.bodyLarge),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            current?.label(isRu) ?? '',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              appState.togglePremium();
-              Navigator.pop(ctx);
-            },
-            child: Text(appState.isPremium ? 'Downgrade' : 'Upgrade'),
+          const SizedBox(width: 8),
+          Icon(
+            CupertinoIcons.chevron_forward,
+            size: 16,
+            color: theme.iconTheme.color?.withValues(alpha: 0.3),
           ),
         ],
       ),
+      onTap: () => _showDnsPicker(context, appState, s),
     );
   }
 
-  void _showManageSubscription(BuildContext context) {
+  void _showDnsPicker(BuildContext context, AppState appState, AppStrings s) {
+    final theme = Theme.of(context);
+    final isRu = s.language == 'Язык';
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Manage Subscription',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blueAccent),
-                color: Colors.blueAccent.withValues(alpha: 0.1),
-              ),
-              child: const Column(
-                children: [
-                  Text(
-                    'Pro Plan - \$9.99/mo',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.dividerTheme.color,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Next billing date: Jan 15, 2026',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Cancel Subscription',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                s.dnsServer,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+              const SizedBox(height: 12),
+              ...DnsPreset.presets.map((preset) {
+                final selected = preset.id == appState.dnsPreset;
+                final subtitle = preset.servers.isNotEmpty
+                    ? preset.servers.join(', ')
+                    : (isRu ? 'По умолчанию системы' : 'System default');
+                return ListTile(
+                  leading: Icon(
+                    preset.icon,
+                    color: selected
+                        ? theme.colorScheme.primary
+                        : theme.iconTheme.color,
+                  ),
+                  title: Text(
+                    preset.label(isRu),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: selected ? theme.colorScheme.primary : null,
+                      fontWeight: selected ? FontWeight.bold : null,
+                    ),
+                  ),
+                  subtitle: Text(subtitle),
+                  trailing: selected
+                      ? Icon(CupertinoIcons.checkmark_alt,
+                          color: theme.colorScheme.primary)
+                      : null,
+                  onTap: () {
+                    appState.setDnsPreset(preset.id);
+                    Navigator.pop(ctx);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context, AppState appState) {
+    final s = AppStrings.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.language),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('English'),
+              trailing: appState.locale.languageCode == 'en'
+                  ? const Icon(CupertinoIcons.checkmark_alt, color: Colors.blue)
+                  : null,
+              onTap: () {
+                appState.setLocale('en');
+                Navigator.pop(ctx);
+              },
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
+            ListTile(
+              title: const Text('Русский'),
+              trailing: appState.locale.languageCode == 'ru'
+                  ? const Icon(CupertinoIcons.checkmark_alt, color: Colors.blue)
+                  : null,
+              onTap: () {
+                appState.setLocale('ru');
+                Navigator.pop(ctx);
+              },
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showProtocolDialog(BuildContext context, AppState appState) {
-    final protocols = [
-      'WireGuard',
-      'OpenVPN (UDP)',
-      'OpenVPN (TCP)',
-      'IKEv2',
-      'VLESS',
-    ];
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Select Protocol'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: protocols
-              .map(
-                (p) => ListTile(
-                  title: Text(p),
-                  trailing: appState.vpnProtocol == p
-                      ? const Icon(
-                          CupertinoIcons.checkmark_alt,
-                          color: Colors.blue,
-                        )
-                      : null,
-                  onTap: () {
-                    appState.setVpnProtocol(p);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              )
-              .toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showDnsDialog(BuildContext context, AppState appState) {
-    final dnsList = [
-      'Default',
-      'Cloudflare (1.1.1.1)',
-      'Google (8.8.8.8)',
-      'AdGuard (94.140.14.14)',
-    ];
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Custom DNS'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: dnsList
-              .map(
-                (d) => ListTile(
-                  title: Text(d),
-                  trailing: appState.customDns == d
-                      ? const Icon(
-                          CupertinoIcons.checkmark_alt,
-                          color: Colors.blue,
-                        )
-                      : null,
-                  onTap: () {
-                    appState.setCustomDns(d);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              )
-              .toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showHelpDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Help & Support'),
-        content: const Text(
-          'For support inquiries, please contact us at support@examplevpn.com or visit our knowledge base on the website.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPrivacyDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Privacy Policy'),
-        content: const SingleChildScrollView(
-          child: Text(
-            'We take your privacy seriously. We maintain a strict no-logs policy, meaning we do not track or store any of your online activities. Your data remains encrypted and secure at all times.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Got it'),
-          ),
-        ],
       ),
     );
   }
