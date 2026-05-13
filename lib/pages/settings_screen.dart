@@ -116,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             buildSettingsSwitchTile(
               theme,
               s.minimizeToTray,
-              Icons.minimize_rounded,
+              Icons.web_asset_off,
               appState.minimizeToTray,
               (val) => appState.setMinimizeToTray(val),
             ),
