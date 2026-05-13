@@ -167,60 +167,58 @@ class _SidebarItemState extends State<_SidebarItem> {
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _hovered ? 1.03 : 1.0,
+        child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: widget.selected
-                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                  : _hovered
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
-                      : null,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  child: Center(
-                    child: Icon(
-                      widget.icon,
-                      size: 20,
-                      color: widget.selected
-                          ? theme.colorScheme.primary
-                          : theme.iconTheme.color?.withValues(alpha: 0.5),
-                    ),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: widget.selected
+                ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                : _hovered
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
+                    : null,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                child: Center(
+                  child: Icon(
+                    widget.icon,
+                    size: 20,
+                    color: widget.selected
+                        ? theme.colorScheme.primary
+                        : theme.iconTheme.color?.withValues(alpha: 0.5),
                   ),
                 ),
-                AnimatedOpacity(
-                  opacity: widget.expanded ? 1 : 0,
-                  duration: const Duration(milliseconds: 120),
-                  child: SizedBox(
-                    width: widget.expanded ? null : 0,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(width: 8),
-                        Text(
-                          widget.label,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 13,
-                            fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
-                            color: widget.selected
-                                ? theme.colorScheme.primary
-                                : theme.textTheme.bodyMedium?.color
-                                    ?.withValues(alpha: 0.7),
-                          ),
+              ),
+              AnimatedOpacity(
+                opacity: widget.expanded ? 1 : 0,
+                duration: const Duration(milliseconds: 120),
+                child: SizedBox(
+                  width: widget.expanded ? null : 0,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.label,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 13,
+                          fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
+                          color: widget.selected
+                              ? theme.colorScheme.primary
+                              : theme.textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.7),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
