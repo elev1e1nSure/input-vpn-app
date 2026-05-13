@@ -3,7 +3,8 @@
 > Лёгкий VPN-клиент для Windows, построенный на **Flutter** и **sing-box**.
 
 <p align="center">
-  <img src="screenshots/main.png" width="400" alt="Скриншот Input VPN" />
+  <img src="screenshots/main.png" width="400" alt="Главный экран" />
+  <img src="screenshots/settings.png" width="400" alt="Настройки" />
 </p>
 
 <p align="center">

@@ -3,7 +3,8 @@
 > A lightweight Windows desktop VPN client built with **Flutter** and powered by **sing-box**.
 
 <p align="center">
-  <img src="screenshots/main.png" width="400" alt="Input VPN Screenshot" />
+  <img src="screenshots/main.png" width="400" alt="Main Screen" />
+  <img src="screenshots/settings.png" width="400" alt="Settings Screen" />
 </p>
 
 <p align="center">
