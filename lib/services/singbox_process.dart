@@ -3,9 +3,11 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:input_vpn/models/connection_failure.dart';
+import 'package:input_vpn/services/network_utils.dart';
 import 'package:win32/win32.dart';
 
 /// Spawns and manages a `sing-box.exe` child process with admin (UAC)
@@ -81,7 +83,8 @@ class SingBoxProcess {
         .lastOrNull;
     if (match != null) return match.group(1)!.trim();
     // Fallback: first non-empty line
-    final first = tail.split('\n').where((l) => l.trim().isNotEmpty).firstOrNull;
+    final first =
+        tail.split('\n').where((l) => l.trim().isNotEmpty).firstOrNull;
     return first ?? 'Unknown error (check sing-box.log)';
   }
 
@@ -107,6 +110,11 @@ class SingBoxProcess {
       throw const SingBoxStartException(
         'sing-box is already running. Call stop() first.',
       );
+    }
+
+    // 0) Pre-flight cleanup: remove old TUN and reset DNS if stuck
+    if (elevated) {
+      await NetworkUtils.globalCleanup();
     }
 
     final exe = _singBoxPath();
@@ -144,10 +152,8 @@ class SingBoxProcess {
     // Tee stdout/stderr into the log file (sing-box also writes via log.output,
     // but this captures early panics that happen before the logger is built).
     final logSink = _logFile!.openWrite(mode: FileMode.append);
-    proc.stdout
-        .listen(logSink.add, onError: (_) {}, cancelOnError: false);
-    proc.stderr
-        .listen(logSink.add, onError: (_) {}, cancelOnError: false);
+    proc.stdout.listen(logSink.add, onError: (_) {}, cancelOnError: false);
+    proc.stderr.listen(logSink.add, onError: (_) {}, cancelOnError: false);
     _normalProc = proc;
     _normalProcExited = false;
     _processId = proc.pid;
@@ -162,43 +168,61 @@ class SingBoxProcess {
   }
 
   /// Gracefully stop the running sing-box process.
-Future<void> stop() async {
-  final proc = _normalProc;
-  if (proc != null) {
-    // Сначала мягко
-    try {
-      proc.kill();
-    } catch (_) {
-      proc.kill();
-    }
-    try {
-      await proc.exitCode.timeout(const Duration(seconds: 5));
-    } catch (_) {
-      // Не вышел за 5 сек — force kill
-      try { proc.kill(); } catch (_) {}
-    }
-    _normalProc = null;
-  } else if (_processId != 0) {
-    // Elevated: сначала без /F
-    try {
-      await Process.run('taskkill', ['/PID', '$_processId', '/T']);
-      await Future<void>.delayed(const Duration(seconds: 1));
-    } catch (_) {}
+  Future<void> stop() async {
+    final proc = _normalProc;
+    final pid = _processId;
 
-    // Проверяем жив ли ещё
+    debugPrint('SingBoxProcess: stopping process (pid=$pid)...');
+
+    if (proc != null) {
+      // Non-elevated: standard kill
+      try {
+        proc.kill();
+        await proc.exitCode.timeout(const Duration(seconds: 3));
+      } catch (_) {
+        try {
+          proc.kill(ProcessSignal.sigkill);
+        } catch (_) {}
+      }
+      _normalProc = null;
+    } else if (pid != 0) {
+      // Elevated: taskkill
+      try {
+        // Try soft first
+        await Process.run('taskkill', ['/PID', '$pid', '/T']);
+
+        // Wait a bit for graceful exit
+        int retry = 0;
+        while (retry < 10 && await isProcessAlive()) {
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+          retry++;
+        }
+
+        // If still alive, force kill
+        if (await isProcessAlive()) {
+          await Process.run('taskkill', ['/PID', '$pid', '/T', '/F']);
+        }
+      } catch (e) {
+        debugPrint('SingBoxProcess: taskkill error: $e');
+      }
+    }
+
+    // Double check by name as a safety net
     if (await _isSingBoxRunningByName()) {
       try {
-        await Process.run('taskkill', ['/PID', '$_processId', '/T', '/F']);
-      } catch (_) {}
-      try {
-        await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
+        await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F', '/T']);
       } catch (_) {}
     }
-  }
 
-  if (_processHandle != 0) CloseHandle(_processHandle);
-  _processHandle = 0;
-  _processId = 0;
+    if (_processHandle != 0) {
+      CloseHandle(_processHandle);
+      _processHandle = 0;
+    }
+    _processId = 0;
+
+    // CRITICAL: Cleanup network after process is gone
+    await NetworkUtils.globalCleanup();
+    debugPrint('SingBoxProcess: stop and cleanup finished.');
   }
 
   /// Launches [exe] with [args] elevated. Returns the new process id.
@@ -217,9 +241,7 @@ Future<void> stop() async {
     final exeUtf16 = exe.toNativeUtf16();
     final verbUtf16 = 'runas'.toNativeUtf16();
     // Quote arguments that contain spaces.
-    final argString = args
-        .map((a) => a.contains(' ') ? '"$a"' : a)
-        .join(' ');
+    final argString = args.map((a) => a.contains(' ') ? '"$a"' : a).join(' ');
     final argsUtf16 = argString.toNativeUtf16();
     final workDirUtf16 = workingDir.toNativeUtf16();
 

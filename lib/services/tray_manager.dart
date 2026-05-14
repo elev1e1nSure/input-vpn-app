@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/services/network_utils.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -18,7 +19,8 @@ class TrayManager {
     String iconPath;
     if (Platform.isWindows) {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
-      final pngPath = '$exeDir\\data\\flutter_assets\\assets\\images\\app_icon.png';
+      final pngPath =
+          '$exeDir\\data\\flutter_assets\\assets\\images\\app_icon.png';
       final icoPath = '$exeDir\\app_icon.ico';
 
       // Try ICO first, then PNG as fallback
@@ -30,7 +32,8 @@ class TrayManager {
         debugPrint('Tray init: using PNG at $iconPath');
       } else {
         iconPath = pngPath;
-        debugPrint('Tray init: neither ICO nor PNG found, trying PNG path anyway');
+        debugPrint(
+            'Tray init: neither ICO nor PNG found, trying PNG path anyway');
       }
     } else {
       iconPath = 'assets/images/app_icon.png';
@@ -38,8 +41,8 @@ class TrayManager {
 
     debugPrint('Tray init: iconPath=$iconPath');
 
-  final file = File(iconPath);
-  debugPrint('Tray init: file exists=${file.existsSync()}, path=$iconPath');
+    final file = File(iconPath);
+    debugPrint('Tray init: file exists=${file.existsSync()}, path=$iconPath');
 
     try {
       await _systemTray.initSystemTray(
@@ -66,11 +69,24 @@ class TrayManager {
       MenuItemLabel(
         label: 'Exit',
         onClicked: (menuItem) async {
-          // Disconnect VPN before closing
+          debugPrint('TrayManager: Exit requested');
+          // 1. Try to disconnect VPN gracefully with a timeout
           if (_appState?.isConnected ?? false) {
-            await _appState?.toggleConnection();
+            try {
+              await _appState
+                  ?.toggleConnection()
+                  .timeout(const Duration(seconds: 5));
+            } catch (e) {
+              debugPrint('TrayManager: Disconnect timed out or failed: $e');
+            }
           }
+
+          // 2. Final safety cleanup (in case toggleConnection failed or wasn't connected but leftovers exist)
+          await NetworkUtils.globalCleanup();
+
+          // 3. Destroy window and exit process
           await windowManager.destroy();
+          exit(0);
         },
       ),
     ]);
