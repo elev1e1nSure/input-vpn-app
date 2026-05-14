@@ -1,9 +1,13 @@
 import 'dart:ffi';
+import 'dart:io';
 
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
 
 /// Manages Windows auto-launch on startup via HKCU registry Run key.
+///
+/// All public methods are no-ops on non-Windows platforms so the rest of
+/// the app can call them unconditionally.
 class WindowsStartupManager {
   static const _runKey =
       r'Software\Microsoft\Windows\CurrentVersion\Run';
@@ -34,6 +38,7 @@ class WindowsStartupManager {
 
   /// Whether the app is registered to launch on Windows startup.
   static bool isEnabled() {
+    if (!Platform.isWindows) return false;
     try {
       final pcbData = calloc<DWORD>();
       try {
@@ -60,6 +65,7 @@ class WindowsStartupManager {
 
   /// Enable auto-launch on Windows startup.
   static void enable(String exePath) {
+    if (!Platform.isWindows) return;
     _withRegistryKey(KEY_WRITE, (hKey) {
       final value = '"$exePath"'.toNativeUtf16();
       final setResult = RegSetValueEx(
@@ -78,6 +84,7 @@ class WindowsStartupManager {
 
   /// Disable auto-launch on Windows startup.
   static void disable() {
+    if (!Platform.isWindows) return;
     _withRegistryKey(KEY_WRITE, (hKey) {
       final delResult = RegDeleteValue(
         hKey,

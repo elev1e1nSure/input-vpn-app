@@ -418,6 +418,11 @@ class _HomeTab extends StatelessWidget {
     final bool isConnecting = appState.isConnecting;
     final server = appState.selectedServer;
     final hasServer = server != null;
+    final selectedServerIp = hasServer
+        ? (appState.selectedServerAddress?.trim().isNotEmpty == true
+            ? appState.selectedServerAddress!.trim()
+            : '—')
+        : null;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -626,16 +631,14 @@ class _HomeTab extends StatelessWidget {
                                   CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  server != null
-                                      ? s.selectedServer
-                                      : s.noServer,
+                                  server != null ? server.name : s.noServer,
                                   style: theme.textTheme.titleLarge
                                       ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                                 ),
                                 const SizedBox(height: 2),
                                 if (server != null)
                                   Text(
-                                    server.name,
+                                    selectedServerIp ?? '—',
                                     style: theme.textTheme.titleLarge
                                         ?.copyWith(fontSize: 15),
                                     maxLines: 1,

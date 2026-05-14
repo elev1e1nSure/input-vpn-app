@@ -29,8 +29,17 @@ class SingBoxVpnService implements VpnService {
     SingBoxConfigBuilder? configBuilder,
     ClashApiClient? clashApi,
     bool proxyMode = false,
+    String remoteDns = 'tls://1.1.1.1',
+    String directDns = '8.8.8.8',
   })  : _process = process ?? SingBoxProcess(),
-        _config = configBuilder ?? SingBoxConfigBuilder(proxyMode: proxyMode),
+        _remoteDnsServer = remoteDns,
+        _directDnsServer = directDns,
+        _config = configBuilder ??
+            SingBoxConfigBuilder(
+              proxyMode: proxyMode,
+              remoteDnsServer: remoteDns,
+              directDnsServer: directDns,
+            ),
         _clash = clashApi ?? ClashApiClient(),
         _proxyMode = proxyMode;
 
@@ -38,6 +47,8 @@ class SingBoxVpnService implements VpnService {
   SingBoxConfigBuilder _config;
   final ClashApiClient _clash;
   bool _proxyMode;
+  String _remoteDnsServer;
+  String _directDnsServer;
 
   /// Whether sing-box is configured as a local SOCKS proxy (no TUN, no UAC).
   bool get proxyMode => _proxyMode;
@@ -46,7 +57,24 @@ class SingBoxVpnService implements VpnService {
   void setProxyMode(bool value) {
     if (_proxyMode == value) return;
     _proxyMode = value;
-    _config = SingBoxConfigBuilder(proxyMode: value);
+    _config = SingBoxConfigBuilder(
+      proxyMode: value,
+      remoteDnsServer: _remoteDnsServer,
+      directDnsServer: _directDnsServer,
+    );
+  }
+
+  void setDnsServers({required String remoteDns, required String directDns}) {
+    if (_remoteDnsServer == remoteDns && _directDnsServer == directDns) {
+      return;
+    }
+    _remoteDnsServer = remoteDns;
+    _directDnsServer = directDns;
+    _config = SingBoxConfigBuilder(
+      proxyMode: _proxyMode,
+      remoteDnsServer: remoteDns,
+      directDnsServer: directDns,
+    );
   }
 
   final _statusCtrl = StreamController<ConnectionStatus>.broadcast();

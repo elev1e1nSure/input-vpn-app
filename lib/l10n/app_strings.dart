@@ -77,6 +77,8 @@ class AppStrings {
   String get supportedFormats => isRu
       ? 'Поддерживаемые форматы: vless://, vmess://, ss://, trojan:// или ссылка на подписку (HTTP/HTTPS).'
       : 'Supported formats: vless://, vmess://, ss://, trojan:// or a subscription link (HTTP/HTTPS).';
+  String get save => isRu ? 'Сохранить' : 'Save';
+  String get delete => isRu ? 'Удалить' : 'Delete';
   String get vlessVmessSs => isRu ? 'VLESS / VMess / SS' : 'VLESS / VMess / SS';
   String get subscriptionUrl => isRu ? 'Ссылка на подписку' : 'Subscription URL';
 
@@ -93,15 +95,37 @@ class AppStrings {
   String get darkMode => isRu ? 'Тёмная тема' : 'Dark Mode';
   String get splitTunneling => isRu ? 'Раздельное туннелирование' : 'Split Tunneling';
   String get customDns => isRu ? 'DNS' : 'Custom DNS';
+  String get customDnsProfilesTitle =>
+      isRu ? 'Пользовательские DNS' : 'Custom DNS Profiles';
+  String get customDnsEmpty => isRu
+      ? 'Добавь профиль DNS, чтобы выбрать его в настройках.'
+      : 'Add a DNS profile to select it inside settings.';
+  String get manageCustomDns =>
+      isRu ? 'Управлять пользовательскими DNS' : 'Manage custom DNS';
+  String get primaryDns => isRu ? 'Основной DNS' : 'Primary DNS';
+  String get secondaryDns => isRu ? 'Резервный DNS' : 'Secondary DNS';
   String get proxyMode => isRu ? 'Режим прокси' : 'Proxy Mode';
   String get vpnMode => isRu ? 'Режим VPN' : 'VPN Mode';
   String get version => isRu ? 'Версия' : 'Version';
   String get checkForUpdates => isRu ? 'Проверить обновления' : 'Check for Updates';
   String get upToDate => isRu ? 'Актуальная версия' : 'Up to Date';
   String get updateAvailable => isRu ? 'Доступно обновление' : 'Update Available';
+  String get updateNow => isRu ? 'Обновить' : 'Update Now';
+  String get downloadingUpdate => isRu ? 'Скачивание обновления' : 'Downloading update';
+  String get updateReady => isRu ? 'Готово к установке' : 'Ready to install';
+  String get updateWillClose =>
+      isRu ? 'Приложение закроется для установки обновления.' : 'The app will close to install the update.';
   String get check => isRu ? 'Проверить' : 'Check';
   String get minimizeToTray => isRu ? 'Сворачивать в трей' : 'Minimize to Tray';
   String get language => isRu ? 'Язык' : 'Language';
+  String get exportSettings => isRu ? 'Экспорт настроек' : 'Export Settings';
+  String get importSettings => isRu ? 'Импорт настроек' : 'Import Settings';
+  String get settingsCopied =>
+      isRu ? 'Настройки скопированы в буфер обмена' : 'Settings copied to clipboard';
+  String get settingsImported =>
+      isRu ? 'Настройки применены' : 'Settings imported';
+  String get settingsImportFailed =>
+      isRu ? 'Не удалось импортировать настройки' : 'Failed to import settings';
 
   // --- Settings ---
   String get basic => isRu ? 'ОБЫЧНЫЕ' : 'BASIC';

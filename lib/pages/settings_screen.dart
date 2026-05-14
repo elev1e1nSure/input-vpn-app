@@ -1,13 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:input_vpn/globals/app_state.dart';
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:input_vpn/globals/app_state.dart';
+
 import 'package:input_vpn/globals/themes.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/pages/advanced_settings_screen.dart';
+import 'package:input_vpn/pages/custom_dns_screen.dart';
+import 'package:input_vpn/services/update_service.dart';
 import 'package:input_vpn/widgets/settings_tiles.dart';
 
 @NowaGenerated()
@@ -24,30 +28,33 @@ class SettingsScreen extends StatefulWidget {
 @NowaGenerated()
 class _SettingsScreenState extends State<SettingsScreen> {
   static const String _currentVersion = '1.0.5';
-  String? _latestVersion;
   bool _checking = false;
   bool _showAdvanced = false;
+  UpdateInfo? _updateInfo;
+  bool _downloadingUpdate = false;
+  double _downloadProgress = 0;
+  String? _downloadError;
+
+  final UpdateService _updateService = UpdateService();
 
   Future<void> _checkForUpdates() async {
-    setState(() => _checking = true);
+    setState(() {
+      _checking = true;
+      _downloadError = null;
+    });
     try {
-      final response = await Dio().get<dynamic>(
-        'https://api.github.com/repos/elev1e1nSure/input-vpn-app/releases/latest',
-        options: Options(
-          headers: {'Accept': 'application/vnd.github.v3+json'},
-          sendTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
-        ),
-      );
-      final tag = (response.data['tag_name'] as String?)?.replaceFirst('v', '');
-      if (mounted) {
-        setState(() {
-          _latestVersion = tag;
-          _checking = false;
-        });
-      }
+      final info = await _updateService.checkForUpdate(_currentVersion);
+      if (!mounted) return;
+      setState(() {
+        _updateInfo = info;
+        _checking = false;
+      });
     } catch (_) {
-      if (mounted) setState(() => _checking = false);
+      if (!mounted) return;
+      setState(() {
+        _checking = false;
+        _updateInfo = null;
+      });
     }
   }
 
@@ -85,7 +92,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             theme,
             s.language,
             Icons.language,
-            trailingText: appState.locale.languageCode == 'ru' ? 'Русский' : 'English',
+            trailingText:
+                appState.locale.languageCode == 'ru' ? 'Русский' : 'English',
             onTap: () => _showLanguageDialog(context, appState),
           ),
           buildSettingsSwitchTile(
@@ -130,12 +138,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ── ABOUT ──
           buildSettingsSectionHeader(theme, s.about),
           ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
             leading: Icon(Icons.info, color: theme.iconTheme.color),
             title: Text(s.version, style: theme.textTheme.bodyLarge),
-            subtitle: _latestVersion != null && _latestVersion != _currentVersion
+            subtitle: _updateInfo != null
                 ? Text(
-                    '${s.updateAvailable}: $_latestVersion',
+                    '${s.updateAvailable}: ${_updateInfo!.version}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.error,
                     ),
@@ -143,7 +152,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : Text(
                     s.checkForUpdates,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.4),
                     ),
                   ),
             trailing: _checking
@@ -156,18 +166,138 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   )
                 : Text(
-                    _latestVersion == _currentVersion ? s.upToDate : _currentVersion,
+                    _updateInfo == null ? s.upToDate : _currentVersion,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _latestVersion == _currentVersion
+                      color: _updateInfo == null
                           ? theme.colorScheme.primary
-                          : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                          : theme.textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.6),
                     ),
                   ),
             onTap: _checkForUpdates,
           ),
+          if (Platform.isWindows && _updateInfo != null)
+            _buildUpdateSection(theme, s),
+          ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+            leading: Icon(Icons.copy_all, color: theme.iconTheme.color),
+            title: Text(s.exportSettings, style: theme.textTheme.bodyLarge),
+            subtitle: Text(
+              s.settingsCopied,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+              ),
+            ),
+            onTap: () => _exportSettings(appState, s),
+          ),
+          ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+            leading: Icon(Icons.paste, color: theme.iconTheme.color),
+            title: Text(s.importSettings, style: theme.textTheme.bodyLarge),
+            subtitle: Text(
+              s.settingsImported,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+              ),
+            ),
+            onTap: () => _importSettings(appState, s),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildUpdateSection(ThemeData theme, AppStrings s) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            s.updateAvailable,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(color: theme.colorScheme.error),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _downloadingUpdate ? null : _startUpdate,
+            icon: const Icon(Icons.system_update_alt),
+            label: Text(
+              _downloadingUpdate
+                  ? '${s.downloadingUpdate} ${(_downloadProgress * 100).clamp(0, 100).toStringAsFixed(0)}%'
+                  : s.updateNow,
+            ),
+          ),
+          if (_downloadingUpdate) ...[
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+                value: _downloadProgress == 0 ? null : _downloadProgress),
+          ],
+          if (_downloadError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _downloadError!,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.error),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _startUpdate() async {
+    final info = _updateInfo;
+    if (!Platform.isWindows || info == null) return;
+    final s = AppStrings.of(context);
+    setState(() {
+      _downloadingUpdate = true;
+      _downloadProgress = 0;
+      _downloadError = null;
+    });
+
+    try {
+      final installerPath = await _updateService.downloadInstaller(
+        info,
+        onProgress: (received, total) {
+          if (!mounted || total <= 0) return;
+          setState(() => _downloadProgress = received / total);
+        },
+      );
+
+      if (!mounted) return;
+      final appState = AppState.of(context, listen: false);
+      if (appState.isConnected) {
+        await appState.toggleConnection();
+      }
+
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(s.updateReady),
+          content: Text(s.updateWillClose),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(s.updateNow),
+            ),
+          ],
+        ),
+      );
+
+      await _updateService.installAndExit(installerPath);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _downloadError = s.unexpectedError;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _downloadingUpdate = false);
+      }
+    }
   }
 
   // ── DNS PRESET TILE ──
@@ -178,7 +308,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AppStrings s,
   ) {
     final current = DnsPreset.byId(appState.dnsPreset);
+    final custom = appState.selectedCustomDnsProfile;
     final isRu = s.language == 'Язык';
+    final display = custom != null
+        ? custom.servers.join(', ')
+        : (current != null && current.servers.isNotEmpty
+            ? current.servers.join(', ')
+            : (isRu ? 'По умолчанию системы' : 'System default'));
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
       leading: Icon(Icons.cloud, color: theme.iconTheme.color),
@@ -187,9 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            current != null && current.servers.isNotEmpty
-                ? current.servers.join(', ')
-                : current?.label(isRu) ?? '',
+            display,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
             ),
@@ -209,6 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showDnsPicker(BuildContext context, AppState appState, AppStrings s) {
     final theme = Theme.of(context);
     final isRu = s.language == 'Язык';
+    final parentContext = context;
     showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -253,8 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   subtitle: Text(preset.label(isRu)),
                   trailing: selected
-                      ? Icon(Icons.check,
-                          color: theme.colorScheme.primary)
+                      ? Icon(Icons.check, color: theme.colorScheme.primary)
                       : null,
                   onTap: () {
                     appState.setDnsPreset(preset.id);
@@ -262,11 +396,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 );
               }),
+              if (appState.customDnsProfiles.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Text(
+                      s.customDnsProfilesTitle,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
+                ),
+                ...appState.customDnsProfiles.map((profile) {
+                  final selected = profile.id == appState.dnsCustomId;
+                  return ListTile(
+                    title: Text(
+                      profile.name,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: selected ? theme.colorScheme.primary : null,
+                        fontWeight: selected ? FontWeight.bold : null,
+                      ),
+                    ),
+                    subtitle: Text(profile.servers.join(', ')),
+                    trailing: selected
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      appState.selectCustomDns(profile.id);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                }),
+              ],
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Icon(Icons.tune, color: theme.iconTheme.color),
+                title: Text(s.manageCustomDns),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.of(parentContext).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const CustomDnsScreen(),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _exportSettings(AppState appState, AppStrings s) async {
+    final snapshot = appState.buildAnonymizedSettingsSnapshot();
+    final json = const JsonEncoder.withIndent('  ').convert(snapshot);
+    await Clipboard.setData(ClipboardData(text: json));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(s.settingsCopied)),
+    );
+  }
+
+  Future<void> _importSettings(AppState appState, AppStrings s) async {
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      if (data?.text == null || data!.text!.trim().isEmpty) {
+        throw const FormatException('empty clipboard');
+      }
+      final decoded = jsonDecode(data.text!);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('invalid json');
+      }
+      await appState.importAnonymizedSettings(decoded);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.settingsImported)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.settingsImportFailed)),
+      );
+    }
   }
 
   void _showLanguageDialog(BuildContext context, AppState appState) {

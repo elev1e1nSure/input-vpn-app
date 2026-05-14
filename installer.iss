@@ -8,6 +8,9 @@ OutputBaseFilename=InputVPN-Setup
 Compression=lzma
 SolidCompression=yes
 SetupIconFile=assets\images\app_icon.ico
+DisableWelcomePage=yes
+DisableDirPage=yes
+DisableReadyPage=yes
 
 [Files]
 Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs

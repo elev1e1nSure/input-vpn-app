@@ -8,6 +8,8 @@ import 'package:input_vpn/globals/themes.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:input_vpn/functions/extract_country_code.dart';
 import 'package:input_vpn/models/connection_status.dart';
+import 'package:input_vpn/models/custom_dns_profile.dart';
+import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/models/parsed_config.dart';
 import 'package:input_vpn/models/vpn_stats.dart';
 import 'package:input_vpn/services/singbox_vpn_service.dart';
@@ -27,6 +29,9 @@ import 'package:input_vpn/globals/shared_prefs.dart';
 ///
 /// Defaults to Full TUN VPN mode on Windows. A "Proxy mode"
 /// toggle lets users run SOCKS-only (no UAC) instead of full TUN.
+///
+/// Android: returns [MockVpnService] for now. The real Android backend
+/// (`VpnService` + sing-box core) is wired in step 2.
 VpnService _defaultVpnBackend() {
   if (!kIsWeb && Platform.isWindows && SingBoxVpnService.isSupported) {
     // Default to FULL VPN (proxyMode=false) for production use.
@@ -49,10 +54,13 @@ class AppState extends ChangeNotifier {
     _proxyPort = sharedPrefs.getInt('proxyPort') ?? 11080;
     _locale = Locale(sharedPrefs.getString('locale') ?? 'en');
 
+    _dnsCustomId = sharedPrefs.getString('dnsCustomId');
     _loadPersistedState();
 
     _statusSub = _vpn.watchStatus().listen(_onStatus);
     _statsSub = _vpn.watchStats().listen(_onStats);
+
+    _applyDnsSelection();
 
     // Auto-connect on launch if enabled and a server is available.
     if (_connectOnBoot && _selectedServer != null) {
@@ -152,6 +160,32 @@ class AppState extends ChangeNotifier {
     return _selectedServer;
   }
 
+  String? get selectedServerAddress {
+    final server = _selectedServer;
+    if (server == null) return null;
+
+    final parsedAddress = _parsedByServerId[server.id]?.server.trim();
+    if (parsedAddress != null && parsedAddress.isNotEmpty) {
+      return parsedAddress;
+    }
+
+    final country = server.country.trim();
+    if (country.isNotEmpty && country != 'Unknown' && country != '—') {
+      return country;
+    }
+
+    final city = server.city.trim();
+    if (city.isEmpty) return null;
+    final separatorIndex = city.indexOf(':');
+    if (separatorIndex >= 0) {
+      final beforeColon = city.substring(0, separatorIndex).trim();
+      if (beforeColon.isNotEmpty) {
+        return beforeColon;
+      }
+    }
+    return city;
+  }
+
   final List<VpnConfig> _userConfigs = [];
 
   List<VpnConfig> get userConfigs {
@@ -203,7 +237,9 @@ class AppState extends ChangeNotifier {
 
   String _customDns = 'Default';
   String _dnsPreset = 'cloudflare';
+  String? _dnsCustomId;
   int _proxyPort = 11080;
+  final List<CustomDnsProfile> _customDnsProfiles = [];
 
   bool get connectOnBoot {
     return _connectOnBoot;
@@ -223,6 +259,20 @@ class AppState extends ChangeNotifier {
 
   String get dnsPreset {
     return _dnsPreset;
+  }
+
+  String? get dnsCustomId => _dnsCustomId;
+
+  List<CustomDnsProfile> get customDnsProfiles =>
+      List.unmodifiable(_customDnsProfiles);
+
+  CustomDnsProfile? get selectedCustomDnsProfile {
+    if (_dnsCustomId == null) return null;
+    try {
+      return _customDnsProfiles.firstWhere((p) => p.id == _dnsCustomId);
+    } catch (_) {
+      return null;
+    }
   }
 
   int get proxyPort {
@@ -329,10 +379,11 @@ class AppState extends ChangeNotifier {
       }
       final displayTitle =
           (name.isEmpty ? (result.title ?? 'Subscription') : name);
-      
+
       // Get subscription stats
       final info = result.info;
-      debugPrint('Subscription stats: upload=${info?.upload}, download=${info?.download}, total=${info?.total}, expire=${info?.expire}');
+      debugPrint(
+          'Subscription stats: upload=${info?.upload}, download=${info?.download}, total=${info?.total}, expire=${info?.expire}');
       final configIndex = _userConfigs.indexWhere((c) => c.id == id);
       if (configIndex != -1 && info != null) {
         _userConfigs[configIndex] = VpnConfig(
@@ -345,16 +396,17 @@ class AppState extends ChangeNotifier {
           subUpload: info.upload,
           subDownload: info.download,
           subTotal: info.total,
-          subExpire: info.expire != null 
-              ? info.expire!.millisecondsSinceEpoch ~/ 1000 
+          subExpire: info.expire != null
+              ? info.expire!.millisecondsSinceEpoch ~/ 1000
               : null,
         );
       }
-      
+
       for (var i = 0; i < result.configs.length; i++) {
         final p = result.configs[i];
         final serverId = 's_${id}_$i';
-        debugPrint('Subscription server $i: name=${p.remark}, server=${p.server}, port=${p.port}');
+        debugPrint(
+            'Subscription server $i: name=${p.remark}, server=${p.server}, port=${p.port}');
         _userServers.add(VpnServer(
           id: serverId,
           name: p.remark.isNotEmpty ? p.remark : '$displayTitle ${i + 1}',
@@ -421,14 +473,21 @@ class AppState extends ChangeNotifier {
 
     // Re-parse the config and update servers
     final parsed = VpnUrlParser.tryParse(newRawConfig);
-    final serverIndices = _userServers.asMap().entries.where((e) => e.value.configId == configId).map((e) => e.key).toList();
+    final serverIndices = _userServers
+        .asMap()
+        .entries
+        .where((e) => e.value.configId == configId)
+        .map((e) => e.key)
+        .toList();
 
     for (final serverIndex in serverIndices) {
       final oldServer = _userServers[serverIndex];
       if (parsed != null) {
         _userServers[serverIndex] = VpnServer(
           id: oldServer.id,
-          name: newName.isNotEmpty ? newName : (parsed.remark.isNotEmpty ? parsed.remark : newName),
+          name: newName.isNotEmpty
+              ? newName
+              : (parsed.remark.isNotEmpty ? parsed.remark : newName),
           country: parsed.server,
           city: '${parsed.server}:${parsed.port}',
           flagCode: extractCountryCode(parsed.remark),
@@ -462,10 +521,10 @@ class AppState extends ChangeNotifier {
   Future<void> refreshSubscriptionStats(String configId) async {
     final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
     if (configIndex == -1) return;
-    
+
     final config = _userConfigs[configIndex];
     if (config.subUrl == null) return;
-    
+
     try {
       final result = await _subs.fetch(config.subUrl!);
       final info = result.info;
@@ -480,8 +539,8 @@ class AppState extends ChangeNotifier {
           subUpload: info.upload,
           subDownload: info.download,
           subTotal: info.total,
-          subExpire: info.expire != null 
-              ? info.expire!.millisecondsSinceEpoch ~/ 1000 
+          subExpire: info.expire != null
+              ? info.expire!.millisecondsSinceEpoch ~/ 1000
               : null,
         );
         _savePersistedState().ignore();
@@ -552,38 +611,46 @@ class AppState extends ChangeNotifier {
     // Don't notifyListeners() - stats are read directly without rebuild
   }
 
-  void _persistBool(String key, bool Function() getter, void Function(bool) fieldSetter, bool value) {
+  void _persistBool(String key, bool Function() getter,
+      void Function(bool) fieldSetter, bool value) {
     if (getter() == value) return;
     fieldSetter(value);
     sharedPrefs.setBool(key, value);
     notifyListeners();
   }
 
-  void _persistString(String key, String Function() getter, void Function(String) fieldSetter, String value) {
+  void _persistString(String key, String Function() getter,
+      void Function(String) fieldSetter, String value) {
     if (getter() == value) return;
     fieldSetter(value);
     sharedPrefs.setString(key, value);
     notifyListeners();
   }
 
-  void _persistInt(String key, int Function() getter, void Function(int) fieldSetter, int value) {
+  void _persistInt(String key, int Function() getter,
+      void Function(int) fieldSetter, int value) {
     if (getter() == value) return;
     fieldSetter(value);
     sharedPrefs.setInt(key, value);
     notifyListeners();
   }
 
-  void setConnectOnBoot(bool value) =>
-      _persistBool('connectOnBoot', () => _connectOnBoot, (v) => _connectOnBoot = v, value);
+  void setConnectOnBoot(bool value) => _persistBool(
+      'connectOnBoot', () => _connectOnBoot, (v) => _connectOnBoot = v, value);
 
   void setAutoLaunch(bool value) {
     if (_autoLaunch == value) return;
     _autoLaunch = value;
     sharedPrefs.setBool('autoLaunch', value);
-    if (value) {
-      WindowsStartupManager.enable(Platform.resolvedExecutable);
-    } else {
-      WindowsStartupManager.disable();
+    // Auto-launch is currently a Windows-only feature (HKCU registry).
+    // Other platforms (Android, etc.) ignore the toggle until a native
+    // implementation is added.
+    if (Platform.isWindows) {
+      if (value) {
+        WindowsStartupManager.enable(Platform.resolvedExecutable);
+      } else {
+        WindowsStartupManager.disable();
+      }
     }
     notifyListeners();
   }
@@ -598,8 +665,55 @@ class AppState extends ChangeNotifier {
   void setCustomDns(String dns) =>
       _persistString('customDns', () => _customDns, (v) => _customDns = v, dns);
 
-  void setDnsPreset(String preset) =>
-      _persistString('dnsPreset', () => _dnsPreset, (v) => _dnsPreset = v, preset);
+  void setDnsPreset(String preset) {
+    if (_dnsPreset == preset && _dnsCustomId == null) return;
+    _dnsPreset = preset;
+    sharedPrefs.setString('dnsPreset', preset);
+    if (_dnsCustomId != null) {
+      _dnsCustomId = null;
+      sharedPrefs.remove('dnsCustomId');
+    }
+    notifyListeners();
+    _applyDnsSelection();
+  }
+
+  void selectCustomDns(String profileId) {
+    if (_dnsCustomId == profileId) return;
+    _dnsCustomId = profileId;
+    sharedPrefs.setString('dnsCustomId', profileId);
+    notifyListeners();
+    _applyDnsSelection();
+  }
+
+  void saveCustomDnsProfile(CustomDnsProfile profile) {
+    final index = _customDnsProfiles.indexWhere((p) => p.id == profile.id);
+    if (index >= 0) {
+      _customDnsProfiles[index] = profile;
+    } else {
+      _customDnsProfiles.add(profile);
+    }
+    _persistCustomDnsProfiles();
+    notifyListeners();
+    if (_dnsCustomId == profile.id) {
+      _applyDnsSelection();
+    }
+  }
+
+  void deleteCustomDnsProfile(String id) {
+    final before = _customDnsProfiles.length;
+    _customDnsProfiles.removeWhere((p) => p.id == id);
+    if (before == _customDnsProfiles.length) {
+      return;
+    }
+    _persistCustomDnsProfiles();
+    if (_dnsCustomId == id) {
+      _dnsCustomId = null;
+      sharedPrefs.remove('dnsCustomId');
+      setDnsPreset(_dnsPreset);
+      return;
+    }
+    notifyListeners();
+  }
 
   void setProxyPort(int port) =>
       _persistInt('proxyPort', () => _proxyPort, (v) => _proxyPort = v, port);
@@ -627,9 +741,9 @@ class AppState extends ChangeNotifier {
       final selectedId = sharedPrefs.getString('selectedServerId');
       if (selectedId != null && selectedId.isNotEmpty) {
         _selectedServer = _userServers.cast<VpnServer?>().firstWhere(
-          (s) => s?.id == selectedId,
-          orElse: () => null,
-        );
+              (s) => s?.id == selectedId,
+              orElse: () => null,
+            );
       }
 
       final parsedJson = sharedPrefs.getString('parsedByServerId');
@@ -640,6 +754,15 @@ class AppState extends ChangeNotifier {
               ParsedConfig.fromJson(entry.value as Map<String, dynamic>);
         }
       }
+
+      final customDnsJson = sharedPrefs.getString('customDnsProfiles');
+      if (customDnsJson != null && customDnsJson.isNotEmpty) {
+        final list = jsonDecode(customDnsJson) as List<dynamic>;
+        for (final item in list) {
+          _customDnsProfiles
+              .add(CustomDnsProfile.fromJson(item as Map<String, dynamic>));
+        }
+      }
     } catch (e) {
       debugPrint('Failed to load persisted state: $e');
     }
@@ -648,20 +771,122 @@ class AppState extends ChangeNotifier {
   Future<void> _savePersistedState() async {
     try {
       // Offload heavy JSON encoding to a microtask so it doesn't block animations
-      final configsJson = await Future(() => jsonEncode(_userConfigs.map((c) => c.toJson()).toList()));
+      final configsJson = await Future(
+          () => jsonEncode(_userConfigs.map((c) => c.toJson()).toList()));
       await sharedPrefs.setString('userConfigs', configsJson);
 
-      final serversJson = await Future(() => jsonEncode(_userServers.map((s) => s.toJson()).toList()));
+      final serversJson = await Future(
+          () => jsonEncode(_userServers.map((s) => s.toJson()).toList()));
       await sharedPrefs.setString('userServers', serversJson);
 
-      await sharedPrefs.setString('selectedServerId', _selectedServer?.id ?? '');
+      await sharedPrefs.setString(
+          'selectedServerId', _selectedServer?.id ?? '');
 
       final parsedJson = await Future(() => jsonEncode(
-        _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
-      ));
+            _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
+          ));
       await sharedPrefs.setString('parsedByServerId', parsedJson);
+
+      final customDnsJson = await Future(() => jsonEncode(
+            _customDnsProfiles.map((p) => p.toJson()).toList(),
+          ));
+      await sharedPrefs.setString('customDnsProfiles', customDnsJson);
     } catch (e) {
       debugPrint('Failed to save persisted state: $e');
+    }
+  }
+
+  void _persistCustomDnsProfiles() {
+    final jsonStr =
+        jsonEncode(_customDnsProfiles.map((p) => p.toJson()).toList());
+    sharedPrefs.setString('customDnsProfiles', jsonStr);
+  }
+
+  void _applyDnsSelection() {
+    final vpn = _vpn;
+    if (vpn is! SingBoxVpnService) return;
+    final servers = _currentDnsServers();
+    final remote =
+        servers.isNotEmpty ? 'tls://${servers.first}' : 'tls://1.1.1.1';
+    final direct = servers.length > 1 ? servers[1] : '8.8.8.8';
+    vpn.setDnsServers(remoteDns: remote, directDns: direct);
+  }
+
+  List<String> _currentDnsServers() {
+    final custom = selectedCustomDnsProfile;
+    if (custom != null && custom.servers.isNotEmpty) {
+      return custom.servers;
+    }
+    final preset = DnsPreset.byId(_dnsPreset);
+    if (preset != null && preset.servers.isNotEmpty) {
+      return preset.servers;
+    }
+    return const ['1.1.1.1', '8.8.8.8'];
+  }
+
+  Map<String, dynamic> buildAnonymizedSettingsSnapshot() {
+    final subscriptionCount =
+        _userConfigs.where((c) => c.type == ConfigType.subscription).length;
+    return {
+      'preferences': {
+        'connectOnBoot': _connectOnBoot,
+        'autoLaunch': _autoLaunch,
+        'minimizeToTray': _minimizeToTray,
+        'proxyMode': isProxyMode,
+        'theme': _theme.brightness == Brightness.dark ? 'dark' : 'light',
+        'language': _locale.languageCode,
+        'dns': {
+          'preset': _dnsPreset,
+          'customSelected': _dnsCustomId != null,
+          'customProfiles': _customDnsProfiles.length,
+        },
+      },
+      'counts': {
+        'servers': _userServers.length,
+        'configs': _userConfigs.length,
+        'subscriptions': subscriptionCount,
+        'customDnsProfiles': _customDnsProfiles.length,
+      },
+    };
+  }
+
+  Future<void> importAnonymizedSettings(Map<String, dynamic> data) async {
+    final prefs = data['preferences'];
+    if (prefs is Map<String, dynamic>) {
+      final connect = prefs['connectOnBoot'];
+      if (connect is bool) setConnectOnBoot(connect);
+
+      final autoLaunch = prefs['autoLaunch'];
+      if (autoLaunch is bool) setAutoLaunch(autoLaunch);
+
+      final minimize = prefs['minimizeToTray'];
+      if (minimize is bool) setMinimizeToTray(minimize);
+
+      final proxy = prefs['proxyMode'];
+      if (proxy is bool) {
+        await setProxyMode(proxy);
+      }
+
+      final theme = prefs['theme'];
+      if (theme == 'dark') {
+        changeTheme(darkTheme);
+      } else if (theme == 'light') {
+        changeTheme(lightTheme);
+      }
+
+      final language = prefs['language'];
+      if (language is String) {
+        setLocale(language);
+      }
+
+      final dns = prefs['dns'];
+      if (dns is Map<String, dynamic>) {
+        final preset = dns['preset'];
+        final customSelected = dns['customSelected'] == true;
+        if (!customSelected && preset is String) {
+          setDnsPreset(preset);
+        }
+      }
     }
   }
 
