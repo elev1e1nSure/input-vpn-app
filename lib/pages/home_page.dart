@@ -514,6 +514,7 @@ class _HomeTab extends StatelessWidget {
       ),
       body: SafeArea(
         child: Stack(
+          fit: StackFit.expand,
           children: [
             Positioned(
               top: 0,
@@ -568,7 +569,17 @@ class _HomeTab extends StatelessWidget {
                 s: s,
               ),
             ),
-            const _ErrorOverlay(),
+            Builder(builder: (context) {
+              final error =
+                  context.select<AppState, String?>((a) => a.lastError);
+              if (error == null) return const SizedBox.shrink();
+              return Positioned(
+                bottom: 110,
+                left: 16,
+                right: 16,
+                child: _ErrorBanner(message: error),
+              );
+            }),
           ],
         ),
       ),
@@ -801,22 +812,6 @@ class _ServerCard extends StatelessWidget {
   }
 }
 
-/// Error banner overlay — only mounts/rebuilds when lastError changes.
-class _ErrorOverlay extends StatelessWidget {
-  const _ErrorOverlay();
-
-  @override
-  Widget build(BuildContext context) {
-    final error = context.select<AppState, String?>((a) => a.lastError);
-    if (error == null) return const SizedBox.shrink();
-    return Positioned(
-      bottom: 110,
-      left: 16,
-      right: 16,
-      child: _ErrorBanner(message: error),
-    );
-  }
-}
 
 /// Session timer shown in AppBar when connected.
 /// Uses StreamBuilder on statusStream — no notifyListeners needed.
