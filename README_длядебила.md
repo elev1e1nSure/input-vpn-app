@@ -1,6 +1,7 @@
-# README для себя (и не только)
+# README для ДЕБИЛА
 
 Flutter-приложение **Input VPN** для Windows. Стек: Flutter + sing-box (TUN/VPN).
+Версия: **1.0.5**.
 
 ---
 
@@ -110,9 +111,9 @@ iscc installer.iss
 
 ### Обновление версии в установщике
 
-Если меняешь версию в `pubspec.yaml` (например, `version: 1.0.3+3`), не забудь синхронно поправить:
+Если меняешь версию в `pubspec.yaml` (например, `version: 1.0.5+5`), не забудь синхронно поправить:
 
-- `installer.iss` → `AppVersion=1.0.3`
+- `installer.iss` → `AppVersion=1.0.5`
 
 ---
 
@@ -135,11 +136,30 @@ iscc installer.iss
 
 | Симптом | Причина / Решение |
 |---------|-------------------|
-| `VPN engine failed to start` | Нет `sing-box.exe` в `windows/runner/resources/` или не та версия. |
-| UAC-запрос при каждом подключении | Нормально для TUN-режима. Чтобы избежать — включи SOCKS Debug Mode в настройках. |
-| Приложение не запускается после сборки | Удали `%APPDATA%\com.example\Input VPN\` — может быть битый кэш. |
+| `VPN engine failed to start` | Нет `sing-box.exe` в `windows/runner/resources/` или не та версия. Полный лог: `%APPDATA%\InputVPN\singbox\sing-box.log`. |
+| UAC-запрос при каждом подключении | Нормально для TUN-режима. Чтобы избежать — включи **Proxy Mode** в настройках (SOCKS без TUN, без UAC). |
+| Туннель `InputVPNTun` остаётся в `ncpa.cpl` после закрытия | Пофиксено: при закрытии окна теперь есть таймаут 10 с на disconnect + принудительный `Remove-NetAdapter`. |
+| Отключение VPN очень долгое | Пофиксено: cleanup теперь один вызов PowerShell вместо 4 отдельных процессов. |
+| Приложение не запускается после сборки | Удали `%APPDATA%\InputVPN\singbox\` — может быть битый `config.json` или `sing-box.log`. |
 | Inno Setup не находит `iscc` | Не добавлен в PATH. Или запускай через GUI. |
 | Ошибка линковки в CMake | Не установлен Visual Studio 2022 с workload C++ desktop. |
+
+---
+
+## Как устроен VPN под капотом
+
+| Компонент | Роль |
+|-----------|------|
+| `sing-box.exe` | VPN-ядро. Запускается дочерним процессом с UAC-повышением (`runas`). |
+| `wintun.dll` | Драйвер TUN-интерфейса для Windows. |
+| TUN-адаптер `InputVPNTun` | Виртуальная сетевая карта, видна в `ncpa.cpl`. Создаётся при подключении, удаляется при отключении. |
+| Clash API `127.0.0.1:9090` | HTTP API sing-box для мониторинга трафика и пинга. Приложение опрашивает его каждые 2 с. |
+| `%APPDATA%\InputVPN\singbox\config.json` | Конфиг sing-box, генерируется автоматически при каждом подключении. |
+| `%APPDATA%\InputVPN\singbox\sing-box.log` | Лог sing-box. Первое место смотреть при ошибках. |
+
+**Два режима работы:**
+- **TUN mode** (по умолчанию) — весь трафик ОС идёт через VPN. Требует UAC при каждом подключении. Адаптер виден в `ncpa.cpl`.
+- **Proxy mode** — только SOCKS5 на `127.0.0.1:11080`. Без TUN, без UAC, без адаптера в `ncpa.cpl`. Включается в настройках.
 
 ---
 
