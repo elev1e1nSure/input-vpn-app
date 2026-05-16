@@ -10,6 +10,7 @@ import 'package:input_vpn/pages/servers_screen.dart';
 import 'package:input_vpn/pages/add_config_screen.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/tray_manager.dart';
 import 'package:input_vpn/vpn_server.dart';
 
@@ -76,22 +77,35 @@ class _HomePageState extends State<HomePage> with WindowListener {
   void onWindowClose() async {
     final appState = AppState.of(context, listen: false);
     debugPrint('onWindowClose triggered, minimizeToTray=${appState.minimizeToTray}');
-    
-    try {
-      if (appState.minimizeToTray) {
+
+    if (appState.minimizeToTray) {
+      try {
         await windowManager.hide();
         debugPrint('Window hidden to tray, VPN remains connected');
-      } else {
-        // Disconnect VPN only when actually closing the app
-        if (appState.isConnected) {
-          debugPrint('Disconnecting VPN before app close');
-          await appState.toggleConnection();
-        }
-        await windowManager.destroy();
-        debugPrint('Window destroyed');
+      } catch (e) {
+        debugPrint('onWindowClose: hide error: $e');
       }
+      return;
+    }
+
+    // Disconnect VPN with a hard timeout so the app never hangs on close.
+    if (appState.isConnected) {
+      debugPrint('onWindowClose: disconnecting VPN...');
+      try {
+        await appState.toggleConnection().timeout(const Duration(seconds: 10));
+      } catch (e) {
+        debugPrint('onWindowClose: disconnect failed or timed out ($e), forcing cleanup');
+        // Best-effort fallback: remove the TUN adapter and reset DNS.
+        await NetworkUtils.globalCleanup();
+      }
+    }
+
+    // Always destroy the window — even if disconnect above failed.
+    debugPrint('onWindowClose: destroying window');
+    try {
+      await windowManager.destroy();
     } catch (e) {
-      debugPrint('onWindowClose error: $e');
+      debugPrint('onWindowClose: destroy error: $e');
     }
   }
 

@@ -7,15 +7,26 @@ class NetworkUtils {
   static const String tunInterfaceName = 'InputVPNTun';
 
   /// Performs a deep cleanup of the network state.
-  /// Should be called before start and after stop.
+  /// Should be called after stop to remove any leftover TUN adapter and
+  /// restore DNS. A single PowerShell invocation is used to minimise
+  /// process-startup overhead (was previously 3–4 separate spawns).
   static Future<void> globalCleanup() async {
     if (!Platform.isWindows) return;
 
     debugPrint('NetworkUtils: starting global cleanup...');
+    const script = r'''
+      Get-NetAdapter | Where-Object { $_.Name -like "InputVPN*" } |
+        Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue
+      Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
+        netsh interface ip set dns name="$($_.Name)" source=dhcp 2>$null
+      }
+    ''';
     try {
-      await Future.wait([
-        deleteTunInterface(),
-        resetAllDns(),
+      await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        script,
       ]);
       debugPrint('NetworkUtils: global cleanup finished.');
     } catch (e) {
@@ -23,57 +34,37 @@ class NetworkUtils {
     }
   }
 
-  /// Force deletes the Wintun/TUN interface.
+  /// Force deletes the Wintun/TUN interface (standalone helper, rarely needed
+  /// directly — prefer [globalCleanup] which also resets DNS).
   static Future<void> deleteTunInterface() async {
     debugPrint('NetworkUtils: deleting TUN interface $tunInterfaceName...');
-
-    // 1. Try via netsh (standard)
     try {
-      final result = await Process.run('netsh',
-          ['interface', 'delete', 'interface', 'name=$tunInterfaceName']);
-      debugPrint('netsh delete result: exit=${result.exitCode}, stdout=${result.stdout}, stderr=${result.stderr}');
-    } catch (e) {
-      debugPrint('netsh delete failed: $e');
-    }
-
-    // 2. Try via PowerShell (more powerful for Wintun)
-    // This removes the adapter and associated drivers if stuck.
-    try {
-      final result = await Process.run('powershell', [
+      await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
         '-Command',
-        'Get-NetAdapter | Where-Object { \$_.Name -eq "$tunInterfaceName" } | Remove-NetAdapter -Confirm:\$false'
+        r'Get-NetAdapter | Where-Object { $_.Name -like "InputVPN*" } |'
+            r' Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue',
       ]);
-      debugPrint('PowerShell remove result: exit=${result.exitCode}, stdout=${result.stdout}, stderr=${result.stderr}');
     } catch (e) {
-      debugPrint('PowerShell remove failed: $e');
-    }
-
-    // 3. Fallback: try to delete any adapter starting with "InputVPN" (in case name differs)
-    try {
-      final result = await Process.run('powershell', [
-        '-Command',
-        'Get-NetAdapter | Where-Object { \$_.Name -like "InputVPN*" } | Remove-NetAdapter -Confirm:\$false'
-      ]);
-      debugPrint('PowerShell wildcard remove result: exit=${result.exitCode}, stdout=${result.stdout}, stderr=${result.stderr}');
-    } catch (e) {
-      debugPrint('PowerShell wildcard remove failed: $e');
+      debugPrint('NetworkUtils: deleteTunInterface error: $e');
     }
   }
 
   /// Resets DNS settings for ALL interfaces to DHCP (automatic).
-  /// This is the most reliable way to restore connectivity if sing-box
-  /// failed to restore DNS after a crash.
   static Future<void> resetAllDns() async {
     debugPrint('NetworkUtils: resetting all DNS to DHCP...');
-
-    // We use PowerShell to find all active/up adapters and reset their DNS.
-    final script = '''
-      Get-NetAdapter | Where-Object { \$_.Status -eq "Up" } | ForEach-Object {
-        netsh interface ip set dns name="\$(\$_.Name)" source=dhcp
+    const script = r'''
+      Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
+        netsh interface ip set dns name="$($_.Name)" source=dhcp 2>$null
       }
     ''';
-
-    await Process.run('powershell', ['-Command', script]);
+    try {
+      await Process.run('powershell',
+          ['-NoProfile', '-NonInteractive', '-Command', script]);
+    } catch (e) {
+      debugPrint('NetworkUtils: resetAllDns error: $e');
+    }
   }
 
   /// Checks if the TUN interface currently exists.

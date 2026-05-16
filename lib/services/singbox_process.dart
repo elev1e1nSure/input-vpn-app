@@ -174,11 +174,6 @@ class SingBoxProcess {
 
     debugPrint('SingBoxProcess: stopping process (pid=$pid)...');
 
-    // CRITICAL: Cleanup network BEFORE killing the process.
-    // sing-box removes the TUN adapter more reliably when it receives
-    // a graceful shutdown signal.
-    await NetworkUtils.globalCleanup();
-
     if (proc != null) {
       // Non-elevated: standard kill
       try {
@@ -196,9 +191,9 @@ class SingBoxProcess {
         // Try soft first
         await Process.run('taskkill', ['/PID', '$pid', '/T']);
 
-        // Wait a bit for graceful exit
+        // Wait a bit for graceful exit (max ~1 s)
         int retry = 0;
-        while (retry < 10 && await isProcessAlive()) {
+        while (retry < 5 && await isProcessAlive()) {
           await Future<void>.delayed(const Duration(milliseconds: 200));
           retry++;
         }
