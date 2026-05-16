@@ -32,13 +32,6 @@
 - **Themes & language** — dark / light mode, Russian / English interface.
 - **Auto update check** — built-in check for new releases via GitHub.
 
-## Screenshots
-
-<p align="center">
-  <img src="screenshots/main.png" width="320" alt="Main screen" />
-  <img src="screenshots/servers.png" width="320" alt="Servers list" />
-</p>
-
 ## Download & Install
 
 1. Go to **[Releases](https://github.com/elev1e1nSure/input-vpn-app/releases/latest)**.

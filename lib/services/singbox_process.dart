@@ -174,6 +174,11 @@ class SingBoxProcess {
 
     debugPrint('SingBoxProcess: stopping process (pid=$pid)...');
 
+    // CRITICAL: Cleanup network BEFORE killing the process.
+    // sing-box removes the TUN adapter more reliably when it receives
+    // a graceful shutdown signal.
+    await NetworkUtils.globalCleanup();
+
     if (proc != null) {
       // Non-elevated: standard kill
       try {
@@ -220,7 +225,7 @@ class SingBoxProcess {
     }
     _processId = 0;
 
-    // CRITICAL: Cleanup network after process is gone
+    // Final cleanup as a safety net in case sing-box didn't clean up
     await NetworkUtils.globalCleanup();
     debugPrint('SingBoxProcess: stop and cleanup finished.');
   }

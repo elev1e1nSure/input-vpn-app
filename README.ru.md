@@ -32,13 +32,6 @@
 - **Темы и язык** — тёмная/светлая тема, интерфейс на русском и английском.
 - **Проверка обновлений** — встроенная проверка новых релизов через GitHub.
 
-## Скриншоты
-
-<p align="center">
-  <img src="screenshots/main.png" width="320" alt="Главный экран" />
-  <img src="screenshots/servers.png" width="320" alt="Список серверов" />
-</p>
-
 ## Скачать и установить
 
 1. Перейди в раздел **[Releases](https://github.com/elev1e1nSure/input-vpn-app/releases/latest)**.
