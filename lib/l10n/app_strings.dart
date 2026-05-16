@@ -136,6 +136,28 @@ class AppStrings {
   String get noAds => isRu ? 'Без рекламы' : 'No ads';
   String get system => isRu ? 'Системный' : 'System';
 
+  // --- Reconnect Watchdog ---
+  String reconnecting(int attempt, int max) => isRu
+      ? 'Переподключение ($attempt/$max)…'
+      : 'Reconnecting ($attempt/$max)…';
+
+  // --- Service Mode ---
+  String get serviceModeTitle => isRu ? 'Сервисный режим' : 'Service Mode';
+  String get serviceModeSubtitle => isRu
+      ? 'UAC запрашивается один раз при установке — потом без диалогов'
+      : 'UAC requested once on install — no prompts on each connection';
+  String get installService => isRu ? 'Установить сервис' : 'Install Service';
+  String get removeService => isRu ? 'Удалить сервис' : 'Remove Service';
+  String get serviceInstalling => isRu ? 'Установка...' : 'Installing...';
+  String get serviceRemoving => isRu ? 'Удаление...' : 'Removing...';
+  String get serviceInstalled =>
+      isRu ? 'Сервис установлен' : 'Service installed';
+  String get serviceRemoved => isRu ? 'Сервис удалён' : 'Service removed';
+  String get serviceInstallFailed =>
+      isRu ? 'Ошибка установки сервиса' : 'Service install failed';
+  String get serviceRemoveFailed =>
+      isRu ? 'Ошибка удаления сервиса' : 'Service removal failed';
+
   // --- Logs ---
   String get logs => isRu ? 'Логи' : 'Logs';
   String get logsEvents => isRu ? 'События' : 'Events';

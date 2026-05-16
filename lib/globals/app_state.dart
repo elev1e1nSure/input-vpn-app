@@ -37,7 +37,8 @@ VpnService _defaultVpnBackend() {
   if (!kIsWeb && Platform.isWindows && SingBoxVpnService.isSupported) {
     // Default to FULL VPN (proxyMode=false) for production use.
     final proxy = sharedPrefs.getBool('proxyMode') ?? false;
-    return SingBoxVpnService(proxyMode: proxy);
+    final service = sharedPrefs.getBool('serviceMode') ?? false;
+    return SingBoxVpnService(proxyMode: proxy, serviceMode: service);
   }
   return MockVpnService();
 }
@@ -115,6 +116,34 @@ class AppState extends ChangeNotifier {
     await vpn.disconnect();
     vpn.setProxyMode(enabled);
     await sharedPrefs.setBool('proxyMode', enabled);
+    notifyListeners();
+  }
+
+  /// Whether the VPN service is in an auto-reconnect cycle after a crash.
+  bool get isReconnecting {
+    final vpn = _vpn;
+    return vpn is SingBoxVpnService ? vpn.isReconnecting : false;
+  }
+
+  /// Current reconnect attempt number (1-based, 0 when not reconnecting).
+  int get reconnectAttempt {
+    final vpn = _vpn;
+    return vpn is SingBoxVpnService ? vpn.reconnectAttempt : 0;
+  }
+
+  /// Whether sing-box launches as a Windows Service (no UAC per connection).
+  bool get isServiceMode {
+    final vpn = _vpn;
+    return vpn is SingBoxVpnService ? vpn.serviceMode : false;
+  }
+
+  /// Enable / disable Windows Service mode. Disconnects first if connected.
+  Future<void> setServiceMode(bool enabled) async {
+    final vpn = _vpn;
+    if (vpn is! SingBoxVpnService) return;
+    if (_isConnected) await vpn.disconnect();
+    vpn.setServiceMode(enabled);
+    await sharedPrefs.setBool('serviceMode', enabled);
     notifyListeners();
   }
 

@@ -270,7 +270,6 @@ class _Sidebar extends StatelessWidget {
               selected: selectedIndex == 5,
               onTap: () => onItemSelected(5),
             ),
-            const Spacer(),
             _SidebarItem(
               expanded: expanded,
               icon: Icons.settings,
@@ -278,7 +277,7 @@ class _Sidebar extends StatelessWidget {
               selected: selectedIndex == 2,
               onTap: () => onItemSelected(2),
             ),
-            const SizedBox(height: 8),
+            const Spacer(),
           ],
         ),
       ),
@@ -441,6 +440,7 @@ class _HomeTab extends StatelessWidget {
     final s = AppStrings.of(context);
     final bool isConnected = appState.isConnected;
     final bool isConnecting = appState.isConnecting;
+    final bool isReconnecting = appState.isReconnecting;
     final server = appState.selectedServer;
     final hasServer = server != null;
     final selectedServerIp = hasServer
@@ -454,13 +454,18 @@ class _HomeTab extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           hasServer
-              ? (isConnecting
-                  ? s.connecting
-                  : appState.isDisconnecting
-                      ? s.disconnecting
-                      : isConnected
-                          ? s.connected
-                          : s.readyToConnect)
+              ? (isReconnecting
+                  ? s.reconnecting(
+                      appState.reconnectAttempt,
+                      3,
+                    )
+                  : isConnecting
+                      ? s.connecting
+                      : appState.isDisconnecting
+                          ? s.disconnecting
+                          : isConnected
+                              ? s.connected
+                              : s.readyToConnect)
               : s.connectInOneMinute,
         ),
         actions: [

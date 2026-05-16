@@ -29,6 +29,7 @@ class SingBoxVpnService implements VpnService {
     SingBoxConfigBuilder? configBuilder,
     ClashApiClient? clashApi,
     bool proxyMode = false,
+    bool serviceMode = false,
     String remoteDns = 'tls://1.1.1.1',
     String directDns = '8.8.8.8',
   })  : _process = process ?? SingBoxProcess(),
@@ -41,17 +42,25 @@ class SingBoxVpnService implements VpnService {
               directDnsServer: directDns,
             ),
         _clash = clashApi ?? ClashApiClient(),
-        _proxyMode = proxyMode;
+        _proxyMode = proxyMode,
+        _serviceMode = serviceMode;
 
   final SingBoxProcess _process;
   SingBoxConfigBuilder _config;
   final ClashApiClient _clash;
   bool _proxyMode;
+  bool _serviceMode;
   String _remoteDnsServer;
   String _directDnsServer;
 
   /// Whether sing-box is configured as a local SOCKS proxy (no TUN, no UAC).
   bool get proxyMode => _proxyMode;
+
+  /// Whether to launch sing-box via Windows Service (no UAC after install).
+  bool get serviceMode => _serviceMode;
+
+  /// Toggle service mode. Takes effect at the NEXT connect().
+  void setServiceMode(bool value) => _serviceMode = value;
 
   /// Toggle proxy mode. Takes effect at the NEXT connect().
   void setProxyMode(bool value) {
@@ -83,7 +92,22 @@ class SingBoxVpnService implements VpnService {
   StreamSubscription<TrafficSample>? _trafficSub;
   Timer? _liveCheckTimer;
   Timer? _latencyTimer;
+  Timer? _reconnectTimer;
   int _lastLatencyMs = 0;
+
+  /// Last config used for connect — kept for auto-reconnect.
+  ParsedConfig? _lastConfig;
+  int _reconnectAttempt = 0;
+  static const int _maxReconnects = 3;
+  static const List<Duration> _reconnectDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 5),
+    Duration(seconds: 15),
+  ];
+
+  /// Whether the service is currently in an auto-reconnect cycle.
+  bool get isReconnecting => _reconnectAttempt > 0;
+  int get reconnectAttempt => _reconnectAttempt;
 
   @override
   ConnectionStatus get status => _status;
@@ -108,6 +132,8 @@ class SingBoxVpnService implements VpnService {
   @override
   Future<void> connect(ParsedConfig config) async {
     if (_status is Connected || _status is Connecting) return;
+    _lastConfig = config;
+    _reconnectAttempt = 0;
     _setStatus(const Connecting());
 
     try {
@@ -118,7 +144,11 @@ class SingBoxVpnService implements VpnService {
       // 2) Generate config and start sing-box. TUN mode needs elevation
       //    (UAC prompt fires here); SOCKS test mode does not.
       final jsonStr = _config.build(config, logPath: ws.logPath);
-      await _process.start(jsonStr, elevated: !_proxyMode);
+      await _process.start(
+        jsonStr,
+        elevated: !_proxyMode && !_serviceMode,
+        serviceMode: _serviceMode,
+      );
 
       // 3) Wait for Clash API to come up, polling process aliveness too so
       //    we fail fast when sing-box exits with a bad config.
@@ -191,9 +221,11 @@ class SingBoxVpnService implements VpnService {
     await _trafficSub?.cancel();
     _liveCheckTimer?.cancel();
     _latencyTimer?.cancel();
+    _reconnectTimer?.cancel();
     _trafficSub = null;
     _liveCheckTimer = null;
     _latencyTimer = null;
+    _reconnectTimer = null;
     _statsCtrl.add(VpnStats.empty);
     await _process.stop();
   }
@@ -209,18 +241,53 @@ class SingBoxVpnService implements VpnService {
     });
   }
 
-  /// If the child process dies unexpectedly (server-side issue, OOM, etc.)
-  /// surface that to the UI as a Disconnected with a failure.
+  /// If the child process dies unexpectedly, try to reconnect with
+  /// exponential backoff up to [_maxReconnects] times.
   void _startLivenessCheck() {
     _liveCheckTimer?.cancel();
     _liveCheckTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (!await _process.isProcessAlive() && _status is Connected) {
-        _setStatus(const Disconnected(
-          failure: UnexpectedFailure(
-            'sing-box exited unexpectedly. See sing-box.log for details.',
-          ),
-        ));
         await _hardStop();
+        _scheduleReconnect();
+      }
+    });
+  }
+
+  void _scheduleReconnect() {
+    _reconnectTimer?.cancel();
+    final cfg = _lastConfig;
+    if (cfg == null || _reconnectAttempt >= _maxReconnects) {
+      _reconnectAttempt = 0;
+      _setStatus(const Disconnected(
+        failure: UnexpectedFailure(
+          'sing-box exited unexpectedly and could not reconnect. '
+          'See sing-box.log for details.',
+        ),
+      ));
+      return;
+    }
+
+    final delay = _reconnectDelays[_reconnectAttempt];
+    _reconnectAttempt++;
+    _setStatus(const Connecting());
+    _reconnectTimer = Timer(delay, () async {
+      try {
+        final ws = await _process.prepareWorkDir();
+        final jsonStr = _config.build(cfg, logPath: ws.logPath);
+        await _process.start(
+          jsonStr,
+          elevated: !_proxyMode && !_serviceMode,
+          serviceMode: _serviceMode,
+        );
+        await _waitReadyOrFail();
+        _startTrafficPump();
+        _startLivenessCheck();
+        _startLatencyProbe();
+        _reconnectAttempt = 0;
+        _setStatus(Connected(since: DateTime.now()));
+      } catch (_) {
+        await _hardStop();
+        _scheduleReconnect();
       }
     });
   }

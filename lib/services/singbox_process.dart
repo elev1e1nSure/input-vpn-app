@@ -7,7 +7,9 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:input_vpn/models/connection_failure.dart';
+import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/network_utils.dart';
+import 'package:input_vpn/services/singbox_service_manager.dart';
 import 'package:win32/win32.dart';
 
 /// Spawns and manages a `sing-box.exe` child process with admin (UAC)
@@ -32,7 +34,11 @@ class SingBoxProcess {
   int _processId = 0;
   File? _logFile;
 
-  bool get isRunning => _processHandle != 0;
+  /// Whether the last [start] used service mode.
+  bool _serviceMode = false;
+
+  bool get isRunning => _serviceMode ? _serviceModeRunning : _processHandle != 0;
+  bool _serviceModeRunning = false;
   int get processId => _processId;
   File? get logFile => _logFile;
 
@@ -100,21 +106,24 @@ class SingBoxProcess {
 
   /// Start sing-box with the provided JSON config.
   ///
-  /// When [elevated] is true, uses [ShellExecuteEx] with the `runas` verb
-  /// (UAC prompt). Required for TUN mode. Set to false for SOCKS-only mode
-  /// to skip UAC and get proper stdout/stderr + reliable process control.
+  /// When [serviceMode] is true, delegates to [SingboxServiceManager] which
+  /// requires no UAC after the service has been installed. Falls back to the
+  /// legacy elevated launch when false.
   ///
-  /// Returns the OS process id. Throws [SingBoxStartException] on failure.
-  Future<int> start(String configJson, {required bool elevated}) async {
+  /// When [elevated] is true (and serviceMode is false), uses [ShellExecuteEx]
+  /// with the `runas` verb (UAC prompt). Required for TUN mode. Set to false
+  /// for SOCKS-only mode to skip UAC.
+  ///
+  /// Returns the OS process id (0 for service mode). Throws [SingBoxStartException] on failure.
+  Future<int> start(
+    String configJson, {
+    required bool elevated,
+    bool serviceMode = false,
+  }) async {
     if (isRunning) {
       throw const SingBoxStartException(
         'sing-box is already running. Call stop() first.',
       );
-    }
-
-    // 0) Pre-flight cleanup: remove old TUN and reset DNS if stuck
-    if (elevated) {
-      await NetworkUtils.globalCleanup();
     }
 
     final exe = _singBoxPath();
@@ -131,6 +140,41 @@ class SingBoxProcess {
     _logFile = File(ws.logPath);
     // Truncate previous log.
     await _logFile!.writeAsString('', flush: true);
+
+    // ── Service mode ──────────────────────────────────────────────────────────
+    if (serviceMode) {
+      AppLogger.info('SingBoxProcess: starting via Windows Service');
+      // Reinstall service so the config path is always up-to-date.
+      final installed = await SingboxServiceManager.isInstalled();
+      if (!installed) {
+        throw const SingBoxStartException(
+          'Service not installed. Go to Advanced Settings → Service Mode to install it.',
+        );
+      }
+      // Update binpath so the service uses the new config.
+      await Process.run('sc', [
+        'config', SingboxServiceManager.serviceName,
+        'binpath=',
+        '"$exe" run -c "${configFile.path}" --disable-color',
+      ]);
+      await NetworkUtils.globalCleanup();
+      final ok = await SingboxServiceManager.start();
+      if (!ok) {
+        throw const SingBoxStartException('Windows Service failed to start.');
+      }
+      _serviceMode = true;
+      _serviceModeRunning = true;
+      _processId = 0;
+      return 0;
+    }
+
+    // ── Legacy elevated / non-elevated mode ───────────────────────────────────
+    _serviceMode = false;
+
+    // Pre-flight cleanup: remove old TUN and reset DNS if stuck.
+    if (elevated) {
+      await NetworkUtils.globalCleanup();
+    }
 
     if (elevated) {
       final pid = _shellExecuteElevated(
@@ -169,6 +213,17 @@ class SingBoxProcess {
 
   /// Gracefully stop the running sing-box process.
   Future<void> stop() async {
+    // ── Service mode: delegate to sc stop ─────────────────────────────────────
+    if (_serviceMode) {
+      AppLogger.info('SingBoxProcess: stopping via Windows Service');
+      await SingboxServiceManager.stop();
+      _serviceModeRunning = false;
+      _serviceMode = false;
+      await NetworkUtils.globalCleanup();
+      debugPrint('SingBoxProcess: service stopped and cleaned up.');
+      return;
+    }
+
     final proc = _normalProc;
     final pid = _processId;
 
