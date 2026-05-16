@@ -207,6 +207,100 @@ class _HomePageState extends State<HomePage> with WindowListener {
   }
 }
 
+/// VPN / SOCKS5 toggle — keeps UI in sync with proxy mode.
+class _ModeToggle extends StatelessWidget {
+  const _ModeToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = AppStrings.of(context);
+    final isProxy = context.select<AppState, bool>((a) => a.isProxyMode);
+    final appState = AppState.of(context, listen: false);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: theme.dividerTheme.color ??
+              theme.colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ModePill(
+            label: s.vpnLabel,
+            icon: Icons.shield,
+            active: !isProxy,
+            onTap: () => appState.setProxyMode(false),
+          ),
+          const SizedBox(width: 4),
+          _ModePill(
+            label: s.socks5Label,
+            icon: Icons.wifi_tethering,
+            active: isProxy,
+            onTap: () => appState.setProxyMode(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModePill extends StatelessWidget {
+  const _ModePill({
+    required this.label,
+    required this.icon,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: active ? theme.colorScheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: active
+                  ? Colors.white
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: active
+                    ? Colors.white
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _Sidebar extends StatelessWidget {
   const _Sidebar({
     required this.expanded,
@@ -553,9 +647,11 @@ class _HomeTab extends StatelessWidget {
                             const SizedBox(height: 16),
                             const _StatsRow(),
                           ],
-                          if (hasServer) ...[
-                            const SizedBox(height: 8),
-                            _PublicIpText(theme: theme),
+                          const SizedBox(height: 8),
+                          _PublicIpText(theme: theme),
+                          if (Platform.isWindows) ...[
+                            const SizedBox(height: 12),
+                            const _ModeToggle(),
                           ],
                           const Spacer(),
                         ],
@@ -716,8 +812,13 @@ class _PublicIpText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ip = context.select<AppState, String?>((a) => a.publicIp);
+    final appState = AppState.of(context, listen: false);
+    if (ip == null) {
+      // Fire-and-forget refresh if IP hasn't been resolved yet.
+      Future.microtask(appState.refreshPublicIp);
+    }
     return Text(
-      ip != null ? 'IP: $ip' : 'IP: ---',
+      ip != null ? 'IP: $ip' : 'IP: …',
       textAlign: TextAlign.center,
       style: theme.textTheme.bodyMedium?.copyWith(
         color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
