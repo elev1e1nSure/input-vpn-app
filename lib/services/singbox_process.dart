@@ -144,28 +144,29 @@ class SingBoxProcess {
     // ── Service mode ──────────────────────────────────────────────────────────
     if (serviceMode) {
       AppLogger.info('SingBoxProcess: starting via Windows Service');
-      // Reinstall service so the config path is always up-to-date.
       final installed = await SingboxServiceManager.isInstalled();
       if (!installed) {
-        throw const SingBoxStartException(
-          'Service not installed. Go to Advanced Settings → Service Mode to install it.',
-        );
+        // Service was never installed (UAC denied or removed externally).
+        // Fall back to legacy elevated launch so the user isn't stuck.
+        AppLogger.warn('SingBoxProcess: service not installed — falling back to elevated launch');
+      } else {
+        // Update binpath so the service uses the new config.
+        await Process.run('sc', [
+          'config', SingboxServiceManager.serviceName,
+          'binpath=',
+          '"$exe" run -c "${configFile.path}" --disable-color',
+        ]);
+        await NetworkUtils.globalCleanup();
+        final ok = await SingboxServiceManager.start();
+        if (!ok) {
+          throw const SingBoxStartException('Windows Service failed to start.');
+        }
+        _serviceMode = true;
+        _serviceModeRunning = true;
+        _processId = 0;
+        return 0;
       }
-      // Update binpath so the service uses the new config.
-      await Process.run('sc', [
-        'config', SingboxServiceManager.serviceName,
-        'binpath=',
-        '"$exe" run -c "${configFile.path}" --disable-color',
-      ]);
-      await NetworkUtils.globalCleanup();
-      final ok = await SingboxServiceManager.start();
-      if (!ok) {
-        throw const SingBoxStartException('Windows Service failed to start.');
-      }
-      _serviceMode = true;
-      _serviceModeRunning = true;
-      _processId = 0;
-      return 0;
+      // Service not installed: fall through to legacy elevated mode below.
     }
 
     // ── Legacy elevated / non-elevated mode ───────────────────────────────────

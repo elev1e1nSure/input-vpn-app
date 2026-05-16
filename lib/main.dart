@@ -50,12 +50,19 @@ Future<void> _ensureServiceInstalled() async {
   try {
     final alreadyInstalled = await SingboxServiceManager.isInstalled();
     if (alreadyInstalled) {
-      // Already installed — make sure serviceMode is enabled in prefs.
+      // Already installed — make sure serviceMode flag matches reality.
       if (!(sharedPrefs.getBool('serviceMode') ?? false)) {
         await sharedPrefs.setBool('serviceMode', true);
       }
       AppLogger.info('ServiceManager: service already installed, skipping');
       return;
+    }
+
+    // Service not installed but flag says it is — reset flag so app uses
+    // legacy elevated mode and doesn't throw on connect.
+    if (sharedPrefs.getBool('serviceMode') ?? false) {
+      await sharedPrefs.setBool('serviceMode', false);
+      AppLogger.warn('ServiceManager: flag was true but service missing — reset to false');
     }
 
     AppLogger.info('ServiceManager: first launch — installing service');
