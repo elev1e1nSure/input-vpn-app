@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
@@ -16,6 +17,7 @@ import 'package:input_vpn/l10n/app_strings.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
+  await AppLogger.init();
 
   // Cleanup any orphaned sing-box processes from previous runs
   if (Platform.isWindows) {

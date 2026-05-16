@@ -136,6 +136,16 @@ class AppStrings {
   String get noAds => isRu ? 'Без рекламы' : 'No ads';
   String get system => isRu ? 'Системный' : 'System';
 
+  // --- Logs ---
+  String get logs => isRu ? 'Логи' : 'Logs';
+  String get logsEvents => isRu ? 'События' : 'Events';
+  String get logsSingbox => 'sing-box';
+  String get copyLog => isRu ? 'Скопировать лог' : 'Copy Log';
+  String get saveLog => isRu ? 'Сохранить' : 'Save';
+  String get clearLog => isRu ? 'Очистить' : 'Clear';
+  String get logsCopied => isRu ? 'Лог скопирован' : 'Log copied';
+  String get logsEmpty => isRu ? 'Лог пуст' : 'Log is empty';
+
   // --- Misc ---
   String get copy => isRu ? 'Копировать' : 'Copy';
   String get dismiss => isRu ? 'Закрыть' : 'Dismiss';

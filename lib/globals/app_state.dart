@@ -12,6 +12,7 @@ import 'package:input_vpn/models/custom_dns_profile.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/models/parsed_config.dart';
 import 'package:input_vpn/models/vpn_stats.dart';
+import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/singbox_vpn_service.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn_service.dart';
@@ -580,10 +581,17 @@ class AppState extends ChangeNotifier {
         _isConnecting = true;
         _isConnected = false;
         TrayManager.updateTooltip('Connecting...');
+        AppLogger.info(
+          'Connecting to ${_selectedServer?.name ?? 'unknown server'}',
+        );
       case Connected():
         _isConnecting = false;
         _isConnected = true;
         TrayManager.updateTooltip('Connected');
+        AppLogger.info(
+          'Connected to ${_selectedServer?.name ?? 'unknown server'}'
+          ' (${_selectedServer?.city ?? ''})',
+        );
         // Задержка 2 сек для установления туннеля
         Future.delayed(const Duration(seconds: 2), () => refreshPublicIp());
       case Disconnected(failure: final f):
@@ -593,6 +601,9 @@ class AppState extends ChangeNotifier {
         if (f != null) {
           _lastError = f.message;
           _scheduleErrorClear();
+          AppLogger.error('Disconnected with error: ${f.message}');
+        } else {
+          AppLogger.info('Disconnected');
         }
         _ping = 0;
         _downloadSpeed = '0.0 KB/s';
