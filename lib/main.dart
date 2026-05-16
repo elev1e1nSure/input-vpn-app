@@ -72,8 +72,15 @@ Future<void> _ensureServiceInstalled() async {
 
     final ok = await SingboxServiceManager.install(exe, configPath);
     if (ok) {
-      await sharedPrefs.setBool('serviceMode', true);
-      AppLogger.info('ServiceManager: installed successfully');
+      // Double-check: sc query must confirm the service actually exists.
+      final verified = await SingboxServiceManager.isInstalled();
+      if (verified) {
+        await sharedPrefs.setBool('serviceMode', true);
+        AppLogger.info('ServiceManager: installed and verified — service mode enabled');
+      } else {
+        AppLogger.error('ServiceManager: install() returned true but sc query '
+            'failed — service mode NOT enabled (UAC may have been denied)');
+      }
     } else {
       AppLogger.warn('ServiceManager: installation failed — falling back to UAC mode');
     }

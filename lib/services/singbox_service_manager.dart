@@ -145,41 +145,83 @@ class SingboxServiceManager {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  /// Run [exe] with [args] via ShellExecuteEx runas (elevation).
-  /// Returns true if the elevated process exited with code 0.
+  /// Run [exe] with [args] elevated (UAC). Returns true iff the command
+  /// exited with code 0.
+  ///
+  /// Strategy:
+  ///  1. Write a temp `.ps1` that calls the command and saves `$LASTEXITCODE`
+  ///     to a result file.
+  ///  2. Run that PS1 via `Start-Process powershell -Verb RunAs -Wait`
+  ///     (this is the UAC prompt).
+  ///  3. Read the result file to get the real exit code.
+  ///
+  /// Why not use `cmd /c`?  PowerShell's `-ArgumentList '/c ...'` mangles
+  /// complex quoting (double-quotes inside single-quotes break sc create).
+  ///
+  /// Why not check `Start-Process` own exit?  `Start-Process -Wait` always
+  /// returns 0 from the outer PowerShell — it does NOT forward the child
+  /// process exit code.  We must use the result file.
   static Future<bool> _runElevated(String exe, List<String> args) async {
-    // We can't get the exit code of ShellExecuteEx directly.
-    // Workaround: wrap in cmd /c and redirect exit code to a temp file.
-    final argsStr = args.map((a) => a.contains(' ') ? '"$a"' : a).join(' ');
-    final tempFile =
-        File('${Directory.systemTemp.path}\\inputvpn_sc_result.txt');
+    if (!Platform.isWindows) return false;
 
-    // Build a cmd script that runs sc and writes errorlevel to a file.
-    final script =
-        '$exe $argsStr & echo %errorlevel% > "${tempFile.path}"';
+    // 'sc' is an alias for Set-Content in PowerShell; use the real binary.
+    final exeName = (exe == 'sc') ? 'sc.exe' : exe;
 
-    final result = await Process.run('powershell', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      'Start-Process cmd.exe -ArgumentList \'/c $script\' '
-          '-Verb RunAs -Wait',
-    ]);
+    final tempDir = Directory.systemTemp.path;
+    // Use simple fixed names — only one install/remove runs at a time.
+    final ps1Path    = '$tempDir\\inputvpn_elev.ps1';
+    final resultPath = '$tempDir\\inputvpn_elev_exit.txt';
 
-    debugPrint('_runElevated result: exit=${result.exitCode}');
+    // In PS1 single-quoted strings, the only escape is '' for a literal '.
+    String psQ(String s) => "'${s.replaceAll("'", "''")}'";
 
-    // Read the exit code written by the script.
+    // Build the PowerShell call-operator argument list: 'sc.exe' 'create' …
+    final psArgList = [exeName, ...args].map(psQ).join(' ');
+
+    // The PS1 script: run the command, capture $LASTEXITCODE, write to file.
+    final ps1Content = [
+      r'$code = 0',
+      '& $psArgList 2>&1 | Out-Null',
+      r'$code = $LASTEXITCODE',
+      "[System.IO.File]::WriteAllText(${psQ(resultPath)}, \$code.ToString())",
+      r'exit $code',
+    ].join('\n').replaceAll(r'$psArgList', psArgList);
+
+    await File(ps1Path).writeAsString(ps1Content, flush: true);
+
     try {
-      if (await tempFile.exists()) {
-        final text = (await tempFile.readAsString()).trim();
-        await tempFile.delete();
-        return text == '0';
+      // Outer (non-elevated) PowerShell launches the PS1 elevated and waits.
+      final outer = await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        'Start-Process powershell.exe '
+            "-ArgumentList @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',${psQ(ps1Path)}) "
+            '-Verb RunAs -Wait',
+      ]);
+
+      debugPrint('_runElevated outer exit=${outer.exitCode} '
+          'stderr=${outer.stderr}');
+
+      final resultFile = File(resultPath);
+      if (await resultFile.exists()) {
+        final text = (await resultFile.readAsString()).trim();
+        try { await resultFile.delete(); } catch (_) {}
+        final code = int.tryParse(text) ?? 1;
+        AppLogger.info('ServiceManager: elevated cmd exit=$code');
+        return code == 0;
       }
 
-    } catch (_) {}
-
-    // If we can't read the file, assume success if powershell itself exited 0.
-    return result.exitCode == 0;
+      // Result file absent: UAC was denied or PS1 was blocked.
+      AppLogger.warn('ServiceManager: elevated result file missing '
+          '(UAC denied or script blocked)');
+      return false;
+    } catch (e) {
+      AppLogger.error('ServiceManager: _runElevated error: $e');
+      return false;
+    } finally {
+      try { await File(ps1Path).delete(); } catch (_) {}
+    }
   }
 
   /// Grant the current user START and STOP permissions on the service
