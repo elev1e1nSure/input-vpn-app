@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -9,7 +10,10 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/services/app_logger.dart';
+import 'package:input_vpn/services/singbox_service_manager.dart';
 import 'package:input_vpn/globals/router.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 
@@ -22,6 +26,9 @@ void main() async {
   // Cleanup any orphaned sing-box processes from previous runs
   if (Platform.isWindows) {
     await _cleanupSingBoxProcesses();
+    // Install sing-box as a Windows Service on first launch (one UAC prompt).
+    // After that, connections require no elevation at all.
+    unawaited(_ensureServiceInstalled());
   }
 
   if (!kIsWeb && Platform.isWindows) {
@@ -35,6 +42,37 @@ void main() async {
   }
 
   runApp(const MyApp());
+}
+
+/// Installs sing-box as a Windows Service on first launch.
+/// Runs silently in the background — one UAC prompt then never again.
+Future<void> _ensureServiceInstalled() async {
+  try {
+    final alreadyInstalled = await SingboxServiceManager.isInstalled();
+    if (alreadyInstalled) {
+      // Already installed — make sure serviceMode is enabled in prefs.
+      if (!(sharedPrefs.getBool('serviceMode') ?? false)) {
+        await sharedPrefs.setBool('serviceMode', true);
+      }
+      AppLogger.info('ServiceManager: service already installed, skipping');
+      return;
+    }
+
+    AppLogger.info('ServiceManager: first launch — installing service');
+    final exe = '${File(Platform.resolvedExecutable).parent.path}\\sing-box.exe';
+    final base = await getApplicationSupportDirectory();
+    final configPath = p.join(base.path, 'singbox', 'config.json');
+
+    final ok = await SingboxServiceManager.install(exe, configPath);
+    if (ok) {
+      await sharedPrefs.setBool('serviceMode', true);
+      AppLogger.info('ServiceManager: installed successfully');
+    } else {
+      AppLogger.warn('ServiceManager: installation failed — falling back to UAC mode');
+    }
+  } catch (e) {
+    AppLogger.error('ServiceManager: _ensureServiceInstalled error: $e');
+  }
 }
 
 /// Kill any orphaned sing-box.exe processes to clean up TUN adapters.
