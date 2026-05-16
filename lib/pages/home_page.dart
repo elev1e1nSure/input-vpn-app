@@ -14,7 +14,6 @@ import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/tray_manager.dart';
-import 'package:input_vpn/functions/country_code_to_emoji.dart';
 import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/vpn_stats.dart';
 import 'package:input_vpn/vpn_server.dart';
@@ -765,7 +764,7 @@ class _ServerCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Country flag or fallback globe icon
+              // Neutral globe icon to match server list styling
               Container(
                 width: 40,
                 height: 40,
@@ -774,16 +773,11 @@ class _ServerCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: server != null && server.flagCode.isNotEmpty
-                      ? Text(
-                          countryCodeToEmoji(server.flagCode),
-                          style: const TextStyle(fontSize: 20),
-                        )
-                      : Icon(
-                          Icons.public,
-                          size: 20,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.3),
-                        ),
+                  child: Icon(
+                    Icons.public,
+                    size: 20,
+                    color: theme.iconTheme.color?.withValues(alpha: 0.35),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -902,14 +896,14 @@ class _StatsRow extends StatelessWidget {
           children: [
             _StatChip(
               icon: Icons.arrow_downward_rounded,
-              color: const Color(0xFF34C759),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
               label: stats.downloadHuman,
               theme: theme,
             ),
             const SizedBox(width: 16),
             _StatChip(
               icon: Icons.arrow_upward_rounded,
-              color: const Color(0xFF007AFF),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
               label: stats.uploadHuman,
               theme: theme,
             ),
