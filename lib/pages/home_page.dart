@@ -496,26 +496,22 @@ class _HomeTab extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: isConnected
-            ? _SessionTimer(fallback: statusText)
-            : Text(statusText),
-        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
-        centerTitle: false,
-        actions: [
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: onSwitchToServers,
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Stack(
           fit: StackFit.expand,
           children: [
+            // + button top-right
+            Positioned(
+              top: 4,
+              right: 4,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: onSwitchToServers,
+                ),
+              ),
+            ),
             Positioned(
               top: 0,
               left: 0,
@@ -528,9 +524,20 @@ class _HomeTab extends StatelessWidget {
                     child: SizedBox(
                       height: constraints.maxHeight,
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 8),
+                          // Status title at top-center
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: isConnected
+                                ? _SessionTimer(fallback: statusText)
+                                : Text(
+                                    statusText,
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+                          const Spacer(),
                           RepaintBoundary(
                             child: _ConnectButton(
                               hasServer: hasServer,
@@ -551,7 +558,7 @@ class _HomeTab extends StatelessWidget {
                             const SizedBox(height: 8),
                             _PublicIpText(theme: theme),
                           ],
-                          const SizedBox(height: 16),
+                          const Spacer(),
                         ],
                       ),
                     ),
