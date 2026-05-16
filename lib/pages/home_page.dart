@@ -14,6 +14,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/tray_manager.dart';
 import 'package:input_vpn/vpn_server.dart';
+import 'package:provider/provider.dart';
 
 @NowaGenerated()
 class HomePage extends StatefulWidget {
@@ -382,10 +383,364 @@ class _HomeTab extends StatelessWidget {
 
   final VoidCallback onSwitchToServers;
 
-  Widget _buildModeToggle(BuildContext context, AppState appState) {
+  void _goToServers() {
+    onSwitchToServers();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final s = AppStrings.of(context);
-    final isProxy = appState.isProxyMode;
+
+    final appState = AppState.of(context, listen: false);
+
+    final hasServer =
+        context.select<AppState, bool>((a) => a.selectedServer != null);
+    final isConnected =
+        context.select<AppState, bool>((a) => a.isConnected);
+    final isConnecting =
+        context.select<AppState, bool>((a) => a.isConnecting);
+    final isDisconnecting =
+        context.select<AppState, bool>((a) => a.isDisconnecting);
+    final isReconnecting =
+        context.select<AppState, bool>((a) => a.isReconnecting);
+    final reconnectAttempt =
+        context.select<AppState, int>((a) => a.reconnectAttempt);
+
+    final titleText = !hasServer
+        ? s.connectInOneMinute
+        : isReconnecting
+            ? s.reconnecting(reconnectAttempt, 3)
+            : isConnecting
+                ? s.connecting
+                : isDisconnecting
+                    ? s.disconnecting
+                    : isConnected
+                        ? s.connected
+                        : s.readyToConnect;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(titleText),
+        actions: [
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: onSwitchToServers,
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 90,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SizedBox(
+                      height: constraints.maxHeight,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 8),
+                          RepaintBoundary(
+                            child: _ConnectButton(
+                              hasServer: hasServer,
+                              onTap: () {
+                                if (!hasServer) {
+                                  _goToServers();
+                                } else {
+                                  appState.toggleConnection();
+                                }
+                              },
+                            ),
+                          ),
+                          if (Platform.isWindows) ...[
+                            const SizedBox(height: 12),
+                            const _ModeToggle(),
+                          ],
+                          if (hasServer) ...[
+                            const SizedBox(height: 8),
+                            _PublicIpText(theme: theme),
+                          ],
+                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              bottom: 12,
+              left: 24,
+              right: 24,
+              child: _ServerCard(
+                onTap: onSwitchToServers,
+                theme: theme,
+                s: s,
+              ),
+            ),
+            const _ErrorOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated connect/disconnect button — isolated repaint boundary target.
+/// Selects only isConnected, isConnecting, isDisconnecting, selectedServer.
+class _ConnectButton extends StatelessWidget {
+  const _ConnectButton({
+    required this.hasServer,
+    required this.onTap,
+  });
+
+  final bool hasServer;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isConnected =
+        context.select<AppState, bool>((a) => a.isConnected);
+    final isConnecting =
+        context.select<AppState, bool>((a) => a.isConnecting);
+    final isDisconnecting =
+        context.select<AppState, bool>((a) => a.isDisconnecting);
+
+    IconData icon;
+    if (!hasServer) {
+      icon = Icons.add;
+    } else if (isConnecting) {
+      icon = Icons.pause;
+    } else {
+      icon = Icons.power_settings_new;
+    }
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              width: 170,
+              height: 170,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isConnected
+                    ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                    : theme.colorScheme.surface,
+                border: Border.all(
+                  color: isConnected
+                      ? theme.colorScheme.primary
+                      : theme.dividerTheme.color ??
+                          theme.colorScheme.onSurface.withValues(alpha: 0.15),
+                  width: 2,
+                ),
+                boxShadow: isConnected
+                    ? [
+                        BoxShadow(
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.25),
+                          blurRadius: 32,
+                          spreadRadius: 6,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Center(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: hasServer ? 120 : 110,
+                  height: hasServer ? 120 : 110,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isConnected
+                        ? theme.colorScheme.primary
+                        : hasServer
+                            ? const Color(0xFF3A3A3C)
+                            : theme.colorScheme.surface,
+                  ),
+                  child: Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) => ScaleTransition(
+                        scale: animation,
+                        child: child,
+                      ),
+                      child: isConnecting || isDisconnecting
+                          ? const SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                          : Icon(
+                              icon,
+                              key: ValueKey<bool>(hasServer),
+                              size: hasServer ? 48 : 40,
+                              color: Colors.white,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Displays the current public IP — only rebuilds when publicIp changes.
+class _PublicIpText extends StatelessWidget {
+  const _PublicIpText({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final ip = context.select<AppState, String?>((a) => a.publicIp);
+    return Text(
+      ip != null ? 'IP: $ip' : 'IP: ---',
+      textAlign: TextAlign.center,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+        fontSize: 13,
+      ),
+    );
+  }
+}
+
+/// Server card at the bottom — only rebuilds when selectedServer changes.
+class _ServerCard extends StatelessWidget {
+  const _ServerCard({
+    required this.onTap,
+    required this.theme,
+    required this.s,
+  });
+
+  final VoidCallback onTap;
+  final ThemeData theme;
+  final AppStrings s;
+
+  @override
+  Widget build(BuildContext context) {
+    final server =
+        context.select<AppState, VpnServer?>((a) => a.selectedServer);
+    final serverAddress =
+        context.select<AppState, String?>((a) => a.selectedServerAddress);
+    final selectedServerIp =
+        serverAddress?.trim().isNotEmpty == true ? serverAddress!.trim() : '—';
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color ?? theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.dividerTheme.color ??
+                  theme.colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.public,
+                    size: 20,
+                    color: theme.iconTheme.color?.withValues(alpha: 0.3),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      server != null ? server.name : s.noServer,
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    if (server != null)
+                      Text(
+                        selectedServerIp,
+                        style:
+                            theme.textTheme.titleLarge?.copyWith(fontSize: 15),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Error banner overlay — only mounts/rebuilds when lastError changes.
+class _ErrorOverlay extends StatelessWidget {
+  const _ErrorOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    final error = context.select<AppState, String?>((a) => a.lastError);
+    if (error == null) return const SizedBox.shrink();
+    return Positioned(
+      bottom: 110,
+      left: 16,
+      right: 16,
+      child: _ErrorBanner(message: error),
+    );
+  }
+}
+
+/// VPN / SOCKS5 toggle pill row — only rebuilds when isProxyMode changes.
+class _ModeToggle extends StatelessWidget {
+  const _ModeToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = AppStrings.of(context);
+    final isProxy = context.select<AppState, bool>((a) => a.isProxyMode);
+    final appState = AppState.of(context, listen: false);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -417,280 +772,6 @@ class _HomeTab extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  IconData _mainButtonIcon(AppState appState) {
-    if (appState.selectedServer == null) return Icons.add;
-    if (appState.isConnecting) return Icons.pause;
-    if (appState.isConnected) return Icons.power_settings_new;
-    return Icons.power_settings_new;
-  }
-
-  void _goToServers() {
-    onSwitchToServers();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final appState = AppState.of(context);
-    final theme = Theme.of(context);
-    final s = AppStrings.of(context);
-    final bool isConnected = appState.isConnected;
-    final bool isConnecting = appState.isConnecting;
-    final bool isReconnecting = appState.isReconnecting;
-    final server = appState.selectedServer;
-    final hasServer = server != null;
-    final selectedServerIp = hasServer
-        ? (appState.selectedServerAddress?.trim().isNotEmpty == true
-            ? appState.selectedServerAddress!.trim()
-            : '—')
-        : null;
-
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          hasServer
-              ? (isReconnecting
-                  ? s.reconnecting(
-                      appState.reconnectAttempt,
-                      3,
-                    )
-                  : isConnecting
-                      ? s.connecting
-                      : appState.isDisconnecting
-                          ? s.disconnecting
-                          : isConnected
-                              ? s.connected
-                              : s.readyToConnect)
-              : s.connectInOneMinute,
-        ),
-        actions: [
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: onSwitchToServers,
-            ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 90,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: SizedBox(
-                      height: constraints.maxHeight,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 8),
-                          MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (!hasServer) {
-                          _goToServers();
-                        } else {
-                          appState.toggleConnection();
-                        }
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                            width: 170,
-                            height: 170,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isConnected
-                                  ? theme.colorScheme.primary
-                                      .withValues(alpha: 0.12)
-                                  : theme.colorScheme.surface,
-                              border: Border.all(
-                                color: isConnected
-                                    ? theme.colorScheme.primary
-                                    : theme.dividerTheme.color ??
-                                        theme.colorScheme.onSurface
-                                            .withValues(alpha: 0.15),
-                                width: 2,
-                              ),
-                              boxShadow: isConnected
-                                  ? [
-                                      BoxShadow(
-                                        color: theme.colorScheme.primary
-                                            .withValues(alpha: 0.25),
-                                        blurRadius: 32,
-                                        spreadRadius: 6,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Center(
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                                width: hasServer ? 120 : 110,
-                                height: hasServer ? 120 : 110,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isConnected
-                                      ? theme.colorScheme.primary
-                                      : hasServer
-                                          ? const Color(0xFF3A3A3C)
-                                          : theme.colorScheme.surface,
-                                ),
-                                child: Center(
-                                  child: AnimatedSwitcher(
-                                    duration:
-                                        const Duration(milliseconds: 250),
-                                    transitionBuilder: (child, animation) {
-                                      return ScaleTransition(
-                                        scale: animation,
-                                        child: child,
-                                      );
-                                    },
-                                    child: isConnecting || appState.isDisconnecting
-                                        ? const SizedBox(
-                                            width: 32,
-                                            height: 32,
-                                            child:
-                                                CircularProgressIndicator(
-                                              color: Colors.white,
-                                              strokeWidth: 3,
-                                            ),
-                                          )
-                                        : Icon(
-                                            _mainButtonIcon(appState),
-                                            key: ValueKey<bool>(hasServer),
-                                            size: hasServer ? 48 : 40,
-                                            color: Colors.white,
-                                          ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (Platform.isWindows) ...[
-                    const SizedBox(height: 12),
-                    _buildModeToggle(context, appState),
-                  ],
-                  if (hasServer) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      appState.publicIp != null
-                          ? 'IP: ${appState.publicIp}'
-                          : 'IP: ---',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.textTheme.bodyMedium?.color
-                            ?.withValues(alpha: 0.5),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  // Stats hidden temporarily
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    ),
-    Positioned(
-              bottom: 12,
-              left: 24,
-              right: 24,
-              child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: onSwitchToServers,
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: theme.cardTheme.color ??
-                            theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.dividerTheme.color ??
-                              theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: theme.scaffoldBackgroundColor,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.public,
-                                size: 20,
-                                color: theme.iconTheme.color?.withValues(alpha: 0.3),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  server != null ? server.name : s.noServer,
-                                  style: theme.textTheme.titleLarge
-                                      ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
-                                ),
-                                const SizedBox(height: 2),
-                                if (server != null)
-                                  Text(
-                                    selectedServerIp ?? '—',
-                                    style: theme.textTheme.titleLarge
-                                        ?.copyWith(fontSize: 15),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            if (appState.lastError != null)
-              Positioned(
-                bottom: 110,
-                left: 16,
-                right: 16,
-                child: _ErrorBanner(message: appState.lastError!),
-              ),
-          ],
         ),
       ),
     );
