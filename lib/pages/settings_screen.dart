@@ -80,6 +80,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: () => Navigator.of(context).pop(),
               )
             : null,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'export') _exportSettings(appState, s);
+              if (value == 'import') _importSettings(appState, s);
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'export',
+                child: Row(
+                  children: [
+                    const Icon(Icons.copy_all, size: 18),
+                    const SizedBox(width: 12),
+                    Text(s.exportSettings),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    const Icon(Icons.paste, size: 18),
+                    const SizedBox(width: 12),
+                    Text(s.importSettings),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -178,32 +209,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (Platform.isWindows && _updateInfo != null)
             _buildUpdateSection(theme, s),
-          ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-            leading: Icon(Icons.copy_all, color: theme.iconTheme.color),
-            title: Text(s.exportSettings, style: theme.textTheme.bodyLarge),
-            subtitle: Text(
-              s.settingsCopied,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-              ),
-            ),
-            onTap: () => _exportSettings(appState, s),
-          ),
-          ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-            leading: Icon(Icons.paste, color: theme.iconTheme.color),
-            title: Text(s.importSettings, style: theme.textTheme.bodyLarge),
-            subtitle: Text(
-              s.settingsImported,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-              ),
-            ),
-            onTap: () => _importSettings(appState, s),
-          ),
         ],
       ),
     );
