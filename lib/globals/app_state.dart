@@ -119,6 +119,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Live throughput stream — use with StreamBuilder for zero-rebuild stats UI.
+  Stream<VpnStats> get statsStream => _vpn.watchStats();
+
+  /// Live connection status stream — use with StreamBuilder for session timer.
+  Stream<ConnectionStatus> get statusStream => _vpn.watchStatus();
+
   /// Whether the VPN service is in an auto-reconnect cycle after a crash.
   bool get isReconnecting {
     final vpn = _vpn;

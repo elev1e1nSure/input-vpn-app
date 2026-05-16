@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -13,6 +14,9 @@ import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/tray_manager.dart';
+import 'package:input_vpn/functions/country_code_to_emoji.dart';
+import 'package:input_vpn/models/connection_status.dart';
+import 'package:input_vpn/models/vpn_stats.dart';
 import 'package:input_vpn/vpn_server.dart';
 import 'package:provider/provider.dart';
 
@@ -279,8 +283,79 @@ class _Sidebar extends StatelessWidget {
               onTap: () => onItemSelected(2),
             ),
             const Spacer(),
+            _SidebarStatus(expanded: expanded),
+            const SizedBox(height: 12),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Status dot + version label at the bottom of the sidebar.
+class _SidebarStatus extends StatelessWidget {
+  const _SidebarStatus({required this.expanded});
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isConnected =
+        context.select<AppState, bool>((a) => a.isConnected);
+    final dotColor = isConnected
+        ? const Color(0xFF34C759)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.25);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: AnimatedOpacity(
+        opacity: expanded ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 150),
+        child: expanded
+            ? Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: dotColor,
+                      shape: BoxShape.circle,
+                      boxShadow: isConnected
+                          ? [BoxShadow(color: dotColor.withValues(alpha: 0.6), blurRadius: 6)]
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isConnected ? 'Connected' : 'Disconnected',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'v1.0.5',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 10,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                    ),
+                  ),
+                ],
+              )
+            : Center(
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                    boxShadow: isConnected
+                        ? [BoxShadow(color: dotColor.withValues(alpha: 0.6), blurRadius: 6)]
+                        : null,
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -407,7 +482,7 @@ class _HomeTab extends StatelessWidget {
     final reconnectAttempt =
         context.select<AppState, int>((a) => a.reconnectAttempt);
 
-    final titleText = !hasServer
+    final statusText = !hasServer
         ? s.connectInOneMinute
         : isReconnecting
             ? s.reconnecting(reconnectAttempt, 3)
@@ -422,7 +497,11 @@ class _HomeTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(titleText),
+        title: isConnected
+            ? _SessionTimer(fallback: statusText)
+            : Text(statusText),
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
+        centerTitle: false,
         actions: [
           MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -463,16 +542,15 @@ class _HomeTab extends StatelessWidget {
                               },
                             ),
                           ),
-                          if (Platform.isWindows) ...[
-                            const SizedBox(height: 12),
-                            const _ModeToggle(),
+                          if (hasServer) ...[
+                            const SizedBox(height: 16),
+                            const _StatsRow(),
                           ],
                           if (hasServer) ...[
                             const SizedBox(height: 8),
                             _PublicIpText(theme: theme),
                           ],
                           const SizedBox(height: 16),
-                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
@@ -669,6 +747,7 @@ class _ServerCard extends StatelessWidget {
           ),
           child: Row(
             children: [
+              // Country flag or fallback globe icon
               Container(
                 width: 40,
                 height: 40,
@@ -677,11 +756,16 @@ class _ServerCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Icon(
-                    Icons.public,
-                    size: 20,
-                    color: theme.iconTheme.color?.withValues(alpha: 0.3),
-                  ),
+                  child: server != null && server.flagCode.isNotEmpty
+                      ? Text(
+                          countryCodeToEmoji(server.flagCode),
+                          style: const TextStyle(fontSize: 20),
+                        )
+                      : Icon(
+                          Icons.public,
+                          size: 20,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.3),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -706,6 +790,9 @@ class _ServerCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // Ping badge when connected
+              _PingBadge(theme: theme),
+
             ],
           ),
         ),
@@ -731,99 +818,183 @@ class _ErrorOverlay extends StatelessWidget {
   }
 }
 
-/// VPN / SOCKS5 toggle pill row — only rebuilds when isProxyMode changes.
-class _ModeToggle extends StatelessWidget {
-  const _ModeToggle();
+/// Session timer shown in AppBar when connected.
+/// Uses StreamBuilder on statusStream — no notifyListeners needed.
+class _SessionTimer extends StatefulWidget {
+  const _SessionTimer({required this.fallback});
+  final String fallback;
+
+  @override
+  State<_SessionTimer> createState() => _SessionTimerState();
+}
+
+class _SessionTimerState extends State<_SessionTimer> {
+  Timer? _tick;
+  DateTime? _since;
+
+  @override
+  void initState() {
+    super.initState();
+    final appState = AppState.of(context, listen: false);
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+    // Pull the connected-since time from the current status.
+    appState.statusStream.listen((status) {
+      if (!mounted) return;
+      if (status is Connected) {
+        setState(() => _since = status.since);
+      } else {
+        setState(() => _since = null);
+      }
+    });
+    // Seed from current status immediately.
+    final cur = appState.statusStream;
+    cur.first.then((s) {
+      if (!mounted) return;
+      if (s is Connected) setState(() => _since = s.since);
+    }).ignore();
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  String _fmt(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return h > 0 ? '$h:$m:$s' : '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final since = _since;
+    if (since == null) return Text(widget.fallback);
+    final elapsed = DateTime.now().difference(since);
+    return Text('${widget.fallback}  ·  ${_fmt(elapsed)}');
+  }
+}
+
+/// Download / Upload speed row — uses StreamBuilder, zero AppState rebuilds.
+class _StatsRow extends StatelessWidget {
+  const _StatsRow();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final s = AppStrings.of(context);
-    final isProxy = context.select<AppState, bool>((a) => a.isProxyMode);
     final appState = AppState.of(context, listen: false);
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => appState.setProxyMode(!isProxy),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: theme.dividerTheme.color ??
-                  theme.colorScheme.onSurface.withValues(alpha: 0.1),
+    final isConnected = context.select<AppState, bool>((a) => a.isConnected);
+
+    if (!isConnected) return const SizedBox.shrink();
+
+    return StreamBuilder<VpnStats>(
+      stream: appState.statsStream,
+      initialData: VpnStats.empty,
+      builder: (context, snap) {
+        final stats = snap.data ?? VpnStats.empty;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _StatChip(
+              icon: Icons.arrow_downward_rounded,
+              color: const Color(0xFF34C759),
+              label: stats.downloadHuman,
+              theme: theme,
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ModePill(
-                label: s.vpnLabel,
-                icon: Icons.shield,
-                active: !isProxy,
-                theme: theme,
-              ),
-              _ModePill(
-                label: s.socks5Label,
-                icon: Icons.wifi_tethering,
-                active: isProxy,
+            const SizedBox(width: 16),
+            _StatChip(
+              icon: Icons.arrow_upward_rounded,
+              color: const Color(0xFF007AFF),
+              label: stats.uploadHuman,
+              theme: theme,
+            ),
+            if (stats.pingMs > 0) ...[
+              const SizedBox(width: 16),
+              _StatChip(
+                icon: Icons.network_ping_rounded,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                label: '${stats.pingMs} ms',
                 theme: theme,
               ),
             ],
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _ModePill extends StatelessWidget {
-  const _ModePill({
-    required this.label,
+class _StatChip extends StatelessWidget {
+  const _StatChip({
     required this.icon,
-    required this.active,
+    required this.color,
+    required this.label,
     required this.theme,
   });
-
-  final String label;
   final IconData icon;
-  final bool active;
+  final Color color;
+  final String label;
   final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-      decoration: BoxDecoration(
-        color: active ? theme.colorScheme.primary : null,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 12,
-            color: active
-                ? Colors.white
-                : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 12,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
-          const SizedBox(width: 5),
-          Text(
-            label,
+        ),
+      ],
+    );
+  }
+}
+
+/// Ping indicator in server card — updates via statsStream.
+class _PingBadge extends StatelessWidget {
+  const _PingBadge({required this.theme});
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final isConnected = context.select<AppState, bool>((a) => a.isConnected);
+    if (!isConnected) return const SizedBox.shrink();
+    final appState = AppState.of(context, listen: false);
+    return StreamBuilder<VpnStats>(
+      stream: appState.statsStream,
+      builder: (context, snap) {
+        final ping = snap.data?.pingMs ?? 0;
+        if (ping <= 0) return const SizedBox.shrink();
+        final color = ping < 100
+            ? const Color(0xFF34C759)
+            : ping < 250
+                ? const Color(0xFFFF9500)
+                : const Color(0xFFFF3B30);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '$ping ms',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: active
-                  ? Colors.white
-                  : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-              fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
