@@ -28,13 +28,13 @@ class SingboxServiceManager {
     if (!Platform.isWindows) return false;
     AppLogger.info('ServiceManager: installing service');
     try {
-      // sc create InputVPNService binpath= "C:\...\sing-box.exe run -c C:\...\config.json --disable-color" start= demand
+      // sc.exe requires key=value as a single token (no space between = and value).
       final binPath = '"$exePath" run -c "$configPath" --disable-color';
       final result = await _runElevated('sc', [
         'create', serviceName,
-        'binpath=', binPath,
-        'start=', 'demand',
-        'DisplayName=', serviceDisplayName,
+        'binpath=$binPath',
+        'start=demand',
+        'DisplayName=$serviceDisplayName',
       ]);
       if (result) {
         AppLogger.info('ServiceManager: service installed successfully');
@@ -172,20 +172,35 @@ class SingboxServiceManager {
     final ps1Path    = '$tempDir\\inputvpn_elev.ps1';
     final resultPath = '$tempDir\\inputvpn_elev_exit.txt';
 
-    // In PS1 single-quoted strings, the only escape is '' for a literal '.
-    String psQ(String s) => "'${s.replaceAll("'", "''")}'";
+    // Escape a value for a PS1 double-quoted string.
+    // We wrap each argument in a double-quoted PS1 string literal so that
+    // PowerShell passes it as a single token to sc.exe (preserving spaces
+    // and embedded double-quotes, which we escape as `").
+    String psArg(String s) {
+      // Inside PS1 double-quoted strings: escape $ ` " with backtick.
+      final escaped = s
+          .replaceAll('`', '``')
+          .replaceAll('"', '`"')
+          .replaceAll(r'$', '`\$');
+      return '"$escaped"';
+    }
 
-    // Build the PowerShell call-operator argument list: 'sc.exe' 'create' …
-    final psArgList = [exeName, ...args].map(psQ).join(' ');
+    // Build PS1: assign each argument to an array element, then splat.
+    //   $a = @( 'sc.exe', 'create', 'InputVPNService', 'binpath=...', ... )
+    //   & $a[0] $a[1..($a.Length-1)]
+    final allArgs = [exeName, ...args];
+    final arrayItems = allArgs.map(psArg).join(',\n  ');
 
-    // The PS1 script: run the command, capture $LASTEXITCODE, write to file.
-    final ps1Content = [
-      r'$code = 0',
-      '& $psArgList 2>&1 | Out-Null',
-      r'$code = $LASTEXITCODE',
-      "[System.IO.File]::WriteAllText(${psQ(resultPath)}, \$code.ToString())",
-      r'exit $code',
-    ].join('\n').replaceAll(r'$psArgList', psArgList);
+    final ps1Content = '''
+\$a = @(
+  $arrayItems
+)
+\$out = & \$a[0] \$a[1..(\$a.Length-1)] 2>&1
+\$code = \$LASTEXITCODE
+Write-Host \$out
+[System.IO.File]::WriteAllText(${psArg(resultPath)}, \$code.ToString())
+exit \$code
+''';
 
     await File(ps1Path).writeAsString(ps1Content, flush: true);
 
@@ -196,7 +211,7 @@ class SingboxServiceManager {
         '-NonInteractive',
         '-Command',
         'Start-Process powershell.exe '
-            "-ArgumentList @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',${psQ(ps1Path)}) "
+            "-ArgumentList @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',${psArg(ps1Path)}) "
             '-Verb RunAs -Wait',
       ]);
 
