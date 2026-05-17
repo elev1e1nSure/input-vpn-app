@@ -170,6 +170,7 @@ iscc installer.iss
 В `.github/workflows/release.yaml` настроен автобилд:
 - Триггер: push тега `v*`.
 - Собирает `flutter build windows --release`.
-- Упаковывает в ZIP и публикует в GitHub Releases.
-
-Inno Setup в CI пока не запускается — только ZIP. Если нужен `.exe` установщик, собирай локально или допиши шаг в `release.yaml`.
+- Устанавливает Inno Setup через `choco` и собирает `.exe` установщик.
+- Публикует в GitHub Releases два артефакта:
+  - `input-vpn-windows-{tag}.zip` (портативная версия)
+  - `InputVPN-Setup.exe` (установщик)
