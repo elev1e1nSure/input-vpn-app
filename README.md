@@ -21,11 +21,13 @@
 ## Features
 
 - **Protocols** — VLESS, VMess, Trojan, Shadowsocks (incl. REALITY).
-- **System VPN (TUN)** — full-system tunnel, requires one-time UAC elevation.
-- **SOCKS5 Proxy mode** — local proxy on `127.0.0.1:11080` without UAC (great for testing or split setups).
+- **System VPN (TUN)** — full-system tunnel; UAC is requested **once** on first launch and never again.
+- **SOCKS5 Proxy mode** — local proxy on `127.0.0.1:11080`, no admin rights needed.
 - **Subscriptions** — add a single link or an entire subscription URL (Base64 / plain text).
 - **Server management** — latency display, selection, rename, edit, delete.
-- **Live stats** — real-time upload / download speed and total traffic via Clash API.
+- **Live stats** — real-time upload / download speed, total traffic, and ping on the main screen.
+- **Crash watchdog** — auto-reconnects if the VPN core exits unexpectedly.
+- **Event log** — timestamped connection history and error log.
 - **Split tunneling** — choose which apps bypass the VPN (Windows settings).
 - **DNS presets** — switch between Cloudflare, Google, Quad9, or custom DNS.
 - **Tray mode** — minimize to system tray instead of closing.
@@ -47,9 +49,9 @@
 2. **Select & connect**
    - Tap the server you want to use.
    - Press the big **power button** on the home screen.
-   - First TUN connection will show a **UAC prompt** — this is normal.
+   - On the very first launch the app registers a background task — you will see **one UAC prompt**. After that, connects are silent.
 3. **Done!**
-   - The top bar shows your IP, ping, and live traffic stats.
+   - Your public IP, ping, and live traffic stats appear on the main screen.
 
 ## Settings
 
@@ -68,16 +70,16 @@
 | Symptom | Fix |
 |---------|-----|
 | "VPN engine failed to start" | Make sure `sing-box.exe` is bundled with the app (it ships inside the installer). |
-| UAC prompt every time | Expected for full TUN mode. Enable **SOCKS Debug Mode** in Settings if you want to avoid it. |
+| UAC prompt on every connect | Should only happen on the very first launch. If it repeats, delete `%APPDATA%\com.example\Input VPN\` to reset app state. |
 | No traffic / 0 KB/s | The server may be offline or the config has an invalid UUID/SNI. Test the same config in another client. |
-| App won't start / crashes on launch | Delete `%APPDATA%\com.example\Input VPN\` to clear corrupted local state. |
+| App won't start / crashes on launch | Delete `%APPDATA%\com.example\Input VPN\singbox\` to clear corrupted config and logs. |
 | Latency shows "—" | The server is unreachable or the ICMP ping is blocked by the remote host. |
 
 ## System Requirements
 
 - Windows 10 version 1809+ or Windows 11
 - 64-bit (x64) architecture
-- Administrator rights (only for TUN mode)
+- Administrator rights (once, on first launch only)
 
 ## For Developers
 
