@@ -278,6 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await appState.toggleConnection();
       }
 
+      if (!mounted) return;
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
