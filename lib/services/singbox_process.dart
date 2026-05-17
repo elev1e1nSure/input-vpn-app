@@ -150,19 +150,10 @@ class SingBoxProcess {
         // Fall back to legacy elevated launch so the user isn't stuck.
         AppLogger.warn('SingBoxProcess: service not installed — falling back to elevated launch');
       } else {
-        // Update binpath so the service uses the latest config path.
-        // sc.exe requires key=value as one token — no space after '='.
-        final binPath =
-            '"$exe" run -c "${configFile.path}" --disable-color';
-        await Process.run('sc.exe', [
-          'config', SingboxServiceManager.serviceName,
-          'binpath=$binPath',
-        ]);
-        // Kill any orphaned sing-box.exe before starting the service,
-        // otherwise sc start will hang/fail if the TUN is already held.
-        await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
+        // start() updates the task's command to the current config path
+        // and runs it as SYSTEM instantly via schtasks /run.
         await NetworkUtils.globalCleanup();
-        final ok = await SingboxServiceManager.start();
+        final ok = await SingboxServiceManager.start(exe, configFile.path);
         if (!ok) {
           throw const SingBoxStartException('Windows Service failed to start.');
         }
