@@ -138,11 +138,11 @@ iscc installer.iss
 
 | Симптом | Причина / Решение |
 |---------|-------------------|
-| `VPN engine failed to start` | Нет `sing-box.exe` в `windows/runner/resources/` или не та версия. Лог: `%APPDATA%\com.example\Input VPN\singbox\app.log`. |
-| UAC-запрос при каждом подключении | Должно быть только при первом запуске. Если повторяется — удали Scheduled Task: `schtasks /delete /f /tn InputVPNSingBox` и перезапусти приложение. |
+| `VPN engine failed to start` | Нет `sing-box.exe` в `windows/runner/resources/` или не та версия. Лог: `%APPDATA%\inputvpn\Input VPN\singbox\app.log`. |
+| UAC-запрос при каждом подключении | Должно быть только при первом запуске. Если повторяется — выполни `schtasks /delete /f /tn InputVPNSingBox` и перезапусти приложение. |
 | Туннель `InputVPNTun` остаётся в `ncpa.cpl` после закрытия | Пофиксено: при закрытии окна теперь есть таймаут 10 с на disconnect + принудительный `Remove-NetAdapter`. |
 | Отключение VPN очень долгое | Пофиксено: cleanup теперь один вызов PowerShell вместо 4 отдельных процессов. |
-| Приложение не запускается после сборки | Удали `%APPDATA%\com.example\Input VPN\singbox\` — может быть битый `config.json` или `app.log`. |
+| Приложение не запускается после сборки | Удали `%APPDATA%\inputvpn\Input VPN\singbox\` — может быть битый `config.json` или `app.log`. |
 | Inno Setup не находит `iscc` | Не добавлен в PATH. Или запускай через GUI. |
 | Ошибка линковки в CMake | Не установлен Visual Studio 2022 с workload C++ desktop. |
 
@@ -156,8 +156,8 @@ iscc installer.iss
 | `wintun.dll` | Драйвер TUN-интерфейса для Windows. |
 | TUN-адаптер `InputVPNTun` | Виртуальная сетевая карта, видна в `ncpa.cpl`. Создаётся при подключении, удаляется при отключении. |
 | Clash API `127.0.0.1:9090` | HTTP API sing-box для мониторинга трафика и пинга. Приложение опрашивает его каждые 2 с. |
-| `%APPDATA%\com.example\Input VPN\singbox\config.json` | Конфиг sing-box, генерируется автоматически при каждом подключении. |
-| `%APPDATA%\com.example\Input VPN\singbox\app.log` | Журнал событий приложения. Первое место смотреть при ошибках. |
+| `%APPDATA%\inputvpn\Input VPN\singbox\config.json` | Конфиг sing-box, генерируется автоматически при каждом подключении. |
+| `%APPDATA%\inputvpn\Input VPN\singbox\app.log` | Журнал событий приложения. Первое место смотреть при ошибках. |
 
 **Два режима работы:**
 - **TUN mode** (по умолчанию) — весь трафик ОС идёт через VPN. UAC запрашивается **один раз** при первом запуске (регистрация Scheduled Task). Адаптер виден в `ncpa.cpl`.

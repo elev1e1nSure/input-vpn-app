@@ -70,9 +70,9 @@
 | Symptom | Fix |
 |---------|-----|
 | "VPN engine failed to start" | Make sure `sing-box.exe` is bundled with the app (it ships inside the installer). |
-| UAC prompt on every connect | Should only happen on the very first launch. If it repeats, delete `%APPDATA%\com.example\Input VPN\` to reset app state. |
+| UAC prompt on every connect | Should only happen on the very first launch. If it repeats, delete `%APPDATA%\inputvpn\Input VPN\` to reset app state. |
 | No traffic / 0 KB/s | The server may be offline or the config has an invalid UUID/SNI. Test the same config in another client. |
-| App won't start / crashes on launch | Delete `%APPDATA%\com.example\Input VPN\singbox\` to clear corrupted config and logs. |
+| App won't start / crashes on launch | Delete `%APPDATA%\inputvpn\Input VPN\singbox\` to clear corrupted config and logs. |
 | Latency shows "—" | The server is unreachable or the ICMP ping is blocked by the remote host. |
 
 ## System Requirements
