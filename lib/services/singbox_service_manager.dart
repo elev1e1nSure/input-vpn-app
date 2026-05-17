@@ -203,6 +203,7 @@ exit \$code
 ''';
 
     await File(ps1Path).writeAsString(ps1Content, flush: true);
+    AppLogger.info('ServiceManager: PS1 content:\n$ps1Content');
 
     try {
       // Outer (non-elevated) PowerShell launches the PS1 elevated and waits.
