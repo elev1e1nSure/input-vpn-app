@@ -27,7 +27,7 @@ class SettingsScreen extends StatefulWidget {
 
 @NowaGenerated()
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const String _currentVersion = '1.0.5';
+  static const String _currentVersion = '1.1.0';
   bool _checking = false;
   bool _showAdvanced = false;
   UpdateInfo? _updateInfo;

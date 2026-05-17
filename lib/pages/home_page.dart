@@ -428,7 +428,7 @@ class _SidebarStatus extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'v1.0.5',
+                    'v1.1.0',
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontSize: 10,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
