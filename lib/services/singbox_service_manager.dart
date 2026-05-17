@@ -30,15 +30,24 @@ class SingboxServiceManager {
     try {
       // sc.exe requires key=value as a single token (no space between = and value).
       final binPath = '"$exePath" run -c "$configPath" --disable-color';
-      final result = await _runElevated('sc', [
+      final scArgs = [
         'create', serviceName,
         'binpath=$binPath',
         'start=demand',
         'DisplayName=$serviceDisplayName',
-      ]);
+      ];
+
+      // Try direct sc.exe first (succeeds if app is already elevated).
+      final direct = await Process.run('sc.exe', scArgs);
+      debugPrint('sc create direct: exit=${direct.exitCode} '
+          'stdout=${direct.stdout} stderr=${direct.stderr}');
+
+      final result = direct.exitCode == 0
+          ? true
+          : await _runElevated('sc', scArgs); // fallback: UAC prompt
+
       if (result) {
         AppLogger.info('ServiceManager: service installed successfully');
-        // Grant the current user permission to start/stop without UAC.
         await _grantServicePermissions();
       } else {
         AppLogger.error('ServiceManager: installation failed');
@@ -203,7 +212,6 @@ exit \$code
 ''';
 
     await File(ps1Path).writeAsString(ps1Content, flush: true);
-    AppLogger.info('ServiceManager: PS1 content:\n$ps1Content');
 
     try {
       // Outer (non-elevated) PowerShell launches the PS1 elevated and waits.
