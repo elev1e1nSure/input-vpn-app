@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 
-@NowaGenerated()
 class InfoScreen extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const InfoScreen({super.key, required this.title, required this.content});
 
   final String title;

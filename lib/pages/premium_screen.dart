@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
 
-@NowaGenerated()
 class PremiumScreen extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const PremiumScreen({super.key});
 
   @override

@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:input_vpn/config_type.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/services/vpn_url_parser.dart';
 
-@NowaGenerated()
 class AddConfigScreen extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const AddConfigScreen({
     super.key,
     required this.onBack,
@@ -28,7 +25,6 @@ class AddConfigScreen extends StatefulWidget {
   }
 }
 
-@NowaGenerated()
 class _AddConfigScreenState extends State<AddConfigScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _configController;

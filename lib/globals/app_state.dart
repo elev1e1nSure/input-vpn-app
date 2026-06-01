@@ -42,7 +42,6 @@ VpnService _defaultVpnBackend() {
   return MockVpnService();
 }
 
-@NowaGenerated()
 class AppState extends ChangeNotifier {
   AppState({VpnService? vpnService, SubscriptionService? subscriptionService})
       : _vpn = vpnService ?? _defaultVpnBackend(),

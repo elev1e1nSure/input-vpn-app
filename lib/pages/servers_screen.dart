@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/vpn_server.dart';
 
-@NowaGenerated()
 class ServersScreen extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const ServersScreen({
     super.key,
     required this.onSwitchToAddConfig,

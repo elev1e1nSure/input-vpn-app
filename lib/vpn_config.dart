@@ -1,7 +1,5 @@
 import 'package:input_vpn/config_type.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 
-@NowaGenerated()
 class VpnConfig {
   const VpnConfig({
     required this.id,

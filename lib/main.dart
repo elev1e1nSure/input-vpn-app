@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +15,6 @@ import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 
-@NowaGenerated()
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
@@ -87,9 +85,7 @@ Future<void> _cleanupSingBoxProcesses() async {
   }
 }
 
-@NowaGenerated({'visibleInNowa': false})
 class MyApp extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const MyApp({super.key});
 
   @override

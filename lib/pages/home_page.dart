@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/pages/settings_screen.dart';
 import 'package:input_vpn/pages/servers_screen.dart';
@@ -18,9 +17,7 @@ import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/vpn_server.dart';
 import 'package:provider/provider.dart';
 
-@NowaGenerated()
 class HomePage extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const HomePage({super.key});
 
   @override
@@ -547,9 +544,7 @@ class _SidebarItemState extends State<_SidebarItem> {
   }
 }
 
-@NowaGenerated()
 class _HomeTab extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const _HomeTab({required this.onSwitchToServers});
 
   final VoidCallback onSwitchToServers;

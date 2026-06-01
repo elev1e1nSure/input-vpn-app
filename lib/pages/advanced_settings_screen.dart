@@ -2,12 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/widgets/settings_tiles.dart';
 
-@NowaGenerated()
 class AdvancedSettingsScreen extends StatelessWidget {
   const AdvancedSettingsScreen({super.key, this.onBack});
 

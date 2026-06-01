@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:input_vpn/globals/app_state.dart';
 
 import 'package:input_vpn/globals/themes.dart';
@@ -14,9 +13,7 @@ import 'package:input_vpn/pages/custom_dns_screen.dart';
 import 'package:input_vpn/services/update_service.dart';
 import 'package:input_vpn/widgets/settings_tiles.dart';
 
-@NowaGenerated()
 class SettingsScreen extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const SettingsScreen({super.key});
 
   @override
@@ -25,7 +22,6 @@ class SettingsScreen extends StatefulWidget {
   }
 }
 
-@NowaGenerated()
 class _SettingsScreenState extends State<SettingsScreen> {
   static const String _currentVersion = '1.1.0';
   bool _checking = false;

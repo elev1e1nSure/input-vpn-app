@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 
-@NowaGenerated()
 class CustomDnsScreen extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const CustomDnsScreen({super.key});
 
   @override

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 
-@NowaGenerated()
 class SplitTunnelingScreen extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const SplitTunnelingScreen({super.key});
 
   @override
@@ -12,7 +9,6 @@ class SplitTunnelingScreen extends StatefulWidget {
   }
 }
 
-@NowaGenerated()
 class _SplitTunnelingScreenState extends State<SplitTunnelingScreen> {
   bool app1 = false;
 
