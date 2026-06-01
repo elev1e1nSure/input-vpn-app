@@ -30,6 +30,9 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTT
 # Disable Windows macros that collide with C++ standard library functions.
 target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 
+# Request administrator privileges on Windows for Wintun TUN device.
+target_link_options(${BINARY_NAME} PRIVATE /MANIFESTUAC:"level='requireAdministrator'")
+
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
@@ -43,7 +46,7 @@ add_dependencies(${BINARY_NAME} flutter_assemble)
 # Copy sing-box.exe and wintun.dll next to the runner so the app can spawn
 # the VPN core process at runtime.
 set(VPN_RESOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
-foreach(VPN_BIN "sing-box.exe" "wintun.dll")
+foreach(VPN_BIN "sing-box.exe" "wintun.dll" "singbox_core.dll")
   if(EXISTS "${VPN_RESOURCES_DIR}/${VPN_BIN}")
     add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different

@@ -81,9 +81,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               )
             : null,
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
               if (value == 'export') _exportSettings(appState, s);
               if (value == 'import') _importSettings(appState, s);
             },
@@ -110,9 +112,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-        ],
-      ),
-      body: ListView(
+        ),
+      ],
+    ),
+    body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
           const SizedBox(height: 8),

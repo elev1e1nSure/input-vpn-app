@@ -10,10 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/services/app_logger.dart';
+import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/singbox_service_manager.dart';
 import 'package:input_vpn/globals/router.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 
@@ -26,9 +25,10 @@ void main() async {
   // Cleanup any orphaned sing-box processes from previous runs
   if (Platform.isWindows) {
     await _cleanupSingBoxProcesses();
-    // Install sing-box as a Windows Service on first launch (one UAC prompt).
-    // After that, connections require no elevation at all.
-    unawaited(_ensureServiceInstalled());
+    // Check for and clean up unhealthy TUN adapters from previous crashes
+    await NetworkUtils.cleanupIfUnhealthy();
+    // Sync the serviceMode flag with reality (task may have been removed).
+    await _syncServiceModeFlag();
   }
 
   if (!kIsWeb && Platform.isWindows) {
@@ -41,51 +41,39 @@ void main() async {
     }
   }
 
+  // Best-effort cleanup on Ctrl+C / terminal kill / app termination.
+  if (Platform.isWindows) {
+    ProcessSignal.sigint.watch().listen((_) async {
+      await _cleanupSingBoxProcesses();
+      await NetworkUtils.globalCleanup();
+      exit(0);
+    });
+    ProcessSignal.sigterm.watch().listen((_) async {
+      await _cleanupSingBoxProcesses();
+      await NetworkUtils.globalCleanup();
+      exit(0);
+    });
+  }
+
   runApp(const MyApp());
 }
 
-/// Installs sing-box as a Windows Service on first launch.
-/// Runs silently in the background — one UAC prompt then never again.
-Future<void> _ensureServiceInstalled() async {
+/// Sync the serviceMode preference with the actual task status.
+/// The task is installed by the Inno Setup installer; we only verify here.
+Future<void> _syncServiceModeFlag() async {
   try {
-    final alreadyInstalled = await SingboxServiceManager.isInstalled();
-    if (alreadyInstalled) {
-      // Already installed — make sure serviceMode flag matches reality.
-      if (!(sharedPrefs.getBool('serviceMode') ?? false)) {
-        await sharedPrefs.setBool('serviceMode', true);
-      }
-      AppLogger.info('ServiceManager: service already installed, skipping');
-      return;
-    }
-
-    // Service not installed but flag says it is — reset flag so app uses
-    // legacy elevated mode and doesn't throw on connect.
-    if (sharedPrefs.getBool('serviceMode') ?? false) {
-      await sharedPrefs.setBool('serviceMode', false);
-      AppLogger.warn('ServiceManager: flag was true but service missing — reset to false');
-    }
-
-    AppLogger.info('ServiceManager: first launch — installing service');
-    final exe = '${File(Platform.resolvedExecutable).parent.path}\\sing-box.exe';
-    final base = await getApplicationSupportDirectory();
-    final configPath = p.join(base.path, 'singbox', 'config.json');
-
-    final ok = await SingboxServiceManager.install(exe, configPath);
-    if (ok) {
-      // Double-check: sc query must confirm the service actually exists.
-      final verified = await SingboxServiceManager.isInstalled();
-      if (verified) {
-        await sharedPrefs.setBool('serviceMode', true);
-        AppLogger.info('ServiceManager: installed and verified — service mode enabled');
+    final installed = await SingboxServiceManager.isInstalled();
+    final currentFlag = sharedPrefs.getBool('serviceMode') ?? false;
+    if (installed != currentFlag) {
+      await sharedPrefs.setBool('serviceMode', installed);
+      if (installed) {
+        AppLogger.info('ServiceManager: task found — service mode enabled');
       } else {
-        AppLogger.error('ServiceManager: install() returned true but sc query '
-            'failed — service mode NOT enabled (UAC may have been denied)');
+        AppLogger.warn('ServiceManager: task missing — service mode disabled');
       }
-    } else {
-      AppLogger.warn('ServiceManager: installation failed — falling back to UAC mode');
     }
   } catch (e) {
-    AppLogger.error('ServiceManager: _ensureServiceInstalled error: $e');
+    AppLogger.error('ServiceManager: _syncServiceModeFlag error: $e');
   }
 }
 

@@ -15,7 +15,6 @@ import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/tray_manager.dart';
 import 'package:input_vpn/models/connection_status.dart';
-import 'package:input_vpn/models/vpn_stats.dart';
 import 'package:input_vpn/vpn_server.dart';
 import 'package:provider/provider.dart';
 
@@ -105,13 +104,14 @@ class _HomePageState extends State<HomePage> with WindowListener {
       }
     }
 
-    // Always destroy the window — even if disconnect above failed.
-    debugPrint('onWindowClose: destroying window');
+    // Always destroy the window and exit the process.
+    debugPrint('onWindowClose: destroying window and exiting');
     try {
       await windowManager.destroy();
     } catch (e) {
       debugPrint('onWindowClose: destroy error: $e');
     }
+    exit(0);
   }
 
   Widget _buildBody() {
@@ -265,36 +265,39 @@ class _ModePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: active ? theme.colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: active
-                  ? Colors.white
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: active ? theme.colorScheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
                 color: active
                     ? Colors.white
                     : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: active
+                      ? Colors.white
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -593,18 +596,6 @@ class _HomeTab extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // + button top-right
-            Positioned(
-              top: 4,
-              right: 4,
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: onSwitchToServers,
-                ),
-              ),
-            ),
             Positioned(
               top: 0,
               left: 0,
@@ -645,7 +636,6 @@ class _HomeTab extends StatelessWidget {
                           ),
                           if (hasServer) ...[
                             const SizedBox(height: 16),
-                            const _StatsRow(),
                           ],
                           const SizedBox(height: 8),
                           _PublicIpText(theme: theme),
@@ -903,9 +893,6 @@ class _ServerCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Ping badge when connected
-              _PingBadge(theme: theme),
-
             ],
           ),
         ),
@@ -975,127 +962,6 @@ class _SessionTimerState extends State<_SessionTimer> {
   }
 }
 
-/// Download / Upload speed row — uses StreamBuilder, zero AppState rebuilds.
-class _StatsRow extends StatelessWidget {
-  const _StatsRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appState = AppState.of(context, listen: false);
-    final isConnected = context.select<AppState, bool>((a) => a.isConnected);
-
-    if (!isConnected) return const SizedBox.shrink();
-
-    return StreamBuilder<VpnStats>(
-      stream: appState.statsStream,
-      initialData: VpnStats.empty,
-      builder: (context, snap) {
-        final stats = snap.data ?? VpnStats.empty;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _StatChip(
-              icon: Icons.arrow_downward_rounded,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-              label: stats.downloadHuman,
-              theme: theme,
-            ),
-            const SizedBox(width: 16),
-            _StatChip(
-              icon: Icons.arrow_upward_rounded,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-              label: stats.uploadHuman,
-              theme: theme,
-            ),
-            if (stats.pingMs > 0) ...[
-              const SizedBox(width: 16),
-              _StatChip(
-                icon: Icons.network_ping_rounded,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                label: '${stats.pingMs} ms',
-                theme: theme,
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.theme,
-  });
-  final IconData icon;
-  final Color color;
-  final String label;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: color),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontSize: 12,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Ping indicator in server card — updates via statsStream.
-class _PingBadge extends StatelessWidget {
-  const _PingBadge({required this.theme});
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final isConnected = context.select<AppState, bool>((a) => a.isConnected);
-    if (!isConnected) return const SizedBox.shrink();
-    final appState = AppState.of(context, listen: false);
-    return StreamBuilder<VpnStats>(
-      stream: appState.statsStream,
-      builder: (context, snap) {
-        final ping = snap.data?.pingMs ?? 0;
-        if (ping <= 0) return const SizedBox.shrink();
-        final color = ping < 100
-            ? const Color(0xFF34C759)
-            : ping < 250
-                ? const Color(0xFFFF9500)
-                : const Color(0xFFFF3B30);
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '$ping ms',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
 class _ErrorBanner extends StatelessWidget {
   const _ErrorBanner({required this.message});
   final String message;
@@ -1135,21 +1001,27 @@ class _ErrorBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => Clipboard.setData(ClipboardData(text: message)),
-            child: Icon(
-              Icons.content_copy,
-              color: theme.colorScheme.error,
-              size: 16,
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () => Clipboard.setData(ClipboardData(text: message)),
+              child: Icon(
+                Icons.content_copy,
+                color: theme.colorScheme.error,
+                size: 16,
+              ),
             ),
           ),
           const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => AppState.of(context, listen: false).clearError(),
-            child: Icon(
-              Icons.close,
-              color: theme.colorScheme.error,
-              size: 16,
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () => AppState.of(context, listen: false).clearError(),
+              child: Icon(
+                Icons.close,
+                color: theme.colorScheme.error,
+                size: 16,
+              ),
             ),
           ),
         ],

@@ -5,34 +5,32 @@ import 'package:input_vpn/models/connection_failure.dart';
 import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/parsed_config.dart';
 import 'package:input_vpn/models/vpn_stats.dart';
+import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/clash_api_client.dart';
+import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/singbox_config_builder.dart';
-import 'package:input_vpn/services/singbox_process.dart';
+import 'package:input_vpn/services/singbox_process_ffi.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 
-/// Real VPN backend for Windows: wraps `sing-box.exe` with a TUN device.
+/// Real VPN backend for Windows: runs `sing-box` via [SingBoxProcessFfi]
+/// (in-process DLL) for TUN mode, or via the legacy [SingBoxProcess] for
+/// SOCKS proxy mode.
 ///
 /// Lifecycle:
 ///   1. [connect] builds a sing-box config from [ParsedConfig] via
-///      [SingBoxConfigBuilder], writes it to disk, spawns `sing-box.exe`
-///      with UAC elevation (TUN requires admin), and waits for the Clash
-///      API to become reachable.
-///   2. Once ready -> emits [Connected]. A background poller drives
-///      [VpnStats] from the Clash API traffic stream.
-///   3. [disconnect] terminates the elevated sing-box process and emits
-///      [Disconnected].
-///
-/// Falls back to a clear error if the bundled binaries are missing.
+///      [SingBoxConfigBuilder], then starts sing-box (via FFI DLL or exe).
+///   2. Once the Clash API answers -> emits [Connected].
+///   3. [disconnect] calls stop on the backend and emits [Disconnected].
 class SingBoxVpnService implements VpnService {
   SingBoxVpnService({
-    SingBoxProcess? process,
+    SingBoxProcessFfi? process,
     SingBoxConfigBuilder? configBuilder,
     ClashApiClient? clashApi,
     bool proxyMode = false,
     bool serviceMode = false,
     String remoteDns = 'tls://1.1.1.1',
     String directDns = '8.8.8.8',
-  })  : _process = process ?? SingBoxProcess(),
+  })  : _process = process ?? SingBoxProcessFfi(),
         _remoteDnsServer = remoteDns,
         _directDnsServer = directDns,
         _config = configBuilder ??
@@ -45,7 +43,7 @@ class SingBoxVpnService implements VpnService {
         _proxyMode = proxyMode,
         _serviceMode = serviceMode;
 
-  final SingBoxProcess _process;
+  final SingBoxProcessFfi _process;
   SingBoxConfigBuilder _config;
   final ClashApiClient _clash;
   bool _proxyMode;
@@ -91,9 +89,7 @@ class SingBoxVpnService implements VpnService {
   ConnectionStatus _status = const Disconnected();
   StreamSubscription<TrafficSample>? _trafficSub;
   Timer? _liveCheckTimer;
-  Timer? _latencyTimer;
   Timer? _reconnectTimer;
-  int _lastLatencyMs = 0;
 
   /// Last config used for connect — kept for auto-reconnect.
   ParsedConfig? _lastConfig;
@@ -137,12 +133,10 @@ class SingBoxVpnService implements VpnService {
     _setStatus(const Connecting());
 
     try {
-      // 1) Pre-resolve the log path so sing-box writes to a file we own
-      //    (ShellExecuteEx detaches stdout, so without this we'd be blind).
+      // 1) Pre-resolve the log path so sing-box writes to a file we own.
       final ws = await _process.prepareWorkDir();
 
-      // 2) Generate config and start sing-box. TUN mode needs elevation
-      //    (UAC prompt fires here); SOCKS test mode does not.
+      // 2) Generate config and start sing-box via FFI DLL.
       final jsonStr = _config.build(config, logPath: ws.logPath);
       await _process.start(
         jsonStr,
@@ -154,10 +148,8 @@ class SingBoxVpnService implements VpnService {
       //    we fail fast when sing-box exits with a bad config.
       await _waitReadyOrFail();
 
-      // 4) Wire up traffic stream + liveness watchdog.
-      _startTrafficPump();
+      // 4) Wire up liveness watchdog only (traffic/latency pumps disabled).
       _startLivenessCheck();
-      _startLatencyProbe();
 
       _setStatus(Connected(since: DateTime.now()));
     } on SingBoxStartException catch (e) {
@@ -220,25 +212,19 @@ class SingBoxVpnService implements VpnService {
   Future<void> _hardStop() async {
     await _trafficSub?.cancel();
     _liveCheckTimer?.cancel();
-    _latencyTimer?.cancel();
     _reconnectTimer?.cancel();
     _trafficSub = null;
     _liveCheckTimer = null;
-    _latencyTimer = null;
     _reconnectTimer = null;
     _statsCtrl.add(VpnStats.empty);
     await _process.stop();
-  }
 
-  void _startTrafficPump() {
-    _trafficSub?.cancel();
-    _trafficSub = _clash.watchTraffic().listen((t) {
-      _statsCtrl.add(VpnStats(
-        downloadBytesPerSec: t.downBps,
-        uploadBytesPerSec: t.upBps,
-        pingMs: _lastLatencyMs,
-      ));
-    });
+    AppLogger.info('SingBoxVpnService: ensuring TUN cleanup after stop');
+    try {
+      await NetworkUtils.globalCleanup();
+    } catch (e) {
+      AppLogger.error('SingBoxVpnService: cleanup failed in _hardStop: $e');
+    }
   }
 
   /// If the child process dies unexpectedly, try to reconnect with
@@ -280,9 +266,7 @@ class SingBoxVpnService implements VpnService {
           serviceMode: _serviceMode,
         );
         await _waitReadyOrFail();
-        _startTrafficPump();
         _startLivenessCheck();
-        _startLatencyProbe();
         _reconnectAttempt = 0;
         _setStatus(Connected(since: DateTime.now()));
       } catch (_) {
@@ -290,20 +274,6 @@ class SingBoxVpnService implements VpnService {
         _scheduleReconnect();
       }
     });
-  }
-
-  void _startLatencyProbe() {
-    _latencyTimer?.cancel();
-    // First probe immediately, then every 15s.
-    _probeLatency();
-    _latencyTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      _probeLatency();
-    });
-  }
-
-  Future<void> _probeLatency() async {
-    final ms = await _clash.measureLatency();
-    if (ms > 0) _lastLatencyMs = ms;
   }
 
   @override

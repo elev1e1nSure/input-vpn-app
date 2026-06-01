@@ -238,32 +238,40 @@ class SingBoxProcess {
       }
       _normalProc = null;
     } else if (pid != 0) {
-      // Elevated: taskkill
-      try {
-        // Try soft first
-        await Process.run('taskkill', ['/PID', '$pid', '/T']);
+      // Elevated: the Flutter process cannot kill a higher-IL process directly.
+      // Use the SYSTEM-level InputVPNStop scheduled task which has SeDebugPrivilege.
+      final stoppedViaSchtask = await SingboxServiceManager.stopViaSchtask();
 
-        // Wait a bit for graceful exit (max ~1 s)
-        int retry = 0;
-        while (retry < 5 && await isProcessAlive()) {
-          await Future<void>.delayed(const Duration(milliseconds: 200));
-          retry++;
-        }
+      if (!stoppedViaSchtask) {
+        // Fallback: direct taskkill (works if app is elevated or stop task missing)
+        try {
+          await Process.run('taskkill', ['/PID', '$pid', '/T']);
 
-        // If still alive, force kill
-        if (await isProcessAlive()) {
-          await Process.run('taskkill', ['/PID', '$pid', '/T', '/F']);
+          int retry = 0;
+          while (retry < 5 && await isProcessAlive()) {
+            await Future<void>.delayed(const Duration(milliseconds: 200));
+            retry++;
+          }
+
+          if (await isProcessAlive()) {
+            await Process.run('taskkill', ['/PID', '$pid', '/T', '/F']);
+          }
+        } catch (e) {
+          debugPrint('SingBoxProcess: taskkill error: $e');
         }
-      } catch (e) {
-        debugPrint('SingBoxProcess: taskkill error: $e');
       }
     }
 
     // Double check by name as a safety net
     if (await _isSingBoxRunningByName()) {
       try {
-        await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F', '/T']);
+        await SingboxServiceManager.stopViaSchtask();
       } catch (_) {}
+      if (await _isSingBoxRunningByName()) {
+        try {
+          await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F', '/T']);
+        } catch (_) {}
+      }
     }
 
     if (_processHandle != 0) {
@@ -290,7 +298,9 @@ class SingBoxProcess {
     required String workingDir,
   }) {
     final shellInfo = calloc<SHELLEXECUTEINFO>();
-    final exeUtf16 = exe.toNativeUtf16();
+    // Quote the executable path itself if it contains spaces.
+    final quotedExe = exe.contains(' ') ? '"$exe"' : exe;
+    final exeUtf16 = quotedExe.toNativeUtf16();
     final verbUtf16 = 'runas'.toNativeUtf16();
     // Quote arguments that contain spaces.
     final argString = args.map((a) => a.contains(' ') ? '"$a"' : a).join(' ');
@@ -330,6 +340,11 @@ class SingBoxProcess {
       }
       final pid = GetProcessId(hProc);
       _processHandle = hProc;
+
+      // Give the elevated child a moment to own its handles before callers
+      // poll isProcessAlive() or extractFatalError().
+      sleep(const Duration(milliseconds: 600));
+
       return pid;
     } finally {
       calloc.free(exeUtf16);

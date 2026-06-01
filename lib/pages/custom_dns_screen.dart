@@ -54,14 +54,20 @@ class _CustomDnsScreenState extends State<CustomDnsScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () =>
-                              _showEditor(appState, s, profile: profile),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () =>
+                                _showEditor(appState, s, profile: profile),
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _confirmDelete(appState, s, profile),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => _confirmDelete(appState, s, profile),
+                          ),
                         ),
                       ],
                     ),

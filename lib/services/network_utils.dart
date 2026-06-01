@@ -73,4 +73,54 @@ class NetworkUtils {
         'netsh', ['interface', 'show', 'interface', 'name=$tunInterfaceName']);
     return result.exitCode == 0;
   }
+
+  /// Checks if the TUN interface is in a healthy state.
+  /// Returns false if the interface exists but is in a broken state
+  /// (e.g., "Up" but without IP, or stuck in Windows).
+  static Future<bool> isTunHealthy() async {
+    if (!Platform.isWindows) return true;
+
+    try {
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        '''
+        Get-NetAdapter | Where-Object { \$_.Name -like "InputVPN*" } | ForEach-Object {
+          \$adapter = \$_
+          \$ipConfig = Get-NetIPAddress -InterfaceAlias \$_.Name -ErrorAction SilentlyContinue
+          if (\$adapter.Status -eq "Up" -and (!\$ipConfig -or \$ipConfig.Count -eq 0)) {
+            Write-Output "UNHEALTHY"
+          } elseif (\$adapter.Status -eq "Disconnected" -and \$ipConfig) {
+            Write-Output "UNHEALTHY"
+          } else {
+            Write-Output "HEALTHY"
+          }
+        }
+        ''',
+      ]);
+
+      final output = (result.stdout as String).trim();
+      return !output.contains('UNHEALTHY');
+    } catch (e) {
+      debugPrint('NetworkUtils: isTunHealthy error: $e');
+      return true;
+    }
+  }
+
+  /// Performs cleanup if the TUN interface is unhealthy.
+  /// Returns true if cleanup was performed, false otherwise.
+  static Future<bool> cleanupIfUnhealthy() async {
+    if (!Platform.isWindows) return false;
+
+    final isHealthy = await isTunHealthy();
+    if (isHealthy) {
+      debugPrint('NetworkUtils: TUN interface is healthy, no cleanup needed');
+      return false;
+    }
+
+    debugPrint('NetworkUtils: TUN interface is unhealthy, performing cleanup');
+    await globalCleanup();
+    return true;
+  }
 }

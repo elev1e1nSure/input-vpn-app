@@ -153,26 +153,35 @@ class _LogsScreenState extends State<LogsScreen>
           // Copy
           Tooltip(
             message: s.copyLog,
-            child: IconButton(
-              icon: const Icon(Icons.copy_outlined, size: 20),
-              onPressed: () => _copyLog(context),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: IconButton(
+                icon: const Icon(Icons.copy_outlined, size: 20),
+                onPressed: () => _copyLog(context),
+              ),
             ),
           ),
           // Save to file
           Tooltip(
             message: s.saveLog,
-            child: IconButton(
-              icon: const Icon(Icons.save_alt_outlined, size: 20),
-              onPressed: () => _saveLog(context),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: IconButton(
+                icon: const Icon(Icons.save_alt_outlined, size: 20),
+                onPressed: () => _saveLog(context),
+              ),
             ),
           ),
           // Clear (events only)
           if (_tabs.index == 0)
             Tooltip(
               message: s.clearLog,
-              child: IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                onPressed: () => _clearLog(context),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  onPressed: () => _clearLog(context),
+                ),
               ),
             ),
           const SizedBox(width: 4),

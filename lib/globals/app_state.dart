@@ -11,7 +11,6 @@ import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/models/parsed_config.dart';
-import 'package:input_vpn/models/vpn_stats.dart';
 import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/singbox_vpn_service.dart';
 import 'package:input_vpn/services/subscription_service.dart';
@@ -60,7 +59,6 @@ class AppState extends ChangeNotifier {
     _loadPersistedState();
 
     _statusSub = _vpn.watchStatus().listen(_onStatus);
-    _statsSub = _vpn.watchStats().listen(_onStats);
 
     _applyDnsSelection();
 
@@ -77,7 +75,6 @@ class AppState extends ChangeNotifier {
   final VpnService _vpn;
   final SubscriptionService _subs;
   StreamSubscription<ConnectionStatus>? _statusSub;
-  StreamSubscription<VpnStats>? _statsSub;
   Timer? _autoConnectTimer;
   Timer? _errorTimer;
 
@@ -118,9 +115,6 @@ class AppState extends ChangeNotifier {
     await sharedPrefs.setBool('proxyMode', enabled);
     notifyListeners();
   }
-
-  /// Live throughput stream — use with StreamBuilder for zero-rebuild stats UI.
-  Stream<VpnStats> get statsStream => _vpn.watchStats();
 
   /// Live connection status stream — use with StreamBuilder for session timer.
   Stream<ConnectionStatus> get statusStream => _vpn.watchStatus();
@@ -232,24 +226,6 @@ class AppState extends ChangeNotifier {
 
   List<VpnServer> get userServers {
     return _userServers;
-  }
-
-  int _ping = 0;
-
-  int get ping {
-    return _ping;
-  }
-
-  String _downloadSpeed = '0.0 KB/s';
-
-  String get downloadSpeed {
-    return _downloadSpeed;
-  }
-
-  String _uploadSpeed = '0.0 KB/s';
-
-  String get uploadSpeed {
-    return _uploadSpeed;
   }
 
   String? _publicIp;
@@ -640,21 +616,11 @@ class AppState extends ChangeNotifier {
         } else {
           AppLogger.info('Disconnected');
         }
-        _ping = 0;
-        _downloadSpeed = '0.0 KB/s';
-        _uploadSpeed = '0.0 KB/s';
         TrayManager.updateTooltip('Disconnected');
         // Задержка 1 сек для восстановления сети
         Future.delayed(const Duration(seconds: 1), () => refreshPublicIp());
     }
     notifyListeners();
-  }
-
-  void _onStats(VpnStats stats) {
-    _ping = stats.pingMs;
-    _downloadSpeed = stats.downloadHuman;
-    _uploadSpeed = stats.uploadHuman;
-    // Don't notifyListeners() - stats are read directly without rebuild
   }
 
   void _persistBool(String key, bool Function() getter,
@@ -941,7 +907,6 @@ class AppState extends ChangeNotifier {
     _errorTimer?.cancel();
     _autoConnectTimer?.cancel();
     _statusSub?.cancel();
-    _statsSub?.cancel();
     // Disconnect VPN to ensure TUN adapter cleanup on app exit
     if (_isConnected) {
       _vpn.disconnect().ignore();

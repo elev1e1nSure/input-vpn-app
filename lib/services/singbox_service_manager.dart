@@ -12,83 +12,16 @@ import 'package:input_vpn/services/app_logger.dart';
 /// SYSTEM (which can create TUN adapters) without any UAC prompt after
 /// the one-time task registration.
 ///
+/// The task is created by the Inno Setup installer (admin rights) during
+/// setup. The Flutter runtime only starts, stops, and queries the task.
+///
 /// Lifecycle:
-///   install()   — registers the task (one UAC / admin prompt).
 ///   start(path) — schtasks /run  (no elevation, works for any user).
 ///   stop()      — taskkill sing-box.exe (no elevation).
-///   remove()    — schtasks /delete (one UAC / admin prompt).
 ///   isInstalled() — schtasks /query.
 class SingboxServiceManager {
   static const String serviceName  = 'InputVPNService';
   static const String _taskName    = 'InputVPNSingBox';
-
-  // ── Installation ────────────────────────────────────────────────────────────
-
-  /// Register a Scheduled Task that runs sing-box as SYSTEM.
-  /// Requires admin rights — prompts UAC once (or silently if already admin).
-  /// [exePath] — absolute path to sing-box.exe.
-  static Future<bool> install(String exePath, String configPath) async {
-    if (!Platform.isWindows) return false;
-    AppLogger.info('ServiceManager: installing scheduled task');
-    try {
-      // schtasks /create registers an on-demand task running as SYSTEM.
-      // /f overwrites any pre-existing task with the same name.
-      // We use a dummy trigger (ONCE at a past time) so it never auto-starts.
-      final args = [
-        '/create', '/f',
-        '/tn', _taskName,
-        '/ru', 'SYSTEM',
-        '/sc', 'ONCE',
-        '/st', '00:00',
-        '/sd', '01/01/2000',
-        '/tr', '"$exePath" run -c "$configPath" --disable-color',
-      ];
-
-      // Try directly first (works when app is already elevated).
-      final direct = await Process.run('schtasks.exe', args);
-      debugPrint('schtasks create direct: exit=${direct.exitCode} '
-          'stdout=${direct.stdout} stderr=${direct.stderr}');
-
-      if (direct.exitCode == 0) {
-        AppLogger.info('ServiceManager: task installed successfully');
-        return true;
-      }
-
-      // Not admin — run elevated via PowerShell Start-Process.
-      final ok = await _runElevated('schtasks.exe', args);
-      if (ok) {
-        AppLogger.info('ServiceManager: task installed successfully (elevated)');
-      } else {
-        AppLogger.error('ServiceManager: task installation failed');
-      }
-      return ok;
-    } catch (e) {
-      AppLogger.error('ServiceManager.install error: $e');
-      return false;
-    }
-  }
-
-  /// Delete the scheduled task. Requires admin.
-  static Future<bool> remove() async {
-    if (!Platform.isWindows) return false;
-    AppLogger.info('ServiceManager: removing scheduled task');
-    try {
-      await stop();
-      final direct = await Process.run('schtasks.exe',
-          ['/delete', '/f', '/tn', _taskName]);
-      if (direct.exitCode == 0) {
-        AppLogger.info('ServiceManager: task removed');
-        return true;
-      }
-      final ok = await _runElevated('schtasks.exe',
-          ['/delete', '/f', '/tn', _taskName]);
-      if (ok) AppLogger.info('ServiceManager: task removed (elevated)');
-      return ok;
-    } catch (e) {
-      AppLogger.error('ServiceManager.remove error: $e');
-      return false;
-    }
-  }
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -125,18 +58,68 @@ class SingboxServiceManager {
     }
   }
 
-  /// Kill sing-box.exe (task runs as SYSTEM so taskkill needs no elevation
-  /// from an admin process; from a normal process it may need /F only).
+  /// Kill sing-box.exe via the SYSTEM-level [InputVPNStop] scheduled task.
+  ///
+  /// Running a task as SYSTEM allows it to terminate privileged (elevated /
+  /// SYSTEM) sing-box processes that a medium-IL Flutter process cannot kill
+  /// with a plain `taskkill`. No UAC prompt is shown.
+  ///
+  /// Returns true when sing-box.exe is confirmed gone (or was already gone).
+  /// Returns false if the task is not installed or the process did not stop
+  /// within the polling window — callers should fall back to a direct taskkill.
+  static Future<bool> stopViaSchtask() async {
+    if (!Platform.isWindows) return false;
+
+    const stopTask = 'InputVPNStop';
+
+    // Trigger the stop task directly. If the task is not installed, /run
+    // returns a non-zero exit code — treat that as "not available" and let
+    // callers fall back to direct taskkill. Skipping a /query pre-check avoids
+    // locale/OEM-encoding issues with schtasks.exe output on non-English Windows.
+    AppLogger.info('ServiceManager: triggering $stopTask task');
+    try {
+      final run = await Process.run('schtasks.exe', ['/run', '/tn', stopTask]);
+      debugPrint('schtasks /run $stopTask: exit=${run.exitCode} stdout=${run.stdout} stderr=${run.stderr}');
+      if (run.exitCode != 0) {
+        AppLogger.warn('ServiceManager: $stopTask /run failed (exit=${run.exitCode}) — task not installed?');
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('ServiceManager: failed to run $stopTask: $e');
+      return false;
+    }
+
+    // Poll until sing-box.exe disappears (max ~5 s).
+    for (int i = 0; i < 25; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!await isRunning()) {
+        AppLogger.info('ServiceManager: sing-box stopped via $stopTask');
+        return true;
+      }
+    }
+
+    AppLogger.warn('ServiceManager: sing-box still running after $stopTask — timed out');
+    return false;
+  }
+
+  /// Kill sing-box.exe. Tries the SYSTEM-level [InputVPNStop] scheduled task
+  /// first; falls back to a direct taskkill if the task is missing.
   static Future<bool> stop() async {
     if (!Platform.isWindows) return false;
     AppLogger.info('ServiceManager: stopping sing-box');
+
+    if (await stopViaSchtask()) return true;
+
+    // Fallback: direct taskkill (works when the app itself is elevated or
+    // the stop task is not installed on older setups).
+    AppLogger.info('ServiceManager: fallback — direct taskkill /IM sing-box.exe /F');
     try {
       final result = await Process.run(
           'taskkill', ['/IM', 'sing-box.exe', '/F']);
       final ok = result.exitCode == 0 ||
           (result.stdout as String).contains('not found') ||
           (result.stderr as String).contains('not found');
-      if (ok) AppLogger.info('ServiceManager: sing-box stopped');
+      if (ok) AppLogger.info('ServiceManager: sing-box stopped via taskkill fallback');
       return true; // treat "not running" as success
     } catch (e) {
       AppLogger.error('ServiceManager.stop error: $e');
@@ -167,68 +150,6 @@ class SingboxServiceManager {
       return (result.stdout as String).contains('sing-box.exe');
     } catch (_) {
       return false;
-    }
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-
-  /// Run [exe] with [args] in an elevated process (UAC prompt).
-  /// Returns true iff the child exited with code 0.
-  static Future<bool> _runElevated(String exe, List<String> args) async {
-    if (!Platform.isWindows) return false;
-
-    final tempDir     = Directory.systemTemp.path;
-    final ps1Path     = '$tempDir\\inputvpn_elev.ps1';
-    final resultPath  = '$tempDir\\inputvpn_elev_exit.txt';
-
-    String psArg(String s) {
-      final escaped = s
-          .replaceAll('`', '``')
-          .replaceAll('"', '`"')
-          .replaceAll(r'$', r'`$');
-      return '"$escaped"';
-    }
-
-    final allArgs    = [exe, ...args];
-    final arrayItems = allArgs.map(psArg).join(',\n  ');
-
-    final ps1Content = '''
-\$a = @(
-  $arrayItems
-)
-\$out = & \$a[0] \$a[1..(\$a.Length-1)] 2>&1
-\$code = \$LASTEXITCODE
-Write-Host \$out
-[System.IO.File]::WriteAllText(${psArg(resultPath)}, \$code.ToString())
-exit \$code
-''';
-
-    await File(ps1Path).writeAsString(ps1Content, flush: true);
-
-    try {
-      final outer = await Process.run('powershell', [
-        '-NoProfile', '-NonInteractive', '-Command',
-        'Start-Process powershell.exe '
-            "-ArgumentList @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',${psArg(ps1Path)}) "
-            '-Verb RunAs -Wait',
-      ]);
-      debugPrint('_runElevated outer exit=${outer.exitCode}');
-
-      final resultFile = File(resultPath);
-      if (await resultFile.exists()) {
-        final text = (await resultFile.readAsString()).trim();
-        try { await resultFile.delete(); } catch (_) {}
-        final code = int.tryParse(text) ?? 1;
-        AppLogger.info('ServiceManager: elevated cmd exit=$code');
-        return code == 0;
-      }
-      AppLogger.warn('ServiceManager: result file missing (UAC denied?)');
-      return false;
-    } catch (e) {
-      AppLogger.error('ServiceManager: _runElevated error: $e');
-      return false;
-    } finally {
-      try { await File(ps1Path).delete(); } catch (_) {}
     }
   }
 
