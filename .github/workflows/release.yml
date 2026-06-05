@@ -62,18 +62,19 @@ jobs:
 
           [System.IO.File]::WriteAllLines("$PWD\changelog.md", $lines)
 
-      - name: Zip Build
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build Installer
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}"
-          Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "InputVPN-$version-windows.zip"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           body_path: changelog.md
-          files: |
-            InputVPN-*.zip
+          files: Output\InputVPN-Setup.exe
           draft: false
           prerelease: false
         env:
