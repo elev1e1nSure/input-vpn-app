@@ -27,10 +27,32 @@ jobs:
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
+      - name: Generate Release Notes
+        id: notes
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $prev = git describe --tags --abbrev=0 "$tag^" 2>$null
+          $range = if ($prev) { "$prev..$tag" } else { $tag }
+
+          $features = git log $range --pretty=format:"%s" |
+            Where-Object { $_ -match "^feat" } |
+            ForEach-Object { "- $_" }
+          $fixes = git log $range --pretty=format:"%s" |
+            Where-Object { $_ -match "^fix" } |
+            ForEach-Object { "- $_" }
+
+          $body = ""
+          if ($features) { $body += "### What's New`n" + ($features -join "`n") + "`n`n" }
+          if ($fixes)    { $body += "### Fixed`n"      + ($fixes    -join "`n") + "`n`n" }
+          if (-not $body) { $body = "Maintenance release." }
+
+          $body | Out-File -FilePath release_notes.txt -Encoding utf8NoBOM
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: release_notes.txt
           files: |
             Output\InputVPN-Setup.exe
         env:
