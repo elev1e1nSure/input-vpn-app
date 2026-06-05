@@ -6,16 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:input_vpn/globals/app_constants.dart';
 import 'package:input_vpn/globals/app_state.dart';
-import 'package:input_vpn/pages/settings_screen.dart';
-import 'package:input_vpn/pages/servers_screen.dart';
-import 'package:input_vpn/pages/add_config_screen.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:input_vpn/services/vpn/windows/network_utils.dart';
-import 'package:input_vpn/services/platform/windows/tray_manager.dart';
 import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/vpn_server.dart';
+import 'package:input_vpn/pages/add_config_screen.dart';
+import 'package:input_vpn/pages/servers_screen.dart';
+import 'package:input_vpn/pages/settings_screen.dart';
+import 'package:input_vpn/services/platform/windows/tray_manager.dart';
+import 'package:input_vpn/services/vpn/windows/network_utils.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
         }
         // Listen to minimizeToTray changes
         appState.addListener(_onMinimizeToTrayChanged);
-      } catch (_) {}
+      } on Exception catch (_) {}
     }
   }
 
@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
         if (_trayInitialized) {
           TrayManager.destroy();
         }
-      } catch (_) {}
+      } on Exception catch (_) {}
     }
     super.dispose();
   }
@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
       try {
         await windowManager.hide();
         debugPrint('Window hidden to tray, VPN remains connected');
-      } catch (e) {
+      } on Exception catch (e) {
         debugPrint('onWindowClose: hide error: $e');
       }
       return;
@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
       debugPrint('onWindowClose: disconnecting VPN...');
       try {
         await appState.toggleConnection().timeout(const Duration(seconds: 10));
-      } catch (e) {
+      } on Exception catch (e) {
         debugPrint(
             'onWindowClose: disconnect failed or timed out ($e), forcing cleanup');
         // Best-effort fallback: remove the TUN adapter and reset DNS.
@@ -108,7 +108,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
     debugPrint('onWindowClose: destroying window and exiting');
     try {
       await windowManager.destroy();
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('onWindowClose: destroy error: $e');
     }
     exit(0);
@@ -857,7 +857,7 @@ class _ServerCardState extends State<_ServerCard> {
     final serverAddress =
         context.select<AppState, String?>((a) => a.selectedServerAddress);
     final selectedServerIp =
-        serverAddress?.trim().isNotEmpty == true ? serverAddress!.trim() : '—';
+        serverAddress?.trim().isNotEmpty ?? false ? serverAddress!.trim() : '—';
 
     final primary = theme.colorScheme.primary;
     final borderNormal = theme.dividerTheme.color ??

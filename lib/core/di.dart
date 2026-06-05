@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:input_vpn/data/local/prefs_data_source.dart';
 import 'package:input_vpn/data/remote/ip_lookup_api.dart';
 import 'package:input_vpn/data/remote/subscription_api.dart';
@@ -8,9 +7,9 @@ import 'package:input_vpn/data/repositories/config_repository_impl.dart';
 import 'package:input_vpn/data/repositories/network_info_repository_impl.dart';
 import 'package:input_vpn/data/repositories/settings_repository_impl.dart';
 import 'package:input_vpn/data/repositories/vpn_repository_impl.dart';
-import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/domain/repositories/network_info_repository.dart';
 import 'package:input_vpn/domain/repositories/settings_repository.dart';
+import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/domain/repositories/vpn_service_repository.dart';
 import 'package:input_vpn/domain/usecases/add_config.dart';
 import 'package:input_vpn/domain/usecases/refresh_network_info.dart';
@@ -23,9 +22,10 @@ import 'package:input_vpn/presentation/cubits/network_info_cubit.dart';
 import 'package:input_vpn/presentation/cubits/settings_cubit.dart';
 import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
 import 'package:input_vpn/services/dio_factory.dart';
-import 'package:input_vpn/services/vpn_service_factory.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn_service.dart';
+import 'package:input_vpn/services/vpn_service_factory.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GetIt getIt = GetIt.instance;
 

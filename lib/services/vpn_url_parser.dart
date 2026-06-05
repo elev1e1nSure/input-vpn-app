@@ -18,7 +18,7 @@ class VpnUrlParser {
   static ParsedConfig? tryParse(String link) {
     try {
       return parse(link);
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -112,7 +112,7 @@ class VpnUrlParser {
     Map<String, dynamic> obj;
     try {
       obj = jsonDecode(jsonStr) as Map<String, dynamic>;
-    } catch (e) {
+    } on Exception catch (e) {
       throw FormatException('vmess: not base64(JSON) body: $e');
     }
 
@@ -158,8 +158,9 @@ class VpnUrlParser {
   // trojan://<password>@<host>:<port>?sni=...&type=ws&path=...#<remark>
   static ParsedConfig _parseTrojan(String link) {
     final password = Uri.decodeComponent(Uri.parse(link).userInfo);
-    if (password.isEmpty)
+    if (password.isEmpty) {
       throw const FormatException('trojan: missing password');
+    }
     final c = _parseCommonUri(link, 'trojan');
     final qp = c.qp;
     return ParsedConfig(
@@ -328,7 +329,7 @@ class VpnUrlParser {
     if (uri.fragment.isEmpty) return fallback;
     try {
       return Uri.decodeComponent(uri.fragment);
-    } catch (_) {
+    } on Exception catch (_) {
       return uri.fragment;
     }
   }
@@ -372,7 +373,7 @@ String safeDecodeBase64(String input) {
     }
     final bytes = base64.decode(s);
     return utf8.decode(bytes, allowMalformed: true);
-  } catch (_) {
+  } on Exception catch (_) {
     return trimmed;
   }
 }

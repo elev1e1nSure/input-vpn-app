@@ -71,12 +71,12 @@ class SettingsRepositoryImpl implements SettingsRepository {
     if (preset != null && preset.servers.isNotEmpty) {
       return Result.ok(preset.servers);
     }
-    return Result.ok(const ['1.1.1.1', '8.8.8.8']);
+    return const Result.ok(['1.1.1.1', '8.8.8.8']);
   }
 
   @override
   Result<DnsProfile?> getSelectedCustomDnsProfile() {
-    if (_dnsCustomId == null) return Result.ok(null);
+    if (_dnsCustomId == null) return const Result.ok(null);
     try {
       final profile =
           _customDnsProfiles.firstWhere((p) => p.id == _dnsCustomId);
@@ -87,76 +87,77 @@ class SettingsRepositoryImpl implements SettingsRepository {
         secondary: profile.servers.length > 1 ? profile.servers[1] : null,
       ));
     } on StateError {
-      return Result.ok(null);
+      return const Result.ok(null);
     }
   }
 
   @override
   Result<void> setLocale(String languageCode) {
-    if (_locale.languageCode == languageCode) return Result.ok(null);
+    if (_locale.languageCode == languageCode) return const Result.ok(null);
     _locale = Locale(languageCode);
     _prefs.setString('locale', languageCode);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setThemeMode(ThemeMode mode) {
-    if (_themeMode == mode) return Result.ok(null);
+    if (_themeMode == mode) return const Result.ok(null);
     _themeMode = mode;
     _prefs.setBool('darkTheme', mode == ThemeMode.dark);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setConnectOnBoot(bool value) {
-    if (_connectOnBoot == value) return Result.ok(null);
+    if (_connectOnBoot == value) return const Result.ok(null);
     _connectOnBoot = value;
     _prefs.setBool('connectOnBoot', value);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setAutoLaunch(bool value) {
-    if (_autoLaunch == value) return Result.ok(null);
+    if (_autoLaunch == value) return const Result.ok(null);
     _autoLaunch = value;
     _prefs.setBool('autoLaunch', value);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setMinimizeToTray(bool value) {
-    if (_minimizeToTray == value) return Result.ok(null);
+    if (_minimizeToTray == value) return const Result.ok(null);
     _minimizeToTray = value;
     _prefs.setBool('minimizeToTray', value);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setDnsPreset(String preset) {
-    if (_dnsPreset == preset && _dnsCustomId == null) return Result.ok(null);
+    if (_dnsPreset == preset && _dnsCustomId == null)
+      return const Result.ok(null);
     _dnsPreset = preset;
     _prefs.setString('dnsPreset', preset);
     if (_dnsCustomId != null) {
       _dnsCustomId = null;
       _prefs.remove('dnsCustomId');
     }
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> selectCustomDns(String profileId) {
-    if (_dnsCustomId == profileId) return Result.ok(null);
+    if (_dnsCustomId == profileId) return const Result.ok(null);
     _dnsCustomId = profileId;
     _prefs.setString('dnsCustomId', profileId);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setProxyPort(int port) {
-    if (_proxyPort == port) return Result.ok(null);
+    if (_proxyPort == port) return const Result.ok(null);
     _proxyPort = port;
     _prefs.setInt('proxyPort', port);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
@@ -174,21 +175,21 @@ class SettingsRepositoryImpl implements SettingsRepository {
       _customDnsProfiles.add(customProfile);
     }
     _persistCustomDnsProfiles();
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> deleteCustomDnsProfile(String id) {
     final before = _customDnsProfiles.length;
     _customDnsProfiles.removeWhere((p) => p.id == id);
-    if (before == _customDnsProfiles.length) return Result.ok(null);
+    if (before == _customDnsProfiles.length) return const Result.ok(null);
     _persistCustomDnsProfiles();
     if (_dnsCustomId == id) {
       _dnsCustomId = null;
       _prefs.remove('dnsCustomId');
       setDnsPreset(_dnsPreset);
     }
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   void _persistCustomDnsProfiles() {
@@ -223,6 +224,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
         // Malformed saved profiles are best-effort
       }
     }
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 }

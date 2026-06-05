@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:input_vpn/models/connection_failure.dart';
 import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/vpn/windows/network_utils.dart';
 import 'package:input_vpn/services/vpn/windows/singbox_ffi.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 /// Manages the sing-box core via [SingboxFfi] (in-process DLL).
 ///
@@ -60,7 +60,7 @@ class SingBoxProcessFfi {
           ? lines
           : lines.sublist(lines.length - maxLines);
       return tail.join('\n').trim();
-    } catch (e) {
+    } on Exception catch (e) {
       return '<failed to read log: $e>';
     }
   }
@@ -138,7 +138,7 @@ class SingBoxProcessFfi {
         AppLogger.info(
             'SingBoxProcessFfi: cleanup succeeded on attempt ${i + 1}');
         return;
-      } catch (e) {
+      } on Exception catch (e) {
         AppLogger.warn(
             'SingBoxProcessFfi: cleanup attempt ${i + 1} failed: $e');
         if (i < maxRetries - 1) {

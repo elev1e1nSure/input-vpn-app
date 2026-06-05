@@ -2,16 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
 
 class SettingsState {
-  final Locale locale;
-  final ThemeMode themeMode;
-  final bool connectOnBoot;
-  final bool autoLaunch;
-  final bool minimizeToTray;
-  final String dnsPreset;
-  final String? dnsCustomId;
-  final int proxyPort;
-  final List<CustomDnsProfile> customDnsProfiles;
-
   const SettingsState({
     this.locale = const Locale('en'),
     this.themeMode = ThemeMode.dark,
@@ -23,6 +13,15 @@ class SettingsState {
     this.proxyPort = 11080,
     this.customDnsProfiles = const [],
   });
+  final Locale locale;
+  final ThemeMode themeMode;
+  final bool connectOnBoot;
+  final bool autoLaunch;
+  final bool minimizeToTray;
+  final String dnsPreset;
+  final String? dnsCustomId;
+  final int proxyPort;
+  final List<CustomDnsProfile> customDnsProfiles;
 
   SettingsState copyWith({
     Locale? locale,

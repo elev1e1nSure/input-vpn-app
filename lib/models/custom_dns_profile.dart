@@ -6,6 +6,14 @@ class CustomDnsProfile {
     this.secondary,
   });
 
+  factory CustomDnsProfile.fromJson(Map<String, dynamic> json) =>
+      CustomDnsProfile(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        primary: json['primary'] as String,
+        secondary: json['secondary'] as String?,
+      );
+
   final String id;
   final String name;
   final String primary;
@@ -30,12 +38,4 @@ class CustomDnsProfile {
         'primary': primary,
         if (secondary != null) 'secondary': secondary,
       };
-
-  factory CustomDnsProfile.fromJson(Map<String, dynamic> json) =>
-      CustomDnsProfile(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        primary: json['primary'] as String,
-        secondary: json['secondary'] as String?,
-      );
 }

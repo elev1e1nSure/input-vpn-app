@@ -163,7 +163,7 @@ class SingBoxVpnService implements VpnService {
       _setStatus(Disconnected(failure: UnexpectedFailure(msg)));
       await _hardStop();
       throw UnexpectedFailure(msg);
-    } catch (e) {
+    } on Exception catch (e) {
       final tail = await _process.tailLog();
       _setStatus(Disconnected(
         failure: UnexpectedFailure('$e\n\nsing-box log tail:\n$tail'),
@@ -222,7 +222,7 @@ class SingBoxVpnService implements VpnService {
     AppLogger.info('SingBoxVpnService: ensuring TUN cleanup after stop');
     try {
       await NetworkUtils.globalCleanup();
-    } catch (e) {
+    } on Exception catch (e) {
       AppLogger.error('SingBoxVpnService: cleanup failed in _hardStop: $e');
     }
   }
@@ -269,7 +269,7 @@ class SingBoxVpnService implements VpnService {
         _startLivenessCheck();
         _reconnectAttempt = 0;
         _setStatus(Connected(since: DateTime.now()));
-      } catch (_) {
+      } on Exception catch (_) {
         await _hardStop();
         _scheduleReconnect();
       }

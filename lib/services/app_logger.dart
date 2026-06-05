@@ -41,7 +41,7 @@ class AppLogger {
       _sink = _logFile!.openWrite(mode: FileMode.append);
       _ready = true;
       info('AppLogger initialised — log: ${_logFile!.path}');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AppLogger.init failed: $e');
     }
   }
@@ -64,7 +64,7 @@ class AppLogger {
     final line = '[$ts] $level $message\n';
     try {
       _sink?.write(line);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AppLogger write error: $e');
     }
     debugPrint(line.trimRight());
@@ -80,7 +80,7 @@ class AppLogger {
           ? lines.sublist(lines.length - _keepLines)
           : lines;
       await file.writeAsString('${kept.join('\n')}\n');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AppLogger rotate error: $e');
     }
   }
@@ -91,7 +91,7 @@ class AppLogger {
     if (f == null || !f.existsSync()) return '';
     try {
       return await f.readAsString();
-    } catch (e) {
+    } on Exception catch (e) {
       return '<read error: $e>';
     }
   }
@@ -108,7 +108,7 @@ class AppLogger {
       }
       _sink = _logFile?.openWrite(mode: FileMode.append);
       info('Log cleared');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AppLogger.clear error: $e');
     }
   }
@@ -120,6 +120,6 @@ class AppLogger {
       await _sink?.close();
       _sink = null;
       _ready = false;
-    } catch (_) {}
+    } on Exception catch (_) {}
   }
 }

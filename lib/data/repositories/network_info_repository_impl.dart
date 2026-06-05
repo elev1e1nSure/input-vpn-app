@@ -20,7 +20,7 @@ class NetworkInfoRepositoryImpl implements NetworkInfoRepository {
 
   @override
   Result<void> refresh() {
-    if (_isRefreshing) return Result.ok(null);
+    if (_isRefreshing) return const Result.ok(null);
     _isRefreshing = true;
     try {
       _publicIp = IpService.fetchPublicIp() as String?;
@@ -28,13 +28,13 @@ class NetworkInfoRepositoryImpl implements NetworkInfoRepository {
     } finally {
       _isRefreshing = false;
     }
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> clear() {
     _publicIp = null;
     _countryCode = null;
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 }

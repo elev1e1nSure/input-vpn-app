@@ -10,6 +10,17 @@ class VpnServer {
     required this.configId,
   });
 
+  factory VpnServer.fromJson(Map<String, dynamic> json) => VpnServer(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        country: json['country'] as String,
+        city: json['city'] as String,
+        flagCode: json['flagCode'] as String,
+        signalQuality: json['signalQuality'] as int,
+        rawConfig: json['rawConfig'] as String,
+        configId: json['configId'] as String,
+      );
+
   final String id;
 
   final String name;
@@ -36,15 +47,4 @@ class VpnServer {
         'rawConfig': rawConfig,
         'configId': configId,
       };
-
-  factory VpnServer.fromJson(Map<String, dynamic> json) => VpnServer(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        country: json['country'] as String,
-        city: json['city'] as String,
-        flagCode: json['flagCode'] as String,
-        signalQuality: json['signalQuality'] as int,
-        rawConfig: json['rawConfig'] as String,
-        configId: json['configId'] as String,
-      );
 }

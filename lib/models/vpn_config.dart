@@ -14,6 +14,19 @@ class VpnConfig {
     this.subExpire,
   });
 
+  factory VpnConfig.fromJson(Map<String, dynamic> json) => VpnConfig(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        rawConfig: json['rawConfig'] as String,
+        type: ConfigType.values.byName(json['type'] as String),
+        addedAt: DateTime.parse(json['addedAt'] as String),
+        subUrl: json['subUrl'] as String?,
+        subUpload: json['subUpload'] as int?,
+        subDownload: json['subDownload'] as int?,
+        subTotal: json['subTotal'] as int?,
+        subExpire: json['subExpire'] as int?,
+      );
+
   final String id;
 
   final String name;
@@ -47,8 +60,9 @@ class VpnConfig {
   static String _bytesToHuman(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024)
+    if (bytes < 1024 * 1024 * 1024) {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 
@@ -64,17 +78,4 @@ class VpnConfig {
         if (subTotal != null) 'subTotal': subTotal,
         if (subExpire != null) 'subExpire': subExpire,
       };
-
-  factory VpnConfig.fromJson(Map<String, dynamic> json) => VpnConfig(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        rawConfig: json['rawConfig'] as String,
-        type: ConfigType.values.byName(json['type'] as String),
-        addedAt: DateTime.parse(json['addedAt'] as String),
-        subUrl: json['subUrl'] as String?,
-        subUpload: json['subUpload'] as int?,
-        subDownload: json['subDownload'] as int?,
-        subTotal: json['subTotal'] as int?,
-        subExpire: json['subExpire'] as int?,
-      );
 }

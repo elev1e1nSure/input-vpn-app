@@ -2,15 +2,14 @@ import 'package:input_vpn/models/vpn_config.dart';
 import 'package:input_vpn/models/vpn_server.dart';
 
 class ConfigState {
-  final List<VpnConfig> userConfigs;
-  final List<VpnServer> userServers;
-  final bool isLoading;
-
   const ConfigState({
     this.userConfigs = const [],
     this.userServers = const [],
     this.isLoading = false,
   });
+  final List<VpnConfig> userConfigs;
+  final List<VpnServer> userServers;
+  final bool isLoading;
 
   ConfigState copyWith({
     List<VpnConfig>? userConfigs,

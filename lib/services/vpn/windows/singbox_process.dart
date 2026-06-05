@@ -4,12 +4,12 @@ import 'dart:io';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:input_vpn/models/connection_failure.dart';
 import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/vpn/windows/network_utils.dart';
 import 'package:input_vpn/services/vpn/windows/singbox_service_manager.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:win32/win32.dart';
 
 /// Spawns and manages a `sing-box.exe` child process with admin (UAC)
@@ -75,7 +75,7 @@ class SingBoxProcess {
           ? lines
           : lines.sublist(lines.length - maxLines);
       return tail.join('\n').trim();
-    } catch (e) {
+    } on Exception catch (e) {
       return '<failed to read log: $e>';
     }
   }
@@ -205,7 +205,7 @@ class SingBoxProcess {
       _normalProcExited = true;
       try {
         logSink.close();
-      } catch (_) {}
+      } on Exception catch (_) {}
     }));
     return proc.pid;
   }
@@ -233,10 +233,10 @@ class SingBoxProcess {
       try {
         proc.kill();
         await proc.exitCode.timeout(const Duration(seconds: 3));
-      } catch (_) {
+      } on Exception catch (_) {
         try {
           proc.kill(ProcessSignal.sigkill);
-        } catch (_) {}
+        } on Exception catch (_) {}
       }
       _normalProc = null;
     } else if (pid != 0) {
@@ -258,7 +258,7 @@ class SingBoxProcess {
           if (await isProcessAlive()) {
             await Process.run('taskkill', ['/PID', '$pid', '/T', '/F']);
           }
-        } catch (e) {
+        } on Exception catch (e) {
           debugPrint('SingBoxProcess: taskkill error: $e');
         }
       }
@@ -268,11 +268,11 @@ class SingBoxProcess {
     if (await _isSingBoxRunningByName()) {
       try {
         await SingboxServiceManager.stopViaSchtask();
-      } catch (_) {}
+      } on Exception catch (_) {}
       if (await _isSingBoxRunningByName()) {
         try {
           await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F', '/T']);
-        } catch (_) {}
+        } on Exception catch (_) {}
       }
     }
 
@@ -395,7 +395,7 @@ class SingBoxProcess {
           ['/FI', 'IMAGENAME eq sing-box.exe', '/FO', 'CSV', '/NH']);
       final out = r.stdout.toString();
       return out.toLowerCase().contains('sing-box.exe');
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }

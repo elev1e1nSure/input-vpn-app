@@ -57,7 +57,7 @@ class WindowsStartupManager {
       } finally {
         free(pcbData);
       }
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }

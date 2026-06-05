@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/domain/usecases/add_config.dart';
+import 'package:input_vpn/domain/usecases/refresh_subscription.dart';
 import 'package:input_vpn/domain/usecases/remove_config.dart';
 import 'package:input_vpn/domain/usecases/update_config.dart';
-import 'package:input_vpn/domain/usecases/refresh_subscription.dart';
 import 'package:input_vpn/models/config_type.dart';
 import 'package:input_vpn/models/vpn_config.dart';
 import 'package:input_vpn/models/vpn_server.dart';
@@ -49,7 +49,6 @@ class ConfigCubit extends Cubit<ConfigState> {
     emit(ConfigState(
       userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
       userServers: userServersResult.getOrElse(const <VpnServer>[]),
-      isLoading: false,
     ));
   }
 
@@ -61,7 +60,6 @@ class ConfigCubit extends Cubit<ConfigState> {
     emit(ConfigState(
       userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
       userServers: userServersResult.getOrElse(const <VpnServer>[]),
-      isLoading: false,
     ));
   }
 
@@ -74,7 +72,6 @@ class ConfigCubit extends Cubit<ConfigState> {
     emit(ConfigState(
       userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
       userServers: userServersResult.getOrElse(const <VpnServer>[]),
-      isLoading: false,
     ));
   }
 

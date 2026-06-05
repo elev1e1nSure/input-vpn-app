@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:input_vpn/domain/repositories/settings_repository.dart';
 import 'package:input_vpn/domain/entities/dns_profile.dart';
+import 'package:input_vpn/domain/repositories/settings_repository.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
 import 'package:input_vpn/presentation/cubits/settings_state.dart';
 
@@ -15,7 +15,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   final SettingsRepository _settingsRepository;
 
   Future<void> _load() async {
-    final loadResult = await _settingsRepository.load();
+    final loadResult = _settingsRepository.load();
     if (loadResult.isFailure) return;
 
     final localeResult = _settingsRepository.getLocale();
@@ -50,38 +50,38 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> setLocale(String languageCode) async {
-    await _settingsRepository.setLocale(languageCode);
+    _settingsRepository.setLocale(languageCode);
     final result = _settingsRepository.getLocale();
     emit(state.copyWith(locale: result.getOrElse(state.locale)));
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
-    await _settingsRepository.setThemeMode(mode);
+    _settingsRepository.setThemeMode(mode);
     final result = _settingsRepository.getThemeMode();
     emit(state.copyWith(themeMode: result.getOrElse(state.themeMode)));
   }
 
   Future<void> setConnectOnBoot(bool value) async {
-    await _settingsRepository.setConnectOnBoot(value);
+    _settingsRepository.setConnectOnBoot(value);
     final result = _settingsRepository.getConnectOnBoot();
     emit(state.copyWith(connectOnBoot: result.getOrElse(state.connectOnBoot)));
   }
 
   Future<void> setAutoLaunch(bool value) async {
-    await _settingsRepository.setAutoLaunch(value);
+    _settingsRepository.setAutoLaunch(value);
     final result = _settingsRepository.getAutoLaunch();
     emit(state.copyWith(autoLaunch: result.getOrElse(state.autoLaunch)));
   }
 
   Future<void> setMinimizeToTray(bool value) async {
-    await _settingsRepository.setMinimizeToTray(value);
+    _settingsRepository.setMinimizeToTray(value);
     final result = _settingsRepository.getMinimizeToTray();
     emit(
         state.copyWith(minimizeToTray: result.getOrElse(state.minimizeToTray)));
   }
 
   Future<void> setDnsPreset(String preset) async {
-    await _settingsRepository.setDnsPreset(preset);
+    _settingsRepository.setDnsPreset(preset);
     final dnsPresetResult = _settingsRepository.getDnsPreset();
     final dnsCustomIdResult = _settingsRepository.getDnsCustomId();
     emit(state.copyWith(
@@ -91,13 +91,13 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> selectCustomDns(String profileId) async {
-    await _settingsRepository.selectCustomDns(profileId);
+    _settingsRepository.selectCustomDns(profileId);
     final result = _settingsRepository.getDnsCustomId();
     emit(state.copyWith(dnsCustomId: result.value));
   }
 
   Future<void> setProxyPort(int port) async {
-    await _settingsRepository.setProxyPort(port);
+    _settingsRepository.setProxyPort(port);
     final result = _settingsRepository.getProxyPort();
     emit(state.copyWith(proxyPort: result.getOrElse(state.proxyPort)));
   }
@@ -109,7 +109,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       primary: profile.primary,
       secondary: profile.secondary,
     );
-    await _settingsRepository.saveCustomDnsProfile(dnsProfile);
+    _settingsRepository.saveCustomDnsProfile(dnsProfile);
     final result = _settingsRepository.getCustomDnsProfiles();
     emit(state.copyWith(
       customDnsProfiles: result
@@ -125,7 +125,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> deleteCustomDnsProfile(String id) async {
-    await _settingsRepository.deleteCustomDnsProfile(id);
+    _settingsRepository.deleteCustomDnsProfile(id);
     final customDnsResult = _settingsRepository.getCustomDnsProfiles();
     final dnsCustomIdResult = _settingsRepository.getDnsCustomId();
     emit(state.copyWith(

@@ -44,7 +44,7 @@ class VpnCubit extends Cubit<VpnState> {
 
   Future<void> toggleConnection(ParsedConfig? config) async {
     if (state.isConnecting) return;
-    await _toggleVpnConnection(config);
+    _toggleVpnConnection(config);
   }
 
   Future<void> setProxyMode(bool enabled) async {

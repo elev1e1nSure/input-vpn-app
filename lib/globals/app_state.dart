@@ -4,27 +4,27 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:input_vpn/globals/themes.dart';
+import 'package:input_vpn/controllers/network_info_controller.dart';
+import 'package:input_vpn/controllers/settings_controller.dart';
+import 'package:input_vpn/controllers/vpn_connection_controller.dart';
+import 'package:input_vpn/data/local/prefs_data_source.dart';
 import 'package:input_vpn/functions/extract_country_code.dart';
+import 'package:input_vpn/globals/shared_prefs.dart';
+import 'package:input_vpn/globals/themes.dart';
+import 'package:input_vpn/models/config_type.dart';
 import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/models/parsed_config.dart';
-import 'package:input_vpn/services/vpn/windows/singbox_vpn_service.dart';
+import 'package:input_vpn/models/vpn_config.dart';
+import 'package:input_vpn/models/vpn_server.dart';
+import 'package:input_vpn/services/platform/windows/windows_startup_manager.dart';
 import 'package:input_vpn/services/subscription_service.dart';
+import 'package:input_vpn/services/vpn/fallback/mock_vpn_service.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_vpn_service.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 import 'package:input_vpn/services/vpn_url_parser.dart';
-import 'package:input_vpn/services/platform/windows/windows_startup_manager.dart';
-import 'package:input_vpn/services/vpn/fallback/mock_vpn_service.dart';
-import 'package:input_vpn/data/local/prefs_data_source.dart';
-import 'package:input_vpn/controllers/network_info_controller.dart';
-import 'package:input_vpn/controllers/settings_controller.dart';
-import 'package:input_vpn/controllers/vpn_connection_controller.dart';
-import 'package:input_vpn/models/vpn_server.dart';
-import 'package:input_vpn/models/vpn_config.dart';
-import 'package:input_vpn/models/config_type.dart';
 import 'package:provider/provider.dart';
-import 'package:input_vpn/globals/shared_prefs.dart';
 
 /// Choose the real backend on Windows, mock everywhere else.
 ///
@@ -76,6 +76,10 @@ class AppState extends ChangeNotifier {
         }
       });
     }
+  }
+
+  factory AppState.of(BuildContext context, {bool listen = true}) {
+    return Provider.of<AppState>(context, listen: listen);
   }
 
   final VpnConnectionController _vpnConnection;
@@ -138,10 +142,6 @@ class AppState extends ChangeNotifier {
     _locale = Locale(languageCode);
     sharedPrefs.setString('locale', languageCode);
     notifyListeners();
-  }
-
-  factory AppState.of(BuildContext context, {bool listen = true}) {
-    return Provider.of<AppState>(context, listen: listen);
   }
 
   late ThemeData _theme = darkTheme;
@@ -247,7 +247,7 @@ class AppState extends ChangeNotifier {
     if (_dnsCustomId == null) return null;
     try {
       return _customDnsProfiles.firstWhere((p) => p.id == _dnsCustomId);
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }
@@ -398,7 +398,7 @@ class AppState extends ChangeNotifier {
       }
       _selectedServer ??= _userServers.isNotEmpty ? _userServers.first : null;
       _lastError = null;
-    } catch (e) {
+    } on Exception catch (e) {
       _lastError = 'Failed to load subscription "$name": $e';
       _scheduleErrorClear();
     } finally {
@@ -523,7 +523,7 @@ class AppState extends ChangeNotifier {
         _savePersistedState().ignore();
         notifyListeners();
       }
-    } catch (e) {
+    } on Exception catch (e) {
       // Silently fail - stats are best-effort
       debugPrint('Failed to refresh subscription stats: $e');
     }
@@ -699,7 +699,7 @@ class AppState extends ChangeNotifier {
               .add(CustomDnsProfile.fromJson(item as Map<String, dynamic>));
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Failed to load persisted state: $e');
     }
   }
@@ -727,7 +727,7 @@ class AppState extends ChangeNotifier {
             _customDnsProfiles.map((p) => p.toJson()).toList(),
           ));
       await sharedPrefs.setString('customDnsProfiles', customDnsJson);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Failed to save persisted state: $e');
     }
   }

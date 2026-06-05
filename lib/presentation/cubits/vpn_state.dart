@@ -2,13 +2,6 @@ import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/vpn_server.dart';
 
 class VpnState {
-  final ConnectionStatus connectionStatus;
-  final VpnServer? selectedServer;
-  final bool isProxyMode;
-  final bool isServiceMode;
-  final bool isReconnecting;
-  final int reconnectAttempt;
-
   const VpnState({
     this.connectionStatus = const Disconnected(),
     this.selectedServer,
@@ -17,6 +10,12 @@ class VpnState {
     this.isReconnecting = false,
     this.reconnectAttempt = 0,
   });
+  final ConnectionStatus connectionStatus;
+  final VpnServer? selectedServer;
+  final bool isProxyMode;
+  final bool isServiceMode;
+  final bool isReconnecting;
+  final int reconnectAttempt;
 
   bool get isConnected => connectionStatus is Connected;
   bool get isConnecting => connectionStatus is Connecting;

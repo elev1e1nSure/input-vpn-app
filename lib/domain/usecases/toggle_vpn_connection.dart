@@ -1,11 +1,10 @@
 import 'package:input_vpn/core/result.dart';
-import 'package:input_vpn/models/parsed_config.dart';
 import 'package:input_vpn/domain/repositories/vpn_service_repository.dart';
+import 'package:input_vpn/models/parsed_config.dart';
 
 class ToggleVpnConnection {
-  final VpnServiceRepository repository;
-
   ToggleVpnConnection(this.repository);
+  final VpnServiceRepository repository;
 
   Result<void> call(ParsedConfig? config) {
     final isConnected = repository.getIsConnected();
@@ -21,7 +20,7 @@ class ToggleVpnConnection {
             if (!connecting && config != null) {
               return repository.connect(config);
             }
-            return Result.ok(null);
+            return const Result.ok(null);
           },
           onFailure: (msg, cause) => Result.err(msg, cause: cause),
         );

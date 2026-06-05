@@ -54,7 +54,7 @@ class SingboxServiceManager {
         AppLogger.error('ServiceManager: start failed — ${run.stderr}');
       }
       return ok;
-    } catch (e) {
+    } on Exception catch (e) {
       AppLogger.error('ServiceManager.start error: $e');
       return false;
     }
@@ -88,7 +88,7 @@ class SingboxServiceManager {
             'ServiceManager: $stopTask /run failed (exit=${run.exitCode}) — task not installed?');
         return false;
       }
-    } catch (e) {
+    } on Exception catch (e) {
       AppLogger.error('ServiceManager: failed to run $stopTask: $e');
       return false;
     }
@@ -125,11 +125,12 @@ class SingboxServiceManager {
       final ok = result.exitCode == 0 ||
           (result.stdout as String).contains('not found') ||
           (result.stderr as String).contains('not found');
-      if (ok)
+      if (ok) {
         AppLogger.info(
             'ServiceManager: sing-box stopped via taskkill fallback');
+      }
       return true; // treat "not running" as success
-    } catch (e) {
+    } on Exception catch (e) {
       AppLogger.error('ServiceManager.stop error: $e');
       return false;
     }
@@ -144,7 +145,7 @@ class SingboxServiceManager {
       final result =
           await Process.run('schtasks.exe', ['/query', '/tn', _taskName]);
       return result.exitCode == 0;
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }
@@ -156,7 +157,7 @@ class SingboxServiceManager {
       final result = await Process.run(
           'tasklist', ['/FI', 'IMAGENAME eq sing-box.exe', '/NH']);
       return (result.stdout as String).contains('sing-box.exe');
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }

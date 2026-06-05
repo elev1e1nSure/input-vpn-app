@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/services/app_logger.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 /// Full-featured debug log page.
 ///
@@ -69,7 +69,7 @@ class _LogsScreenState extends State<LogsScreen>
       final f = File(p.join(base.path, 'singbox', 'sing-box.log'));
       if (!f.existsSync()) return '';
       return await f.readAsString();
-    } catch (e) {
+    } on Exception catch (e) {
       return '<read error: $e>';
     }
   }
@@ -118,7 +118,7 @@ class _LogsScreenState extends State<LogsScreen>
           duration: const Duration(seconds: 3),
         ),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Save failed: $e')),

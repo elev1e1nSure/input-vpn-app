@@ -4,13 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:input_vpn/core/result.dart';
 import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/functions/extract_country_code.dart';
+import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/models/config_type.dart';
 import 'package:input_vpn/models/parsed_config.dart';
 import 'package:input_vpn/models/vpn_config.dart';
 import 'package:input_vpn/models/vpn_server.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn_url_parser.dart';
-import 'package:input_vpn/globals/shared_prefs.dart';
 
 class ConfigRepositoryImpl implements VpnConfigRepository {
   ConfigRepositoryImpl({required SubscriptionService subscriptionService})
@@ -46,7 +46,7 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
     } else {
       _addSingleLink(name, trimmed, type);
     }
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   void _addSingleLink(String name, String link, String type) {
@@ -173,14 +173,14 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
       _selectedServer = _userServers.isNotEmpty ? _userServers.first : null;
     }
     saveState();
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> updateConfig(
       String configId, String newName, String newRawConfig) {
     final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
-    if (configIndex == -1) return Result.ok(null);
+    if (configIndex == -1) return const Result.ok(null);
 
     final oldConfig = _userConfigs[configIndex];
     _userConfigs[configIndex] = VpnConfig(
@@ -234,23 +234,23 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
     }
 
     saveState();
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> selectServer(VpnServer server) {
     _selectedServer = server;
     saveState();
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> refreshSubscriptionStats(String configId) {
     final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
-    if (configIndex == -1) return Result.ok(null);
+    if (configIndex == -1) return const Result.ok(null);
 
     final config = _userConfigs[configIndex];
-    if (config.subUrl == null) return Result.ok(null);
+    if (config.subUrl == null) return const Result.ok(null);
 
     _subs.fetch(config.subUrl!).then((result) {
       final info = result.info;
@@ -274,7 +274,7 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
     }).catchError((Object e) {
       debugPrint('Failed to refresh subscription stats: $e');
     });
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
@@ -294,10 +294,10 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
         _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
       );
       sharedPrefs.setString('parsedByServerId', parsedJson);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Failed to save persisted state: $e');
     }
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
@@ -337,10 +337,10 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
               ParsedConfig.fromJson(entry.value as Map<String, dynamic>);
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Failed to load persisted state: $e');
     }
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   ConfigType _parseConfigType(String type) {

@@ -23,13 +23,12 @@ class NetworkInfoCubit extends Cubit<NetworkInfoState> {
 
   Future<void> refresh() async {
     emit(state.copyWith(isRefreshing: true));
-    await _refreshNetworkInfo();
+    _refreshNetworkInfo();
     final publicIpResult = _networkInfoRepository.getPublicIp();
     final countryCodeResult = _networkInfoRepository.getCountryCode();
     emit(NetworkInfoState(
       publicIp: publicIpResult.value,
       countryCode: countryCodeResult.value,
-      isRefreshing: false,
     ));
   }
 

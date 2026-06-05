@@ -29,7 +29,7 @@ class SubscriptionService {
     for (final line in lines) {
       try {
         configs.add(VpnUrlParser.parse(line));
-      } catch (e) {
+      } on Exception catch (e) {
         failures.add((line: line, error: e.toString()));
       }
     }

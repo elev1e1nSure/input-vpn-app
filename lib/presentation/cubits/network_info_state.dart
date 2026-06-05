@@ -1,13 +1,12 @@
 class NetworkInfoState {
-  final String? publicIp;
-  final String? countryCode;
-  final bool isRefreshing;
-
   const NetworkInfoState({
     this.publicIp,
     this.countryCode,
     this.isRefreshing = false,
   });
+  final String? publicIp;
+  final String? countryCode;
+  final bool isRefreshing;
 
   NetworkInfoState copyWith({
     String? publicIp,

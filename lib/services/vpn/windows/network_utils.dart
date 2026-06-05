@@ -29,7 +29,7 @@ class NetworkUtils {
         script,
       ]);
       debugPrint('NetworkUtils: global cleanup finished.');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('NetworkUtils: cleanup error: $e');
     }
   }
@@ -43,10 +43,9 @@ class NetworkUtils {
         '-NoProfile',
         '-NonInteractive',
         '-Command',
-        r'Get-NetAdapter | Where-Object { $_.Name -like "InputVPN*" } |'
-            r' Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue',
+        r'Get-NetAdapter | Where-Object { $_.Name -like "InputVPN*" } | Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue',
       ]);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('NetworkUtils: deleteTunInterface error: $e');
     }
   }
@@ -62,7 +61,7 @@ class NetworkUtils {
     try {
       await Process.run(
           'powershell', ['-NoProfile', '-NonInteractive', '-Command', script]);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('NetworkUtils: resetAllDns error: $e');
     }
   }
@@ -102,7 +101,7 @@ class NetworkUtils {
 
       final output = (result.stdout as String).trim();
       return !output.contains('UNHEALTHY');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('NetworkUtils: isTunHealthy error: $e');
       return true;
     }

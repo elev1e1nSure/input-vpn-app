@@ -1,5 +1,5 @@
 /// Typed connection failure errors.
-sealed class ConnectionFailure {
+sealed class ConnectionFailure implements Exception {
   const ConnectionFailure(this.message);
   final String message;
   @override

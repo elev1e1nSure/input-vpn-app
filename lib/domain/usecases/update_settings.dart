@@ -4,9 +4,8 @@ import 'package:input_vpn/domain/entities/dns_profile.dart';
 import 'package:input_vpn/domain/repositories/settings_repository.dart';
 
 class UpdateSettings {
-  final SettingsRepository repository;
-
   UpdateSettings(this.repository);
+  final SettingsRepository repository;
 
   Result<void> setLocale(String languageCode) {
     return repository.setLocale(languageCode);

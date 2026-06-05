@@ -45,7 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _updateInfo = info;
         _checking = false;
       });
-    } catch (_) {
+    } on Exception catch (_) {
       if (!mounted) return;
       setState(() {
         _checking = false;
@@ -301,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       await _updateService.installAndExit(installerPath);
-    } catch (e) {
+    } on Exception catch (_) {
       if (!mounted) return;
       setState(() {
         _downloadError = s.unexpectedError;
@@ -476,7 +476,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(s.settingsImported)),
       );
-    } catch (_) {
+    } on Exception catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(s.settingsImportFailed)),

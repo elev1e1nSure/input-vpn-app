@@ -52,13 +52,13 @@ class VpnRepositoryImpl implements VpnServiceRepository {
   @override
   Result<void> connect(ParsedConfig config) {
     _vpn.connect(config);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> disconnect() {
     _vpn.disconnect();
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
@@ -68,7 +68,7 @@ class VpnRepositoryImpl implements VpnServiceRepository {
       _vpn.disconnect().ignore();
     }
     _vpn.dispose();
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
@@ -92,31 +92,31 @@ class VpnRepositoryImpl implements VpnServiceRepository {
   @override
   Result<void> setProxyMode(bool enabled) {
     final vpn = _vpn;
-    if (vpn is! SingBoxVpnService) return Result.ok(null);
+    if (vpn is! SingBoxVpnService) return const Result.ok(null);
     if (_isConnected) {
       disconnect();
     }
     vpn.setProxyMode(enabled);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setServiceMode(bool enabled) {
     final vpn = _vpn;
-    if (vpn is! SingBoxVpnService) return Result.ok(null);
+    if (vpn is! SingBoxVpnService) return const Result.ok(null);
     if (_isConnected) {
       disconnect();
     }
     vpn.setServiceMode(enabled);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 
   @override
   Result<void> setDnsServers(
       {required String remoteDns, required String directDns}) {
     final vpn = _vpn;
-    if (vpn is! SingBoxVpnService) return Result.ok(null);
+    if (vpn is! SingBoxVpnService) return const Result.ok(null);
     vpn.setDnsServers(remoteDns: remoteDns, directDns: directDns);
-    return Result.ok(null);
+    return const Result.ok(null);
   }
 }

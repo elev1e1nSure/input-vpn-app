@@ -18,7 +18,7 @@ class IpService {
       );
       final ip = response.data?.trim();
       if (ip != null && ip.isNotEmpty) return ip;
-    } catch (_) {
+    } on Exception catch (_) {
       // Silently fail — IP is best-effort.
     }
     return null;
@@ -39,7 +39,7 @@ class IpService {
       debugPrint(
           'IpService: countryCode response: $countryCode, full data: ${response.data}');
       if (countryCode != null && countryCode.isNotEmpty) return countryCode;
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('IpService: Failed to fetch country code: $e');
     }
     return null;

@@ -51,7 +51,7 @@ class TrayManager {
         toolTip: 'Input VPN',
       );
       debugPrint('Tray init: success');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Tray init failed: $e');
       return;
     }
@@ -76,7 +76,7 @@ class TrayManager {
               await _appState
                   ?.toggleConnection()
                   .timeout(const Duration(seconds: 5));
-            } catch (e) {
+            } on Exception catch (e) {
               debugPrint('TrayManager: Disconnect timed out or failed: $e');
             }
           }

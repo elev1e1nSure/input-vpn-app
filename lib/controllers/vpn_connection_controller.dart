@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +6,8 @@ import 'package:input_vpn/models/connection_failure.dart';
 import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/parsed_config.dart';
 import 'package:input_vpn/services/app_logger.dart';
-import 'package:input_vpn/services/vpn/windows/singbox_vpn_service.dart';
 import 'package:input_vpn/services/platform/windows/tray_manager.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_vpn_service.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 
 /// Manages the VPN connection lifecycle, status transitions,

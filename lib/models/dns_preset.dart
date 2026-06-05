@@ -41,7 +41,7 @@ class DnsPreset {
   static DnsPreset? byId(String id) {
     try {
       return presets.firstWhere((p) => p.id == id);
-    } catch (_) {
+    } on Exception catch (_) {
       return presets.first;
     }
   }

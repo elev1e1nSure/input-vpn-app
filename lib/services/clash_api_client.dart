@@ -43,7 +43,7 @@ class ClashApiClient {
           final data = res.data is Map ? res.data as Map : <String, dynamic>{};
           return (data['version'] ?? 'unknown').toString();
         }
-      } catch (e) {
+      } on Exception catch (e) {
         lastErr = e;
       }
       await Future<void>.delayed(retry);
@@ -61,7 +61,7 @@ class ClashApiClient {
         options: Options(receiveTimeout: const Duration(milliseconds: 500)),
       );
       return res.statusCode == 200;
-    } catch (_) {
+    } on Exception catch (_) {
       return false;
     }
   }
@@ -86,11 +86,11 @@ class ClashApiClient {
               upBps: (obj['up'] as num? ?? 0).toDouble(),
               downBps: (obj['down'] as num? ?? 0).toDouble(),
             );
-          } catch (_) {
+          } on Exception catch (_) {
             // skip malformed line
           }
         }
-      } catch (_) {
+      } on Exception catch (_) {
         // Connection dropped — wait and retry.
         await Future<void>.delayed(const Duration(seconds: 1));
       }
@@ -115,7 +115,7 @@ class ClashApiClient {
       if (res.data is Map && (res.data as Map)['delay'] != null) {
         return ((res.data as Map)['delay'] as num).toInt();
       }
-    } catch (_) {}
+    } on Exception catch (_) {}
     return 0;
   }
 
@@ -125,7 +125,7 @@ class ClashApiClient {
     try {
       await _dio.post<dynamic>('$base/restart',
           options: Options(receiveTimeout: const Duration(seconds: 2)));
-    } catch (_) {}
+    } on Exception catch (_) {}
   }
 }
 

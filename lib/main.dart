@@ -2,23 +2,23 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:input_vpn/presentation/cubits/settings_cubit.dart';
-import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
-import 'package:input_vpn/presentation/cubits/config_cubit.dart';
-import 'package:input_vpn/presentation/cubits/network_info_cubit.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:input_vpn/services/vpn/windows/network_utils.dart';
-import 'package:input_vpn/services/app_logger.dart';
-import 'package:input_vpn/services/vpn/windows/singbox_service_manager.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:input_vpn/core/di.dart';
 import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/globals/themes.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
+import 'package:input_vpn/presentation/cubits/config_cubit.dart';
+import 'package:input_vpn/presentation/cubits/network_info_cubit.dart';
+import 'package:input_vpn/presentation/cubits/settings_cubit.dart';
+import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
+import 'package:input_vpn/services/app_logger.dart';
+import 'package:input_vpn/services/vpn/windows/network_utils.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_service_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +39,7 @@ void main() async {
     try {
       await windowManager.ensureInitialized();
       await windowManager.setPreventClose(true);
-    } catch (e) {
+    } on Exception catch (e) {
       // Plugin unavailable during hot restart or unsupported platform.
       debugPrint('Window init failed: $e');
     }
@@ -76,7 +76,7 @@ Future<void> _syncServiceModeFlag() async {
         AppLogger.warn('ServiceManager: task missing — service mode disabled');
       }
     }
-  } catch (e) {
+  } on Exception catch (e) {
     AppLogger.error('ServiceManager: _syncServiceModeFlag error: $e');
   }
 }
@@ -86,7 +86,7 @@ Future<void> _cleanupSingBoxProcesses() async {
   try {
     await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
     debugPrint('Cleaned up orphaned sing-box processes');
-  } catch (_) {
+  } on Exception catch (_) {
     // No sing-box processes running or taskkill failed - that's OK
   }
 }
