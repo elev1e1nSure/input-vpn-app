@@ -396,7 +396,7 @@ class _SidebarStatus extends StatelessWidget {
     final isConnected =
         context.select<AppState, bool>((a) => a.isConnected);
     final dotColor = isConnected
-        ? const Color(0xFF34C759)
+        ? theme.colorScheme.primary
         : theme.colorScheme.onSurface.withValues(alpha: 0.25);
 
     return Padding(
@@ -750,7 +750,7 @@ class _ConnectButton extends StatelessWidget {
                     color: isConnected
                         ? theme.colorScheme.primary
                         : hasServer
-                            ? const Color(0xFF3A3A3C)
+                            ? theme.colorScheme.surface
                             : theme.colorScheme.surface,
                   ),
                   child: Center(
