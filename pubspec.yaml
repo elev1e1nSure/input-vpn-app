@@ -27,7 +27,7 @@ dependencies:
   window_manager: ^0.4.0
   google_fonts: ^6.2.1
   package_info_plus: ^8.0.0
-  get_it: ^8.0.0
+  get_it: ^9.2.1
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
   flutter_localizations:
