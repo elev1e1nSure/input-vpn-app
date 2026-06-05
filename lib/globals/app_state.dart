@@ -15,7 +15,6 @@ import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 import 'package:input_vpn/services/vpn_url_parser.dart';
 import 'package:input_vpn/services/windows_startup_manager.dart';
-import 'package:input_vpn/services/ip_service.dart';
 import 'package:input_vpn/controllers/network_info_controller.dart';
 import 'package:input_vpn/controllers/settings_controller.dart';
 import 'package:input_vpn/controllers/vpn_connection_controller.dart';
