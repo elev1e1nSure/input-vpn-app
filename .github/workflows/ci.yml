@@ -54,3 +54,9 @@ jobs:
 
       - name: Build Windows
         run: flutter build windows --release
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: build/windows/x64/runner/Release/
