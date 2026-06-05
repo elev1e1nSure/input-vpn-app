@@ -11,7 +11,8 @@ abstract class VpnConfigRepository {
 
   Result<void> addConfig(String name, String raw, String type);
   Result<void> removeConfig(String configId);
-  Result<void> updateConfig(String configId, String newName, String newRawConfig);
+  Result<void> updateConfig(
+      String configId, String newName, String newRawConfig);
   Result<void> selectServer(VpnServer server);
   Result<void> refreshSubscriptionStats(String configId);
 

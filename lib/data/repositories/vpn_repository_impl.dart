@@ -46,7 +46,8 @@ class VpnRepositoryImpl implements VpnServiceRepository {
   }
 
   @override
-  Result<Stream<ConnectionStatus>> watchStatus() => Result.ok(_vpn.watchStatus());
+  Result<Stream<ConnectionStatus>> watchStatus() =>
+      Result.ok(_vpn.watchStatus());
 
   @override
   Result<void> connect(ParsedConfig config) {
@@ -111,7 +112,8 @@ class VpnRepositoryImpl implements VpnServiceRepository {
   }
 
   @override
-  Result<void> setDnsServers({required String remoteDns, required String directDns}) {
+  Result<void> setDnsServers(
+      {required String remoteDns, required String directDns}) {
     final vpn = _vpn;
     if (vpn is! SingBoxVpnService) return Result.ok(null);
     vpn.setDnsServers(remoteDns: remoteDns, directDns: directDns);

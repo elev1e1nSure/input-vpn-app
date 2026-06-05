@@ -33,7 +33,8 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
   Result<VpnServer?> getSelectedServer() => Result.ok(_selectedServer);
 
   @override
-  Result<ParsedConfig?> getParsedConfig(String serverId) => Result.ok(_parsedByServerId[serverId]);
+  Result<ParsedConfig?> getParsedConfig(String serverId) =>
+      Result.ok(_parsedByServerId[serverId]);
 
   @override
   Result<void> addConfig(String name, String raw, String type) {
@@ -176,7 +177,8 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
   }
 
   @override
-  Result<void> updateConfig(String configId, String newName, String newRawConfig) {
+  Result<void> updateConfig(
+      String configId, String newName, String newRawConfig) {
     final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
     if (configIndex == -1) return Result.ok(null);
 
@@ -278,18 +280,19 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
   @override
   Result<void> saveState() {
     try {
-      final configsJson = jsonEncode(_userConfigs.map((c) => c.toJson()).toList());
+      final configsJson =
+          jsonEncode(_userConfigs.map((c) => c.toJson()).toList());
       sharedPrefs.setString('userConfigs', configsJson);
 
-      final serversJson = jsonEncode(_userServers.map((s) => s.toJson()).toList());
+      final serversJson =
+          jsonEncode(_userServers.map((s) => s.toJson()).toList());
       sharedPrefs.setString('userServers', serversJson);
 
-      sharedPrefs.setString(
-          'selectedServerId', _selectedServer?.id ?? '');
+      sharedPrefs.setString('selectedServerId', _selectedServer?.id ?? '');
 
       final parsedJson = jsonEncode(
-            _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
-          );
+        _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
+      );
       sharedPrefs.setString('parsedByServerId', parsedJson);
     } catch (e) {
       debugPrint('Failed to save persisted state: $e');

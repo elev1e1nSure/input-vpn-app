@@ -64,7 +64,8 @@ class VpnCubit extends Cubit<VpnState> {
   }
 
   void applyDns(List<String> servers) {
-    final remote = servers.isNotEmpty ? 'tls://${servers.first}' : 'tls://1.1.1.1';
+    final remote =
+        servers.isNotEmpty ? 'tls://${servers.first}' : 'tls://1.1.1.1';
     final direct = servers.length > 1 ? servers[1] : '8.8.8.8';
     _vpnRepository.setDnsServers(remoteDns: remote, directDns: direct);
   }

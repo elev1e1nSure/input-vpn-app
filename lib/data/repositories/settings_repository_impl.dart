@@ -49,18 +49,22 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   @override
   Result<List<DnsProfile>> getCustomDnsProfiles() {
-    return Result.ok(_customDnsProfiles.map((p) => DnsProfile(
-      id: p.id,
-      name: p.name,
-      primary: p.servers.isNotEmpty ? p.servers.first : '',
-      secondary: p.servers.length > 1 ? p.servers[1] : null,
-    )).toList());
+    return Result.ok(_customDnsProfiles
+        .map((p) => DnsProfile(
+              id: p.id,
+              name: p.name,
+              primary: p.servers.isNotEmpty ? p.servers.first : '',
+              secondary: p.servers.length > 1 ? p.servers[1] : null,
+            ))
+        .toList());
   }
 
   @override
   Result<List<String>> getCurrentDnsServers() {
     final custom = getSelectedCustomDnsProfile();
-    if (custom.isSuccess && custom.value != null && custom.value!.servers.isNotEmpty) {
+    if (custom.isSuccess &&
+        custom.value != null &&
+        custom.value!.servers.isNotEmpty) {
       return Result.ok(custom.value!.servers);
     }
     final preset = DnsPreset.byId(_dnsPreset);
@@ -74,7 +78,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
   Result<DnsProfile?> getSelectedCustomDnsProfile() {
     if (_dnsCustomId == null) return Result.ok(null);
     try {
-      final profile = _customDnsProfiles.firstWhere((p) => p.id == _dnsCustomId);
+      final profile =
+          _customDnsProfiles.firstWhere((p) => p.id == _dnsCustomId);
       return Result.ok(DnsProfile(
         id: profile.id,
         name: profile.name,

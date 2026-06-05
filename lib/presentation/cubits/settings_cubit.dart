@@ -17,7 +17,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> _load() async {
     final loadResult = await _settingsRepository.load();
     if (loadResult.isFailure) return;
-    
+
     final localeResult = _settingsRepository.getLocale();
     final themeModeResult = _settingsRepository.getThemeMode();
     final connectOnBootResult = _settingsRepository.getConnectOnBoot();
@@ -27,7 +27,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final dnsCustomIdResult = _settingsRepository.getDnsCustomId();
     final proxyPortResult = _settingsRepository.getProxyPort();
     final customDnsProfilesResult = _settingsRepository.getCustomDnsProfiles();
-    
+
     emit(SettingsState(
       locale: localeResult.getOrElse(const Locale('en')),
       themeMode: themeModeResult.getOrElse(ThemeMode.dark),
@@ -37,12 +37,15 @@ class SettingsCubit extends Cubit<SettingsState> {
       dnsPreset: dnsPresetResult.getOrElse('cloudflare'),
       dnsCustomId: dnsCustomIdResult.value,
       proxyPort: proxyPortResult.getOrElse(11080),
-      customDnsProfiles: customDnsProfilesResult.getOrElse(const <DnsProfile>[]).map((dp) => CustomDnsProfile(
-        id: dp.id,
-        name: dp.name,
-        primary: dp.primary,
-        secondary: dp.secondary,
-      )).toList(),
+      customDnsProfiles: customDnsProfilesResult
+          .getOrElse(const <DnsProfile>[])
+          .map((dp) => CustomDnsProfile(
+                id: dp.id,
+                name: dp.name,
+                primary: dp.primary,
+                secondary: dp.secondary,
+              ))
+          .toList(),
     ));
   }
 
@@ -73,7 +76,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setMinimizeToTray(bool value) async {
     await _settingsRepository.setMinimizeToTray(value);
     final result = _settingsRepository.getMinimizeToTray();
-    emit(state.copyWith(minimizeToTray: result.getOrElse(state.minimizeToTray)));
+    emit(
+        state.copyWith(minimizeToTray: result.getOrElse(state.minimizeToTray)));
   }
 
   Future<void> setDnsPreset(String preset) async {
@@ -108,12 +112,15 @@ class SettingsCubit extends Cubit<SettingsState> {
     await _settingsRepository.saveCustomDnsProfile(dnsProfile);
     final result = _settingsRepository.getCustomDnsProfiles();
     emit(state.copyWith(
-      customDnsProfiles: result.getOrElse(const <DnsProfile>[]).map((dp) => CustomDnsProfile(
-        id: dp.id,
-        name: dp.name,
-        primary: dp.primary,
-        secondary: dp.secondary,
-      )).toList(),
+      customDnsProfiles: result
+          .getOrElse(const <DnsProfile>[])
+          .map((dp) => CustomDnsProfile(
+                id: dp.id,
+                name: dp.name,
+                primary: dp.primary,
+                secondary: dp.secondary,
+              ))
+          .toList(),
     ));
   }
 
@@ -122,12 +129,15 @@ class SettingsCubit extends Cubit<SettingsState> {
     final customDnsResult = _settingsRepository.getCustomDnsProfiles();
     final dnsCustomIdResult = _settingsRepository.getDnsCustomId();
     emit(state.copyWith(
-      customDnsProfiles: customDnsResult.getOrElse(const <DnsProfile>[]).map((dp) => CustomDnsProfile(
-        id: dp.id,
-        name: dp.name,
-        primary: dp.primary,
-        secondary: dp.secondary,
-      )).toList(),
+      customDnsProfiles: customDnsResult
+          .getOrElse(const <DnsProfile>[])
+          .map((dp) => CustomDnsProfile(
+                id: dp.id,
+                name: dp.name,
+                primary: dp.primary,
+                secondary: dp.secondary,
+              ))
+          .toList(),
       dnsCustomId: dnsCustomIdResult.value,
     ));
   }

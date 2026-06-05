@@ -17,5 +17,6 @@ abstract class VpnServiceRepository {
 
   Result<void> setProxyMode(bool enabled);
   Result<void> setServiceMode(bool enabled);
-  Result<void> setDnsServers({required String remoteDns, required String directDns});
+  Result<void> setDnsServers(
+      {required String remoteDns, required String directDns});
 }

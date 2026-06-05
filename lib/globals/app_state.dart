@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -61,7 +61,8 @@ class AppState extends ChangeNotifier {
     _loadPersistedState();
 
     _vpnConnection.addListener(notifyListeners);
-    _settingsController = SettingsController(prefs: PrefsDataSource(sharedPrefs));
+    _settingsController =
+        SettingsController(prefs: PrefsDataSource(sharedPrefs));
     _settingsController.addListener(notifyListeners);
     _networkInfo.addListener(notifyListeners);
 

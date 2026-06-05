@@ -11,8 +11,6 @@ class DnsProfile {
   final String primary;
   final String? secondary;
 
-  List<String> get servers => [
-        primary,
-        if (secondary != null && secondary!.isNotEmpty) secondary!
-      ];
+  List<String> get servers =>
+      [primary, if (secondary != null && secondary!.isNotEmpty) secondary!];
 }
