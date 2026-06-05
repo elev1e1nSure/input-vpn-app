@@ -36,45 +36,31 @@ jobs:
         run: flutter build windows --release
 
       - name: Generate Changelog
-        id: changelog
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
           $prevTag = git describe --tags --abbrev=0 HEAD^ 2>$null
           if (-not $prevTag) { $prevTag = git rev-list --max-parents=0 HEAD }
-          
+
           $changes = git log "$prevTag..HEAD" --pretty=format:"- %s (%h)" --no-merges
-          
-          # Categorize commits
-          $added = $changes | Where-Object { $_ -match '^- (feat|add|introduce)' }
-          $fixed = $changes | Where-Object { $_ -match '^- (fix|repair|correct)' }
+
+          $added   = $changes | Where-Object { $_ -match '^- (feat|add|introduce)' }
+          $fixed   = $changes | Where-Object { $_ -match '^- (fix|repair|correct)' }
           $changed = $changes | Where-Object { $_ -match '^- (refactor|style|update|chore|ci|build|perf|test)' }
           $removed = $changes | Where-Object { $_ -match '^- (remove|delete|drop)' }
           $breaking = $changes | Where-Object { $_ -match 'BREAKING CHANGE' }
-          
-          $changelog = "## What's Changed`n`n"
-          
-          if ($breaking) {
-            $changelog += "### ⚠️ Breaking Changes`n$($breaking -join "`n")`n`n"
-          }
-          if ($added) {
-            $changelog += "### ✨ Added`n$($added -join "`n")`n`n"
-          }
-          if ($changed) {
-            $changelog += "### 🔧 Changed`n$($changed -join "`n")`n`n"
-          }
-          if ($fixed) {
-            $changelog += "### 🐛 Fixed`n$($fixed -join "`n")`n`n"
-          }
-          if ($removed) {
-            $changelog += "### 🗑️ Removed`n$($removed -join "`n")`n`n"
-          }
-          
-          $changelog += "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$prevTag...$tag"
-          
-          # Output for GitHub Actions
-          $changelog = $changelog -replace "`n", "\n"
-          Write-Output "body=$changelog" >> $env:GITHUB_OUTPUT
+
+          $lines = @("## What's Changed", "")
+
+          if ($breaking) { $lines += "### ⚠️ Breaking Changes"; $lines += $breaking; $lines += "" }
+          if ($added)    { $lines += "### ✨ Added";            $lines += $added;    $lines += "" }
+          if ($changed)  { $lines += "### 🔧 Changed";         $lines += $changed;  $lines += "" }
+          if ($fixed)    { $lines += "### 🐛 Fixed";           $lines += $fixed;    $lines += "" }
+          if ($removed)  { $lines += "### 🗑️ Removed";        $lines += $removed;  $lines += "" }
+
+          $lines += "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$prevTag...$tag"
+
+          [System.IO.File]::WriteAllLines("$PWD\changelog.md", $lines)
 
       - name: Zip Build
         shell: pwsh
@@ -85,7 +71,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.body }}
+          body_path: changelog.md
           files: |
             InputVPN-*.zip
           draft: false
