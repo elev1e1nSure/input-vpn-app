@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Generate Changelog
+        id: changelog
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $prevTag = git describe --tags --abbrev=0 HEAD^ 2>$null
+          if (-not $prevTag) { $prevTag = git rev-list --max-parents=0 HEAD }
+          
+          $changes = git log "$prevTag..HEAD" --pretty=format:"- %s (%h)" --no-merges
+          
+          # Categorize commits
+          $added = $changes | Where-Object { $_ -match '^- (feat|add|introduce)' }
+          $fixed = $changes | Where-Object { $_ -match '^- (fix|repair|correct)' }
+          $changed = $changes | Where-Object { $_ -match '^- (refactor|style|update|chore|ci|build|perf|test)' }
+          $removed = $changes | Where-Object { $_ -match '^- (remove|delete|drop)' }
+          $breaking = $changes | Where-Object { $_ -match 'BREAKING CHANGE' }
+          
+          $changelog = "## What's Changed`n`n"
+          
+          if ($breaking) {
+            $changelog += "### ⚠️ Breaking Changes`n$($breaking -join "`n")`n`n"
+          }
+          if ($added) {
+            $changelog += "### ✨ Added`n$($added -join "`n")`n`n"
+          }
+          if ($changed) {
+            $changelog += "### 🔧 Changed`n$($changed -join "`n")`n`n"
+          }
+          if ($fixed) {
+            $changelog += "### 🐛 Fixed`n$($fixed -join "`n")`n`n"
+          }
+          if ($removed) {
+            $changelog += "### 🗑️ Removed`n$($removed -join "`n")`n`n"
+          }
+          
+          $changelog += "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$prevTag...$tag"
+          
+          # Output for GitHub Actions
+          $changelog = $changelog -replace "`n", "\n"
+          Write-Output "body=$changelog" >> $env:GITHUB_OUTPUT
+
+      - name: Zip Build
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "InputVPN-$version-windows.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.body }}
+          files: |
+            InputVPN-*.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
