@@ -52,11 +52,11 @@ jobs:
 
           $lines = @("## What's Changed", "")
 
-          if ($breaking) { $lines += "### ⚠️ Breaking Changes"; $lines += $breaking; $lines += "" }
-          if ($added)    { $lines += "### ✨ Added";            $lines += $added;    $lines += "" }
-          if ($changed)  { $lines += "### 🔧 Changed";         $lines += $changed;  $lines += "" }
-          if ($fixed)    { $lines += "### 🐛 Fixed";           $lines += $fixed;    $lines += "" }
-          if ($removed)  { $lines += "### 🗑️ Removed";        $lines += $removed;  $lines += "" }
+          if ($breaking) { $lines += "### Breaking Changes"; $lines += $breaking; $lines += "" }
+          if ($added)    { $lines += "### Added";            $lines += $added;    $lines += "" }
+          if ($changed)  { $lines += "### Changed";          $lines += $changed;  $lines += "" }
+          if ($fixed)    { $lines += "### Fixed";            $lines += $fixed;    $lines += "" }
+          if ($removed)  { $lines += "### Removed";          $lines += $removed;  $lines += "" }
 
           $lines += "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$prevTag...$tag"
 
