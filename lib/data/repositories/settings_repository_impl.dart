@@ -133,8 +133,9 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   @override
   Result<void> setDnsPreset(String preset) {
-    if (_dnsPreset == preset && _dnsCustomId == null)
+    if (_dnsPreset == preset && _dnsCustomId == null) {
       return const Result.ok(null);
+    }
     _dnsPreset = preset;
     _prefs.setString('dnsPreset', preset);
     if (_dnsCustomId != null) {
