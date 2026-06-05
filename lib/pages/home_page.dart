@@ -405,50 +405,16 @@ class _SidebarStatus extends StatelessWidget {
         opacity: expanded ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 150),
         child: expanded
-            ? Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
-                      boxShadow: isConnected
-                          ? [BoxShadow(color: dotColor.withValues(alpha: 0.6), blurRadius: 6)]
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isConnected ? 'Connected' : 'Disconnected',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 11,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'v1.1.0',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
-                    ),
-                  ),
-                ],
-              )
-            : Center(
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    shape: BoxShape.circle,
-                    boxShadow: isConnected
-                        ? [BoxShadow(color: dotColor.withValues(alpha: 0.6), blurRadius: 6)]
-                        : null,
+            ? Center(
+                child: Text(
+                  'v1.1.0',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 11,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                   ),
                 ),
-              ),
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }

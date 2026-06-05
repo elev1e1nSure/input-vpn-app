@@ -140,17 +140,6 @@ const obs = new IntersectionObserver(entries => {
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 ```
 
----
-
-## Разделитель
-
-Горизонтальная линия между секциями:
-```html
-<hr style="border: none; border-top: 1px solid var(--border); margin: 0; opacity: 0.5;">
-```
-
----
-
 ## Принципы дизайна
 
 1. **Монохром + один акцент.** Только чёрное, белое, серое — и зелёный для важного.
