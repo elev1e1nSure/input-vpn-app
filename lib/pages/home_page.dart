@@ -712,13 +712,8 @@ class _ConnectButtonState extends State<_ConnectButton>
     return AnimatedBuilder(
       animation: _pulse,
       builder: (context, child) {
-        // Glow: pulses when connected, subtle green tint when hovering disconnected
-        final glowAlpha = isConnected
-            ? 0.18 + 0.14 * _pulse.value
-            : (_hovered && widget.hasServer ? 0.10 : 0.0);
-        final glowBlur = isConnected
-            ? 28.0 + 16.0 * _pulse.value
-            : 20.0;
+        final glowAlpha = isConnected ? 0.18 + 0.14 * _pulse.value : 0.0;
+        final glowBlur = 28.0 + 16.0 * _pulse.value;
 
         return MouseRegion(
           cursor: SystemMouseCursors.click,
