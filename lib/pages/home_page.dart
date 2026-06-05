@@ -9,7 +9,6 @@ import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/pages/settings_screen.dart';
 import 'package:input_vpn/pages/servers_screen.dart';
 import 'package:input_vpn/pages/add_config_screen.dart';
-import 'package:input_vpn/pages/logs_screen.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/services/network_utils.dart';

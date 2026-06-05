@@ -169,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             s.logs,
             Icons.article,
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LogsScreen()),
+              MaterialPageRoute<void>(builder: (_) => const LogsScreen()),
             ),
           ),
           const SizedBox(height: 24),
