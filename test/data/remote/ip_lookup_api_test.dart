@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:input_vpn/core/result.dart';
 import 'package:input_vpn/data/remote/ip_lookup_api.dart';
+import 'package:mocktail/mocktail.dart';
 
 class _MockDio extends Mock implements Dio {}
 
@@ -25,7 +24,6 @@ void main() {
     test('fetchPublicIp returns ip on success', () async {
       final response = Response<String>(
         data: '1.2.3.4',
-        statusCode: 200,
         requestOptions: RequestOptions(),
       );
       when(
@@ -42,8 +40,6 @@ void main() {
 
     test('fetchPublicIp returns failure on empty data', () async {
       final response = Response<String>(
-        data: null,
-        statusCode: 200,
         requestOptions: RequestOptions(),
       );
       when(
@@ -60,7 +56,6 @@ void main() {
     test('fetchCountryCode returns country code on success', () async {
       final response = Response<Map<String, dynamic>>(
         data: <String, dynamic>{'countryCode': 'US'},
-        statusCode: 200,
         requestOptions: RequestOptions(),
       );
       when(

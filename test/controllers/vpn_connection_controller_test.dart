@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:input_vpn/controllers/vpn_connection_controller.dart';
-import 'package:input_vpn/models/connection_failure.dart';
 import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/parsed_config.dart';
 import 'package:input_vpn/models/proxy_type.dart';
 import 'package:input_vpn/services/vpn_service.dart';
+import 'package:mocktail/mocktail.dart';
 
 class _MockVpnService extends Mock implements VpnService {}
 

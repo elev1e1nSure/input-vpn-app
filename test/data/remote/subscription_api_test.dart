@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:input_vpn/data/remote/subscription_api.dart';
+import 'package:mocktail/mocktail.dart';
 
 class _MockDio extends Mock implements Dio {}
 
@@ -26,7 +26,6 @@ void main() {
       const url = 'https://example.com/sub';
       final response = Response<String>(
         data: 'vless://a@b:443',
-        statusCode: 200,
         requestOptions: RequestOptions(path: url),
       );
       when(
@@ -51,8 +50,6 @@ void main() {
     test('fetch returns empty body when data is null', () async {
       const url = 'https://example.com/sub';
       final response = Response<String>(
-        data: null,
-        statusCode: 200,
         requestOptions: RequestOptions(path: url),
       );
       when(

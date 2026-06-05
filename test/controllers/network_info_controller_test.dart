@@ -1,11 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:input_vpn/controllers/network_info_controller.dart';
-import 'package:input_vpn/services/ip_service.dart';
-
-class _MockIpService extends Mock implements IpService {}
 
 void main() {
   group('NetworkInfoController', () {

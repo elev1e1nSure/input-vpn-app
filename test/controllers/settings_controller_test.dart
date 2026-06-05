@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:input_vpn/controllers/settings_controller.dart';
 import 'package:input_vpn/data/local/prefs_data_source.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('SettingsController', () {
