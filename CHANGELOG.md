@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-06-05
+
 ### Added
 - CI/CD pipeline with GitHub Actions
 - Windows build artifacts upload
 - Centralized version management via `AppConstants`
+- CHANGELOG.md with automated generation scripts
 
 ### Changed
 - Replaced all CupertinoIcons and outlined Material Icons with standard Material Icons for Windows compatibility
