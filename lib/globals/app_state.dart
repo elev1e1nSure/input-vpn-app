@@ -18,9 +18,12 @@ import 'package:input_vpn/services/vpn_url_parser.dart';
 import 'package:input_vpn/services/tray_manager.dart';
 import 'package:input_vpn/services/windows_startup_manager.dart';
 import 'package:input_vpn/services/ip_service.dart';
-import 'package:input_vpn/vpn_server.dart';
-import 'package:input_vpn/vpn_config.dart';
-import 'package:input_vpn/config_type.dart';
+import 'package:input_vpn/controllers/network_info_controller.dart';
+import 'package:input_vpn/controllers/settings_controller.dart';
+import 'package:input_vpn/core/di.dart';
+import 'package:input_vpn/models/vpn_server.dart';
+import 'package:input_vpn/models/vpn_config.dart';
+import 'package:input_vpn/models/config_type.dart';
 import 'package:provider/provider.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 
@@ -57,6 +60,9 @@ class AppState extends ChangeNotifier {
     _loadPersistedState();
 
     _statusSub = _vpn.watchStatus().listen(_onStatus);
+    _settingsController = getIt<SettingsController>();
+    _settingsController.addListener(notifyListeners);
+    _networkInfo.addListener(notifyListeners);
 
     _applyDnsSelection();
 
@@ -72,9 +78,13 @@ class AppState extends ChangeNotifier {
 
   final VpnService _vpn;
   final SubscriptionService _subs;
+  late final SettingsController _settingsController;
   StreamSubscription<ConnectionStatus>? _statusSub;
   Timer? _autoConnectTimer;
   Timer? _errorTimer;
+
+  /// Access to settings; UI should prefer this over legacy AppState getters.
+  SettingsController get settings => _settingsController;
 
   /// Parsed VPN configuration per server.id, populated by [addConfig].
   final Map<String, ParsedConfig> _parsedByServerId = {};
@@ -226,19 +236,14 @@ class AppState extends ChangeNotifier {
     return _userServers;
   }
 
-  String? _publicIp;
+  final NetworkInfoController _networkInfo = NetworkInfoController();
 
-  String? get publicIp => _publicIp;
+  String? get publicIp => _networkInfo.publicIp;
 
-  String? _countryCode;
-
-  String? get countryCode => _countryCode;
+  String? get countryCode => _networkInfo.countryCode;
 
   Future<void> refreshPublicIp() async {
-    _publicIp = await IpService.fetchPublicIp();
-    _countryCode = await IpService.fetchCountryCode();
-    debugPrint('AppState: publicIp=$_publicIp, countryCode=$_countryCode');
-    notifyListeners();
+    await _networkInfo.refresh();
   }
 
   bool _connectOnBoot = false;
@@ -905,6 +910,9 @@ class AppState extends ChangeNotifier {
     _errorTimer?.cancel();
     _autoConnectTimer?.cancel();
     _statusSub?.cancel();
+    _settingsController.removeListener(notifyListeners);
+    _networkInfo.removeListener(notifyListeners);
+    _networkInfo.dispose();
     // Disconnect VPN to ensure TUN adapter cleanup on app exit
     if (_isConnected) {
       _vpn.disconnect().ignore();

@@ -24,6 +24,10 @@ dependencies:
   system_tray: ^2.0.3
   uuid: ^3.0.7
   window_manager: ^0.4.0
+  package_info_plus: ^8.0.0
+  get_it: ^8.0.0
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
   flutter_localizations:
     sdk: flutter
 
@@ -33,6 +37,9 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
   mocktail: ^1.0.4
+  build_runner: ^2.4.14
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
 
 
 # The following section is specific to Flutter packages.

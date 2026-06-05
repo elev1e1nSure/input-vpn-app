@@ -11,6 +11,7 @@ import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/singbox_service_manager.dart';
+import 'package:input_vpn/core/di.dart';
 import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
@@ -18,6 +19,7 @@ import 'package:input_vpn/l10n/app_strings.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
+  configureDependencies(sharedPrefs);
   await AppLogger.init();
 
   // Cleanup any orphaned sing-box processes from previous runs

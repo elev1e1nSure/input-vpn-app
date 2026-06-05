@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:input_vpn/config_type.dart';
+import 'package:input_vpn/models/config_type.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';

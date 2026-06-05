@@ -14,7 +14,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:input_vpn/services/network_utils.dart';
 import 'package:input_vpn/services/tray_manager.dart';
 import 'package:input_vpn/models/connection_status.dart';
-import 'package:input_vpn/vpn_server.dart';
+import 'package:input_vpn/models/vpn_server.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {

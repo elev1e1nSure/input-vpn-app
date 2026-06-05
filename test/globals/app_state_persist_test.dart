@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:input_vpn/core/di.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/services/subscription_service.dart';
@@ -19,6 +20,7 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       sharedPrefs = await SharedPreferences.getInstance();
+      configureDependencies(sharedPrefs);
       mockVpn = _MockVpnService();
       mockSubs = _MockSubscriptionService();
       when(() => mockVpn.watchStatus()).thenAnswer((_) => const Stream.empty());
@@ -27,7 +29,10 @@ void main() {
       state = AppState(vpnService: mockVpn, subscriptionService: mockSubs);
     });
 
-    tearDown(() => state.dispose());
+    tearDown(() {
+      state.dispose();
+      getIt.reset();
+    });
 
     test('setConnectOnBoot does not notify when value unchanged', () {
       var count = 0;

@@ -1,4 +1,4 @@
-import 'package:input_vpn/config_type.dart';
+import 'package:input_vpn/models/config_type.dart';
 
 class VpnConfig {
   const VpnConfig({
