@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -640,16 +641,53 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-/// Animated connect/disconnect button — isolated repaint boundary target.
-/// Selects only isConnected, isConnecting, isDisconnecting, selectedServer.
-class _ConnectButton extends StatelessWidget {
-  const _ConnectButton({
-    required this.hasServer,
-    required this.onTap,
-  });
+/// Animated connect/disconnect button.
+/// Pulse glow when connected (breathe), hover border glow, press scale.
+class _ConnectButton extends StatefulWidget {
+  const _ConnectButton({required this.hasServer, required this.onTap});
 
   final bool hasServer;
   final VoidCallback onTap;
+
+  @override
+  State<_ConnectButton> createState() => _ConnectButtonState();
+}
+
+class _ConnectButtonState extends State<_ConnectButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+  bool _hovered = false;
+  bool _pressed = false;
+  bool _lastConnected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  void _syncPulse(bool isConnected) {
+    if (isConnected == _lastConnected) return;
+    _lastConnected = isConnected;
+    if (isConnected) {
+      _pulse.repeat(reverse: true);
+    } else {
+      _pulse.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOut,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -661,95 +699,123 @@ class _ConnectButton extends StatelessWidget {
     final isDisconnecting =
         context.select<AppState, bool>((a) => a.isDisconnecting);
 
-    IconData icon;
-    if (!hasServer) {
-      icon = Icons.add;
-    } else if (isConnecting) {
-      icon = Icons.pause;
-    } else {
-      icon = Icons.power_settings_new;
-    }
+    // Defer animation sync so we never mutate controller during build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncPulse(isConnected);
+    });
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              width: 170,
-              height: 170,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isConnected
-                    ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                    : theme.colorScheme.surface,
-                border: Border.all(
-                  color: isConnected
-                      ? theme.colorScheme.primary
-                      : theme.dividerTheme.color ??
-                          theme.colorScheme.onSurface.withValues(alpha: 0.15),
-                  width: 2,
-                ),
-                boxShadow: isConnected
-                    ? [
-                        BoxShadow(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.25),
-                          blurRadius: 32,
-                          spreadRadius: 6,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Center(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  width: hasServer ? 120 : 110,
-                  height: hasServer ? 120 : 110,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isConnected
-                        ? theme.colorScheme.primary
-                        : hasServer
-                            ? theme.colorScheme.surface
-                            : theme.colorScheme.surface,
-                  ),
-                  child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      transitionBuilder: (child, animation) => ScaleTransition(
-                        scale: animation,
-                        child: child,
+    final icon = !widget.hasServer
+        ? Icons.add
+        : isConnecting
+            ? Icons.pause
+            : Icons.power_settings_new;
+
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        // Glow: pulses when connected, subtle green tint when hovering disconnected
+        final glowAlpha = isConnected
+            ? 0.18 + 0.14 * _pulse.value
+            : (_hovered && widget.hasServer ? 0.10 : 0.0);
+        final glowBlur = isConnected
+            ? 28.0 + 16.0 * _pulse.value
+            : 20.0;
+
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() {
+            _hovered = false;
+            _pressed = false;
+          }),
+          child: GestureDetector(
+            onTap: widget.onTap,
+            onTapDown: (_) => setState(() => _pressed = true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            child: AnimatedScale(
+              scale: _pressed ? 0.94 : 1.0,
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeInOut,
+                    width: 170,
+                    height: 170,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isConnected
+                          ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                          : theme.colorScheme.surface,
+                      border: Border.all(
+                        color: isConnected
+                            ? theme.colorScheme.primary
+                            : _hovered && widget.hasServer
+                                ? theme.colorScheme.primary
+                                    .withValues(alpha: 0.45)
+                                : theme.dividerTheme.color ??
+                                    theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.15),
+                        width: 2,
                       ),
-                      child: isConnecting || isDisconnecting
-                          ? const SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
+                      boxShadow: glowAlpha > 0
+                          ? [
+                              BoxShadow(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: glowAlpha),
+                                blurRadius: glowBlur,
+                                spreadRadius: 4,
                               ),
-                            )
-                          : Icon(
-                              icon,
-                              key: ValueKey<bool>(hasServer),
-                              size: hasServer ? 48 : 40,
-                              color: Colors.white,
-                            ),
+                            ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        width: widget.hasServer ? 120 : 110,
+                        height: widget.hasServer ? 120 : 110,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isConnected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.surface,
+                        ),
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            transitionBuilder: (child, animation) =>
+                                ScaleTransition(scale: animation, child: child),
+                            child: isConnecting || isDisconnecting
+                                ? const SizedBox(
+                                    width: 32,
+                                    height: 32,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                : Icon(
+                                    icon,
+                                    key: ValueKey<bool>(widget.hasServer),
+                                    size: widget.hasServer ? 48 : 40,
+                                    color: Colors.white,
+                                  ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -779,8 +845,9 @@ class _PublicIpText extends StatelessWidget {
   }
 }
 
-/// Server card at the bottom — only rebuilds when selectedServer changes.
-class _ServerCard extends StatelessWidget {
+/// Server card at the bottom — feature-card style from Просека design system.
+/// Hover: border lightens, scale 1.015, icon goes green, liquid fill from cursor.
+class _ServerCard extends StatefulWidget {
   const _ServerCard({
     required this.onTap,
     required this.theme,
@@ -792,7 +859,35 @@ class _ServerCard extends StatelessWidget {
   final AppStrings s;
 
   @override
+  State<_ServerCard> createState() => _ServerCardState();
+}
+
+class _ServerCardState extends State<_ServerCard>
+    with SingleTickerProviderStateMixin {
+  bool _hovered = false;
+  Offset _fillOrigin = const Offset(0.5, 0.5);
+  late final AnimationController _fill;
+
+  @override
+  void initState() {
+    super.initState();
+    _fill = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+      reverseDuration: const Duration(milliseconds: 350),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fill.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final s = widget.s;
     final server =
         context.select<AppState, VpnServer?>((a) => a.selectedServer);
     final serverAddress =
@@ -800,66 +895,165 @@ class _ServerCard extends StatelessWidget {
     final selectedServerIp =
         serverAddress?.trim().isNotEmpty == true ? serverAddress!.trim() : '—';
 
+    final primary = theme.colorScheme.primary;
+    final borderNormal =
+        theme.dividerTheme.color ?? theme.colorScheme.onSurface.withValues(alpha: 0.15);
+    final borderHover = primary.withValues(alpha: 0.35);
+    final iconNormal = theme.iconTheme.color?.withValues(alpha: 0.35) ?? Colors.white38;
+    final iconHover = primary.withValues(alpha: 0.75);
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
+      onEnter: (_) {
+        setState(() => _hovered = true);
+        _fill.forward();
+      },
+      onHover: (event) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box == null) return;
+        final local = box.globalToLocal(event.position);
+        setState(() => _fillOrigin = Offset(
+              (local.dx / box.size.width).clamp(0.0, 1.0),
+              (local.dy / box.size.height).clamp(0.0, 1.0),
+            ));
+      },
+      onExit: (_) {
+        setState(() => _hovered = false);
+        _fill.reverse();
+      },
       child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.cardTheme.color ?? theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.dividerTheme.color ??
-                  theme.colorScheme.onSurface.withValues(alpha: 0.1),
-            ),
-          ),
-          child: Row(
-            children: [
-              // Neutral globe icon to match server list styling
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.public,
-                    size: 20,
-                    color: theme.iconTheme.color?.withValues(alpha: 0.35),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _hovered ? 1.015 : 1.0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          child: AnimatedBuilder(
+            animation: _fill,
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.cardTheme.color ?? theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _hovered ? borderHover : borderNormal,
+                      ),
+                    ),
+                    child: child,
+                  ),
+                  // Liquid fill overlay — green circle expanding from cursor
+                  if (_fill.value > 0)
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: CustomPaint(
+                          painter: _LiquidFillPainter(
+                            progress: _fill.value,
+                            origin: _fillOrigin,
+                            color: primary.withValues(alpha: 0.07),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _hovered
+                          ? primary.withValues(alpha: 0.4)
+                          : Colors.transparent,
+                    ),
+                  ),
+                  child: Center(
+                    child: TweenAnimationBuilder<Color?>(
+                      tween: ColorTween(
+                        begin: iconNormal,
+                        end: _hovered ? iconHover : iconNormal,
+                      ),
+                      duration: const Duration(milliseconds: 250),
+                      builder: (_, color, __) =>
+                          Icon(Icons.public, size: 20, color: color),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      server != null ? server.name : s.noServer,
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 2),
-                    if (server != null)
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        selectedServerIp,
-                        style:
-                            theme.textTheme.titleLarge?.copyWith(fontSize: 15),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        server != null ? server.name : s.noServer,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                            fontSize: 17, fontWeight: FontWeight.w700),
                       ),
-                  ],
+                      const SizedBox(height: 2),
+                      if (server != null)
+                        Text(
+                          selectedServerIp,
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Paints an expanding circle from [origin] (0–1 coords) filling the widget.
+/// Used for the liquid-fill hover effect on [_ServerCard].
+class _LiquidFillPainter extends CustomPainter {
+  const _LiquidFillPainter({
+    required this.progress,
+    required this.origin,
+    required this.color,
+  });
+
+  final double progress;
+  final Offset origin;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(origin.dx * size.width, origin.dy * size.height);
+    // Max radius to cover all four corners from wherever the cursor is
+    final maxR = [
+      center.distance,
+      (center - Offset(size.width, 0)).distance,
+      (center - Offset(0, size.height)).distance,
+      (center - Offset(size.width, size.height)).distance,
+    ].reduce(math.max);
+
+    final t = Curves.easeOutCubic.transform(progress);
+    canvas.drawCircle(center, maxR * t, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_LiquidFillPainter old) =>
+      old.progress != progress ||
+      old.origin != origin ||
+      old.color != color;
 }
 
 
