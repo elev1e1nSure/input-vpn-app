@@ -9,7 +9,7 @@ import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/clash_api_client.dart';
 import 'package:input_vpn/services/vpn/windows/network_utils.dart';
 import 'package:input_vpn/services/vpn/windows/singbox_config_builder.dart';
-import 'package:input_vpn/services/vpn/windows/singbox_process_ffi.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_process.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 
 /// Real VPN backend for Windows: runs `sing-box` via [SingBoxProcessFfi]
@@ -23,14 +23,14 @@ import 'package:input_vpn/services/vpn_service.dart';
 ///   3. [disconnect] calls stop on the backend and emits [Disconnected].
 class SingBoxVpnService implements VpnService {
   SingBoxVpnService({
-    SingBoxProcessFfi? process,
+    SingBoxProcess? process,
     SingBoxConfigBuilder? configBuilder,
     ClashApiClient? clashApi,
     bool proxyMode = false,
     bool serviceMode = false,
     String remoteDns = 'tls://1.1.1.1',
     String directDns = '8.8.8.8',
-  })  : _process = process ?? SingBoxProcessFfi(),
+  })  : _process = process ?? SingBoxProcess(),
         _remoteDnsServer = remoteDns,
         _directDnsServer = directDns,
         _config = configBuilder ??
@@ -43,7 +43,7 @@ class SingBoxVpnService implements VpnService {
         _proxyMode = proxyMode,
         _serviceMode = serviceMode;
 
-  final SingBoxProcessFfi _process;
+  final SingBoxProcess _process;
   SingBoxConfigBuilder _config;
   final ClashApiClient _clash;
   bool _proxyMode;
