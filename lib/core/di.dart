@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:input_vpn/data/local/prefs_data_source.dart';
@@ -11,13 +8,13 @@ import 'package:input_vpn/data/repositories/config_repository_impl.dart';
 import 'package:input_vpn/data/repositories/network_info_repository_impl.dart';
 import 'package:input_vpn/data/repositories/settings_repository_impl.dart';
 import 'package:input_vpn/data/repositories/vpn_repository_impl.dart';
-import 'package:input_vpn/domain/repositories/config_repository.dart';
+import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/domain/repositories/network_info_repository.dart';
 import 'package:input_vpn/domain/repositories/settings_repository.dart';
-import 'package:input_vpn/domain/repositories/vpn_repository.dart';
+import 'package:input_vpn/domain/repositories/vpn_service_repository.dart';
 import 'package:input_vpn/domain/usecases/add_config.dart';
 import 'package:input_vpn/domain/usecases/refresh_network_info.dart';
-import 'package:input_vpn/domain/usecases/refresh_subscription_stats.dart';
+import 'package:input_vpn/domain/usecases/refresh_subscription.dart';
 import 'package:input_vpn/domain/usecases/remove_config.dart';
 import 'package:input_vpn/domain/usecases/toggle_vpn_connection.dart';
 import 'package:input_vpn/domain/usecases/update_config.dart';
@@ -64,10 +61,10 @@ void configureDependencies(SharedPreferences sharedPreferences) {
       () => _defaultVpnBackend(),
     )
     // Repositories
-    ..registerLazySingleton<VpnRepository>(
+    ..registerLazySingleton<VpnServiceRepository>(
       () => VpnRepositoryImpl(vpnService: getIt<VpnService>()),
     )
-    ..registerLazySingleton<ConfigRepository>(
+    ..registerLazySingleton<VpnConfigRepository>(
       () => ConfigRepositoryImpl(
         subscriptionService: getIt<SubscriptionService>(),
       ),
@@ -80,19 +77,19 @@ void configureDependencies(SharedPreferences sharedPreferences) {
     )
     // Use cases
     ..registerFactory<ToggleVpnConnection>(
-      () => ToggleVpnConnection(getIt<VpnRepository>()),
+      () => ToggleVpnConnection(getIt<VpnServiceRepository>()),
     )
     ..registerFactory<AddConfig>(
-      () => AddConfig(getIt<ConfigRepository>()),
+      () => AddConfig(getIt<VpnConfigRepository>()),
     )
     ..registerFactory<RemoveConfig>(
-      () => RemoveConfig(getIt<ConfigRepository>()),
+      () => RemoveConfig(getIt<VpnConfigRepository>()),
     )
     ..registerFactory<UpdateConfig>(
-      () => UpdateConfig(getIt<ConfigRepository>()),
+      () => UpdateConfig(getIt<VpnConfigRepository>()),
     )
-    ..registerFactory<RefreshSubscriptionStats>(
-      () => RefreshSubscriptionStats(getIt<ConfigRepository>()),
+    ..registerFactory<RefreshSubscription>(
+      () => RefreshSubscription(getIt<VpnConfigRepository>()),
     )
     ..registerFactory<RefreshNetworkInfo>(
       () => RefreshNetworkInfo(getIt<NetworkInfoRepository>()),
@@ -100,17 +97,17 @@ void configureDependencies(SharedPreferences sharedPreferences) {
     // Cubits
     ..registerFactory<VpnCubit>(
       () => VpnCubit(
-        vpnRepository: getIt<VpnRepository>(),
+        vpnRepository: getIt<VpnServiceRepository>(),
         toggleVpnConnection: getIt<ToggleVpnConnection>(),
       ),
     )
     ..registerFactory<ConfigCubit>(
       () => ConfigCubit(
-        configRepository: getIt<ConfigRepository>(),
+        configRepository: getIt<VpnConfigRepository>(),
         addConfig: getIt<AddConfig>(),
         removeConfig: getIt<RemoveConfig>(),
         updateConfig: getIt<UpdateConfig>(),
-        refreshSubscriptionStats: getIt<RefreshSubscriptionStats>(),
+        refreshSubscription: getIt<RefreshSubscription>(),
       ),
     )
     ..registerFactory<SettingsCubit>(

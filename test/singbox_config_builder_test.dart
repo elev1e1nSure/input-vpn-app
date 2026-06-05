@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:input_vpn/services/singbox_config_builder.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_config_builder.dart';
 import 'package:input_vpn/services/vpn_url_parser.dart';
 
 void main() {

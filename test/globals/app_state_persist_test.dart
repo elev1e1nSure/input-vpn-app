@@ -24,6 +24,7 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       sharedPrefs = await SharedPreferences.getInstance();
+      getIt.allowReassignment = true;
       configureDependencies(sharedPrefs);
       mockVpn = _MockVpnService();
       mockSubs = _MockSubscriptionService();
@@ -34,9 +35,9 @@ void main() {
       await pumpEventQueue();
     });
 
-    tearDown(() {
+    tearDown(() async {
       state.dispose();
-      getIt.reset();
+      await getIt.reset();
     });
 
     test('setConnectOnBoot does not notify when value unchanged', () {

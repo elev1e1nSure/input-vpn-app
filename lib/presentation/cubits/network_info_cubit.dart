@@ -8,10 +8,13 @@ class NetworkInfoCubit extends Cubit<NetworkInfoState> {
     required NetworkInfoRepository networkInfoRepository,
     required RefreshNetworkInfo refreshNetworkInfo,
   })  : _networkInfoRepository = networkInfoRepository,
-        _refreshNetworkInfo = refreshNetworkInfo {
+        _refreshNetworkInfo = refreshNetworkInfo,
+        super(const NetworkInfoState()) {
+    final publicIpResult = _networkInfoRepository.getPublicIp();
+    final countryCodeResult = _networkInfoRepository.getCountryCode();
     emit(NetworkInfoState(
-      publicIp: _networkInfoRepository.publicIp,
-      countryCode: _networkInfoRepository.countryCode,
+      publicIp: publicIpResult.value,
+      countryCode: countryCodeResult.value,
     ));
   }
 
@@ -21,9 +24,11 @@ class NetworkInfoCubit extends Cubit<NetworkInfoState> {
   Future<void> refresh() async {
     emit(state.copyWith(isRefreshing: true));
     await _refreshNetworkInfo();
+    final publicIpResult = _networkInfoRepository.getPublicIp();
+    final countryCodeResult = _networkInfoRepository.getCountryCode();
     emit(NetworkInfoState(
-      publicIp: _networkInfoRepository.publicIp,
-      countryCode: _networkInfoRepository.countryCode,
+      publicIp: publicIpResult.value,
+      countryCode: countryCodeResult.value,
       isRefreshing: false,
     ));
   }

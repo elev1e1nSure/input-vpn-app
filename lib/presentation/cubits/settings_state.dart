@@ -13,7 +13,7 @@ class SettingsState {
   final List<CustomDnsProfile> customDnsProfiles;
 
   const SettingsState({
-    this.locale = Locale('en'),
+    this.locale = const Locale('en'),
     this.themeMode = ThemeMode.dark,
     this.connectOnBoot = false,
     this.autoLaunch = false,

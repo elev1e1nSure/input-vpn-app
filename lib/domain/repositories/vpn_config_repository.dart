@@ -1,9 +1,9 @@
 import 'package:input_vpn/core/result.dart';
-import 'package:input_vpn/domain/entities/parsed_config.dart';
-import 'package:input_vpn/domain/entities/vpn_config.dart';
-import 'package:input_vpn/domain/entities/vpn_server.dart';
+import 'package:input_vpn/models/parsed_config.dart';
+import 'package:input_vpn/models/vpn_config.dart';
+import 'package:input_vpn/models/vpn_server.dart';
 
-abstract class ConfigRepository {
+abstract class VpnConfigRepository {
   Result<List<VpnConfig>> getUserConfigs();
   Result<List<VpnServer>> getUserServers();
   Result<VpnServer?> getSelectedServer();

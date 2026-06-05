@@ -5,15 +5,19 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:input_vpn/presentation/cubits/settings_cubit.dart';
+import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
+import 'package:input_vpn/presentation/cubits/config_cubit.dart';
+import 'package:input_vpn/presentation/cubits/network_info_cubit.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:input_vpn/globals/app_state.dart';
+import 'package:input_vpn/services/vpn/windows/network_utils.dart';
 import 'package:input_vpn/services/app_logger.dart';
-import 'package:input_vpn/services/network_utils.dart';
-import 'package:input_vpn/services/singbox_service_manager.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_service_manager.dart';
 import 'package:input_vpn/core/di.dart';
 import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
+import 'package:input_vpn/globals/themes.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 
 void main() async {
@@ -92,13 +96,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return MultiBlocProvider(
       providers: [
-        ChangeNotifierProvider<AppState>(create: (context) => AppState()),
+        BlocProvider(create: (context) => getIt<SettingsCubit>()),
+        BlocProvider(create: (context) => getIt<VpnCubit>()),
+        BlocProvider(create: (context) => getIt<ConfigCubit>()),
+        BlocProvider(create: (context) => getIt<NetworkInfoCubit>()),
       ],
-      builder: (context, child) => MaterialApp.router(
-        theme: AppState.of(context).theme,
-        locale: AppState.of(context).locale,
+      child: Builder(
+        builder: (context) => MaterialApp.router(
+          theme: context.watch<SettingsCubit>().state.themeMode == ThemeMode.dark ? darkTheme : lightTheme,
+          locale: context.watch<SettingsCubit>().state.locale,
         localizationsDelegates: const [
           AppStringsDelegate(),
           GlobalMaterialLocalizations.delegate,
@@ -115,7 +123,8 @@ class MyApp extends StatelessWidget {
           final _ = AppStrings.of(context);
           return child!;
         },
-        routerConfig: appRouter,
+          routerConfig: appRouter,
+        ),
       ),
     );
   }

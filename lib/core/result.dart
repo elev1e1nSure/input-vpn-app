@@ -9,7 +9,7 @@ sealed class Result<T> {
   const factory Result.ok(T value) = Success<T>;
 
   /// Create a failure result with an error message.
-  const factory Result.err(String message, {Object? cause}) = Failure<T>;
+  const factory Result.err(String message, {Object? cause}) = UnexpectedFailure<T>;
 
   /// Convenience wrapper around an async function.
   static Future<Result<T>> guard<T>(Future<T> Function() fn) async {

@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:input_vpn/core/result.dart';
+import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/functions/extract_country_code.dart';
 import 'package:input_vpn/models/config_type.dart';
 import 'package:input_vpn/models/parsed_config.dart';
@@ -9,9 +11,8 @@ import 'package:input_vpn/models/vpn_server.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn_url_parser.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
-import 'package:input_vpn/domain/repositories/config_repository.dart';
 
-class ConfigRepositoryImpl {
+class ConfigRepositoryImpl implements VpnConfigRepository {
   ConfigRepositoryImpl({required SubscriptionService subscriptionService})
       : _subs = subscriptionService;
 
@@ -23,37 +24,38 @@ class ConfigRepositoryImpl {
   VpnServer? _selectedServer;
 
   @override
-  List<VpnConfig> getUserConfigs() => _userConfigs;
+  Result<List<VpnConfig>> getUserConfigs() => Result.ok(_userConfigs);
 
   @override
-  List<VpnServer> getUserServers() => _userServers;
+  Result<List<VpnServer>> getUserServers() => Result.ok(_userServers);
 
   @override
-  VpnServer? getSelectedServer() => _selectedServer;
+  Result<VpnServer?> getSelectedServer() => Result.ok(_selectedServer);
 
   @override
-  ParsedConfig? getParsedConfig(String serverId) => _parsedByServerId[serverId];
+  Result<ParsedConfig?> getParsedConfig(String serverId) => Result.ok(_parsedByServerId[serverId]);
 
   @override
-  Future<void> addConfig(String name, String raw, ConfigType type) async {
+  Result<void> addConfig(String name, String raw, String type) {
     final trimmed = raw.trim();
     final isUrl =
         trimmed.startsWith('http://') || trimmed.startsWith('https://');
-    if (type == ConfigType.subscription || isUrl) {
-      await _addSubscription(name, trimmed);
+    if (type == 'subscription' || isUrl) {
+      _addSubscription(name, trimmed);
     } else {
       _addSingleLink(name, trimmed, type);
     }
+    return Result.ok(null);
   }
 
-  void _addSingleLink(String name, String link, ConfigType type) {
+  void _addSingleLink(String name, String link, String type) {
     final parsed = VpnUrlParser.tryParse(link);
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     _userConfigs.add(VpnConfig(
       id: id,
       name: name,
       rawConfig: link,
-      type: type,
+      type: _parseConfigType(type),
       addedAt: DateTime.now(),
     ));
     final serverId = 's_$id';
@@ -86,7 +88,7 @@ class ConfigRepositoryImpl {
     saveState();
   }
 
-  Future<void> _addSubscription(String name, String url) async {
+  void _addSubscription(String name, String url) {
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     _userConfigs.add(VpnConfig(
       id: id,
@@ -98,53 +100,52 @@ class ConfigRepositoryImpl {
     ));
 
     try {
-      final result = await _subs.fetch(url);
-      if (result.isEmpty) {
-        return;
-      }
+      _subs.fetch(url).then((result) {
+        if (result.isEmpty) return;
 
-      final displayTitle =
-          (name.isEmpty ? (result.title ?? 'Subscription') : name);
+        final displayTitle =
+            (name.isEmpty ? (result.title ?? 'Subscription') : name);
 
-      final info = result.info;
-      final configIndex = _userConfigs.indexWhere((c) => c.id == id);
-      if (configIndex != -1 && info != null) {
-        _userConfigs[configIndex] = VpnConfig(
-          id: id,
-          name: displayTitle,
-          rawConfig: url,
-          type: ConfigType.subscription,
-          addedAt: DateTime.now(),
-          subUrl: url,
-          subUpload: info.upload,
-          subDownload: info.download,
-          subTotal: info.total,
-          subExpire: info.expire != null
-              ? info.expire!.millisecondsSinceEpoch ~/ 1000
-              : null,
-        );
-      }
+        final info = result.info;
+        final configIndex = _userConfigs.indexWhere((c) => c.id == id);
+        if (configIndex != -1 && info != null) {
+          _userConfigs[configIndex] = VpnConfig(
+            id: id,
+            name: displayTitle,
+            rawConfig: url,
+            type: ConfigType.subscription,
+            addedAt: DateTime.now(),
+            subUrl: url,
+            subUpload: info.upload,
+            subDownload: info.download,
+            subTotal: info.total,
+            subExpire: info.expire != null
+                ? info.expire!.millisecondsSinceEpoch ~/ 1000
+                : null,
+          );
+        }
 
-      for (var i = 0; i < result.configs.length; i++) {
-        final p = result.configs[i];
-        final serverId = 's_${id}_$i';
-        _userServers.add(VpnServer(
-          id: serverId,
-          name: p.remark.isNotEmpty ? p.remark : '$displayTitle ${i + 1}',
-          country: p.server.isNotEmpty ? p.server : displayTitle,
-          city: p.server.isNotEmpty ? '${p.server}:${p.port}' : displayTitle,
-          flagCode: extractCountryCode(p.remark),
-          signalQuality: _estimateSignal(p),
-          rawConfig: p.raw,
-          configId: id,
-        ));
-        _parsedByServerId[serverId] = p;
-      }
-      _selectedServer ??= _userServers.isNotEmpty ? _userServers.first : null;
-    } catch (e) {
-      debugPrint('Failed to load subscription "$name": $e');
+        for (var i = 0; i < result.configs.length; i++) {
+          final p = result.configs[i];
+          final serverId = 's_${id}_$i';
+          _userServers.add(VpnServer(
+            id: serverId,
+            name: p.remark.isNotEmpty ? p.remark : '$displayTitle ${i + 1}',
+            country: p.server.isNotEmpty ? p.server : displayTitle,
+            city: p.server.isNotEmpty ? '${p.server}:${p.port}' : displayTitle,
+            flagCode: extractCountryCode(p.remark),
+            signalQuality: _estimateSignal(p),
+            rawConfig: p.raw,
+            configId: id,
+          ));
+          _parsedByServerId[serverId] = p;
+        }
+        _selectedServer ??= _userServers.isNotEmpty ? _userServers.first : null;
+      }).catchError((Object e) {
+        debugPrint('Failed to load subscription "$name": $e');
+      });
     } finally {
-      unawaited(saveState());
+      saveState();
     }
   }
 
@@ -160,7 +161,7 @@ class ConfigRepositoryImpl {
   }
 
   @override
-  Future<void> removeConfig(String configId) async {
+  Result<void> removeConfig(String configId) {
     _userConfigs.removeWhere((c) => c.id == configId);
     final removed = _userServers.where((s) => s.configId == configId).toList();
     _userServers.removeWhere((s) => s.configId == configId);
@@ -170,13 +171,14 @@ class ConfigRepositoryImpl {
     if (_selectedServer?.configId == configId) {
       _selectedServer = _userServers.isNotEmpty ? _userServers.first : null;
     }
-    unawaited(saveState());
+    saveState();
+    return Result.ok(null);
   }
 
-  Future<void> updateConfig(
-      String configId, String newName, String newRawConfig) async {
+  @override
+  Result<void> updateConfig(String configId, String newName, String newRawConfig) {
     final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
-    if (configIndex == -1) return;
+    if (configIndex == -1) return Result.ok(null);
 
     final oldConfig = _userConfigs[configIndex];
     _userConfigs[configIndex] = VpnConfig(
@@ -229,24 +231,26 @@ class ConfigRepositoryImpl {
       }
     }
 
-    unawaited(saveState());
-  }
-
-  Future<void> selectServer(VpnServer server) async {
-    _selectedServer = server;
     saveState();
+    return Result.ok(null);
   }
 
   @override
-  Future<void> refreshSubscriptionStats(String configId) async {
+  Result<void> selectServer(VpnServer server) {
+    _selectedServer = server;
+    saveState();
+    return Result.ok(null);
+  }
+
+  @override
+  Result<void> refreshSubscriptionStats(String configId) {
     final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
-    if (configIndex == -1) return;
+    if (configIndex == -1) return Result.ok(null);
 
     final config = _userConfigs[configIndex];
-    if (config.subUrl == null) return;
+    if (config.subUrl == null) return Result.ok(null);
 
-    try {
-      final result = await _subs.fetch(config.subUrl!);
+    _subs.fetch(config.subUrl!).then((result) {
       final info = result.info;
       if (info != null) {
         _userConfigs[configIndex] = VpnConfig(
@@ -263,36 +267,38 @@ class ConfigRepositoryImpl {
               ? info.expire!.millisecondsSinceEpoch ~/ 1000
               : null,
         );
-        unawaited(saveState());
+        saveState();
       }
-    } catch (e) {
+    }).catchError((Object e) {
       debugPrint('Failed to refresh subscription stats: $e');
-    }
+    });
+    return Result.ok(null);
   }
 
-  Future<void> saveState() async {
+  @override
+  Result<void> saveState() {
     try {
-      final configsJson = await Future(
-          () => jsonEncode(_userConfigs.map((c) => c.toJson()).toList()));
-      await sharedPrefs.setString('userConfigs', configsJson);
+      final configsJson = jsonEncode(_userConfigs.map((c) => c.toJson()).toList());
+      sharedPrefs.setString('userConfigs', configsJson);
 
-      final serversJson = await Future(
-          () => jsonEncode(_userServers.map((s) => s.toJson()).toList()));
-      await sharedPrefs.setString('userServers', serversJson);
+      final serversJson = jsonEncode(_userServers.map((s) => s.toJson()).toList());
+      sharedPrefs.setString('userServers', serversJson);
 
-      await sharedPrefs.setString(
+      sharedPrefs.setString(
           'selectedServerId', _selectedServer?.id ?? '');
 
-      final parsedJson = await Future(() => jsonEncode(
+      final parsedJson = jsonEncode(
             _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
-          ));
-      await sharedPrefs.setString('parsedByServerId', parsedJson);
+          );
+      sharedPrefs.setString('parsedByServerId', parsedJson);
     } catch (e) {
       debugPrint('Failed to save persisted state: $e');
     }
+    return Result.ok(null);
   }
 
-  Future<void> loadState() async {
+  @override
+  Result<void> loadState() {
     try {
       final configsJson = sharedPrefs.getString('userConfigs');
       if (configsJson != null && configsJson.isNotEmpty) {
@@ -330,6 +336,25 @@ class ConfigRepositoryImpl {
       }
     } catch (e) {
       debugPrint('Failed to load persisted state: $e');
+    }
+    return Result.ok(null);
+  }
+
+  ConfigType _parseConfigType(String type) {
+    switch (type.toLowerCase()) {
+      case 'subscription':
+        return ConfigType.subscription;
+      case 'vless':
+        return ConfigType.vless;
+      case 'vmess':
+        return ConfigType.vmess;
+      case 'shadowsocks':
+      case 'ss':
+        return ConfigType.shadowsocks;
+      case 'trojan':
+        return ConfigType.trojan;
+      default:
+        return ConfigType.vless;
     }
   }
 }

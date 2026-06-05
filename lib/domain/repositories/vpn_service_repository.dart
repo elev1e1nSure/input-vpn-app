@@ -1,8 +1,8 @@
 import 'package:input_vpn/core/result.dart';
-import 'package:input_vpn/domain/entities/connection_status.dart';
-import 'package:input_vpn/domain/entities/parsed_config.dart';
+import 'package:input_vpn/models/connection_status.dart';
+import 'package:input_vpn/models/parsed_config.dart';
 
-abstract class VpnRepository {
+abstract class VpnServiceRepository {
   Result<Stream<ConnectionStatus>> watchStatus();
   Result<void> connect(ParsedConfig config);
   Result<void> disconnect();

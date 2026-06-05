@@ -1,58 +1,66 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:input_vpn/domain/repositories/config_repository.dart';
+import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/domain/usecases/add_config.dart';
 import 'package:input_vpn/domain/usecases/remove_config.dart';
 import 'package:input_vpn/domain/usecases/update_config.dart';
-import 'package:input_vpn/domain/usecases/refresh_subscription_stats.dart';
+import 'package:input_vpn/domain/usecases/refresh_subscription.dart';
 import 'package:input_vpn/models/config_type.dart';
+import 'package:input_vpn/models/vpn_config.dart';
 import 'package:input_vpn/models/vpn_server.dart';
 import 'package:input_vpn/presentation/cubits/config_state.dart';
 
 class ConfigCubit extends Cubit<ConfigState> {
   ConfigCubit({
-    required ConfigRepository configRepository,
+    required VpnConfigRepository configRepository,
     required AddConfig addConfig,
     required RemoveConfig removeConfig,
     required UpdateConfig updateConfig,
-    required RefreshSubscriptionStats refreshSubscriptionStats,
+    required RefreshSubscription refreshSubscription,
   })  : _configRepository = configRepository,
         _addConfig = addConfig,
         _removeConfig = removeConfig,
         _updateConfig = updateConfig,
-        _refreshSubscriptionStats = refreshSubscriptionStats {
+        _refreshSubscription = refreshSubscription,
+        super(const ConfigState()) {
     _loadState();
   }
 
-  final ConfigRepository _configRepository;
+  final VpnConfigRepository _configRepository;
   final AddConfig _addConfig;
   final RemoveConfig _removeConfig;
   final UpdateConfig _updateConfig;
-  final RefreshSubscriptionStats _refreshSubscriptionStats;
+  final RefreshSubscription _refreshSubscription;
 
   Future<void> _loadState() async {
-    await _configRepository.loadState();
+    _configRepository.loadState();
+    final userConfigsResult = _configRepository.getUserConfigs();
+    final userServersResult = _configRepository.getUserServers();
     emit(ConfigState(
-      userConfigs: _configRepository.getUserConfigs(),
-      userServers: _configRepository.getUserServers(),
+      userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
+      userServers: userServersResult.getOrElse(const <VpnServer>[]),
     ));
   }
 
   Future<void> addConfig(String name, String raw, ConfigType type) async {
     emit(state.copyWith(isLoading: true));
-    await _addConfig(name, raw, type);
+    _addConfig(name, raw, type);
+    final userConfigsResult = _configRepository.getUserConfigs();
+    final userServersResult = _configRepository.getUserServers();
     emit(ConfigState(
-      userConfigs: _configRepository.getUserConfigs(),
-      userServers: _configRepository.getUserServers(),
+      userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
+      userServers: userServersResult.getOrElse(const <VpnServer>[]),
       isLoading: false,
     ));
   }
 
   Future<void> removeConfig(String configId) async {
     emit(state.copyWith(isLoading: true));
-    await _removeConfig(configId);
+    _removeConfig(configId);
+    final userConfigsResult = _configRepository.getUserConfigs();
+    final userServersResult = _configRepository.getUserServers();
     emit(ConfigState(
-      userConfigs: _configRepository.getUserConfigs(),
-      userServers: _configRepository.getUserServers(),
+      userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
+      userServers: userServersResult.getOrElse(const <VpnServer>[]),
       isLoading: false,
     ));
   }
@@ -60,25 +68,32 @@ class ConfigCubit extends Cubit<ConfigState> {
   Future<void> updateConfig(
       String configId, String newName, String newRawConfig) async {
     emit(state.copyWith(isLoading: true));
-    await _updateConfig(configId, newName, newRawConfig);
+    _updateConfig(configId, newName, newRawConfig);
+    final userConfigsResult = _configRepository.getUserConfigs();
+    final userServersResult = _configRepository.getUserServers();
     emit(ConfigState(
-      userConfigs: _configRepository.getUserConfigs(),
-      userServers: _configRepository.getUserServers(),
+      userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
+      userServers: userServersResult.getOrElse(const <VpnServer>[]),
       isLoading: false,
     ));
   }
 
   Future<void> refreshSubscriptionStats(String configId) async {
-    await _refreshSubscriptionStats(configId);
+    _refreshSubscription(configId);
+    final userConfigsResult = _configRepository.getUserConfigs();
+    final userServersResult = _configRepository.getUserServers();
     emit(ConfigState(
-      userConfigs: _configRepository.getUserConfigs(),
-      userServers: _configRepository.getUserServers(),
+      userConfigs: userConfigsResult.getOrElse(const <VpnConfig>[]),
+      userServers: userServersResult.getOrElse(const <VpnServer>[]),
     ));
   }
 
-  VpnServer? getSelectedServer() => _configRepository.getSelectedServer();
+  VpnServer? getSelectedServer() {
+    final result = _configRepository.getSelectedServer();
+    return result.value;
+  }
 
   Future<void> selectServer(VpnServer server) async {
-    await _configRepository.selectServer(server);
+    _configRepository.selectServer(server);
   }
 }

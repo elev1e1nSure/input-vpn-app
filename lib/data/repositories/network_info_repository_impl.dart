@@ -1,5 +1,6 @@
-import 'package:input_vpn/services/ip_service.dart';
+import 'package:input_vpn/core/result.dart';
 import 'package:input_vpn/domain/repositories/network_info_repository.dart';
+import 'package:input_vpn/services/ip_service.dart';
 
 class NetworkInfoRepositoryImpl implements NetworkInfoRepository {
   NetworkInfoRepositoryImpl();
@@ -9,29 +10,31 @@ class NetworkInfoRepositoryImpl implements NetworkInfoRepository {
   bool _isRefreshing = false;
 
   @override
-  String? get publicIp => _publicIp;
+  Result<String?> getPublicIp() => Result.ok(_publicIp);
 
   @override
-  String? get countryCode => _countryCode;
+  Result<String?> getCountryCode() => Result.ok(_countryCode);
 
   @override
-  bool get isRefreshing => _isRefreshing;
+  Result<bool> getIsRefreshing() => Result.ok(_isRefreshing);
 
   @override
-  Future<void> refresh() async {
-    if (_isRefreshing) return;
+  Result<void> refresh() {
+    if (_isRefreshing) return Result.ok(null);
     _isRefreshing = true;
     try {
-      _publicIp = await IpService.fetchPublicIp();
-      _countryCode = await IpService.fetchCountryCode();
+      _publicIp = IpService.fetchPublicIp() as String?;
+      _countryCode = IpService.fetchCountryCode() as String?;
     } finally {
       _isRefreshing = false;
     }
+    return Result.ok(null);
   }
 
   @override
-  void clear() {
+  Result<void> clear() {
     _publicIp = null;
     _countryCode = null;
+    return Result.ok(null);
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:input_vpn/core/result.dart';
 import 'package:input_vpn/data/local/prefs_data_source.dart';
+import 'package:input_vpn/domain/entities/dns_profile.dart';
+import 'package:input_vpn/domain/repositories/settings_repository.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
 import 'package:input_vpn/models/dns_preset.dart';
-import 'package:input_vpn/domain/repositories/settings_repository.dart';
 
 class SettingsRepositoryImpl implements SettingsRepository {
   SettingsRepositoryImpl({required PrefsDataSource prefs}) : _prefs = prefs;
@@ -22,138 +24,166 @@ class SettingsRepositoryImpl implements SettingsRepository {
   final List<CustomDnsProfile> _customDnsProfiles = [];
 
   @override
-  Locale get locale => _locale;
+  Result<Locale> getLocale() => Result.ok(_locale);
 
   @override
-  ThemeMode get themeMode => _themeMode;
+  Result<ThemeMode> getThemeMode() => Result.ok(_themeMode);
 
   @override
-  bool get connectOnBoot => _connectOnBoot;
+  Result<bool> getConnectOnBoot() => Result.ok(_connectOnBoot);
 
   @override
-  bool get autoLaunch => _autoLaunch;
+  Result<bool> getAutoLaunch() => Result.ok(_autoLaunch);
 
   @override
-  bool get minimizeToTray => _minimizeToTray;
+  Result<bool> getMinimizeToTray() => Result.ok(_minimizeToTray);
 
   @override
-  String get dnsPreset => _dnsPreset;
+  Result<String> getDnsPreset() => Result.ok(_dnsPreset);
 
   @override
-  String? get dnsCustomId => _dnsCustomId;
+  Result<String?> getDnsCustomId() => Result.ok(_dnsCustomId);
 
   @override
-  int get proxyPort => _proxyPort;
+  Result<int> getProxyPort() => Result.ok(_proxyPort);
 
   @override
-  List<CustomDnsProfile> get customDnsProfiles =>
-      List.unmodifiable(_customDnsProfiles);
+  Result<List<DnsProfile>> getCustomDnsProfiles() {
+    return Result.ok(_customDnsProfiles.map((p) => DnsProfile(
+      id: p.id,
+      name: p.name,
+      primary: p.servers.isNotEmpty ? p.servers.first : '',
+      secondary: p.servers.length > 1 ? p.servers[1] : null,
+    )).toList());
+  }
 
   @override
-  List<String> getCurrentDnsServers() {
+  Result<List<String>> getCurrentDnsServers() {
     final custom = getSelectedCustomDnsProfile();
-    if (custom != null && custom.servers.isNotEmpty) {
-      return custom.servers;
+    if (custom.isSuccess && custom.value != null && custom.value!.servers.isNotEmpty) {
+      return Result.ok(custom.value!.servers);
     }
     final preset = DnsPreset.byId(_dnsPreset);
     if (preset != null && preset.servers.isNotEmpty) {
-      return preset.servers;
+      return Result.ok(preset.servers);
     }
-    return const ['1.1.1.1', '8.8.8.8'];
+    return Result.ok(const ['1.1.1.1', '8.8.8.8']);
   }
 
   @override
-  CustomDnsProfile? getSelectedCustomDnsProfile() {
-    if (_dnsCustomId == null) return null;
+  Result<DnsProfile?> getSelectedCustomDnsProfile() {
+    if (_dnsCustomId == null) return Result.ok(null);
     try {
-      return _customDnsProfiles.firstWhere((p) => p.id == _dnsCustomId);
+      final profile = _customDnsProfiles.firstWhere((p) => p.id == _dnsCustomId);
+      return Result.ok(DnsProfile(
+        id: profile.id,
+        name: profile.name,
+        primary: profile.servers.isNotEmpty ? profile.servers.first : '',
+        secondary: profile.servers.length > 1 ? profile.servers[1] : null,
+      ));
     } on StateError {
-      return null;
+      return Result.ok(null);
     }
   }
 
   @override
-  Future<void> setLocale(String languageCode) async {
-    if (_locale.languageCode == languageCode) return;
+  Result<void> setLocale(String languageCode) {
+    if (_locale.languageCode == languageCode) return Result.ok(null);
     _locale = Locale(languageCode);
     _prefs.setString('locale', languageCode);
+    return Result.ok(null);
   }
 
   @override
-  Future<void> setThemeMode(ThemeMode mode) async {
-    if (_themeMode == mode) return;
+  Result<void> setThemeMode(ThemeMode mode) {
+    if (_themeMode == mode) return Result.ok(null);
     _themeMode = mode;
     _prefs.setBool('darkTheme', mode == ThemeMode.dark);
+    return Result.ok(null);
   }
 
   @override
-  Future<void> setConnectOnBoot(bool value) async {
-    if (_connectOnBoot == value) return;
+  Result<void> setConnectOnBoot(bool value) {
+    if (_connectOnBoot == value) return Result.ok(null);
     _connectOnBoot = value;
     _prefs.setBool('connectOnBoot', value);
+    return Result.ok(null);
   }
 
   @override
-  Future<void> setAutoLaunch(bool value) async {
-    if (_autoLaunch == value) return;
+  Result<void> setAutoLaunch(bool value) {
+    if (_autoLaunch == value) return Result.ok(null);
     _autoLaunch = value;
     _prefs.setBool('autoLaunch', value);
+    return Result.ok(null);
   }
 
   @override
-  Future<void> setMinimizeToTray(bool value) async {
-    if (_minimizeToTray == value) return;
+  Result<void> setMinimizeToTray(bool value) {
+    if (_minimizeToTray == value) return Result.ok(null);
     _minimizeToTray = value;
     _prefs.setBool('minimizeToTray', value);
+    return Result.ok(null);
   }
 
   @override
-  Future<void> setDnsPreset(String preset) async {
-    if (_dnsPreset == preset && _dnsCustomId == null) return;
+  Result<void> setDnsPreset(String preset) {
+    if (_dnsPreset == preset && _dnsCustomId == null) return Result.ok(null);
     _dnsPreset = preset;
     _prefs.setString('dnsPreset', preset);
     if (_dnsCustomId != null) {
       _dnsCustomId = null;
       _prefs.remove('dnsCustomId');
     }
+    return Result.ok(null);
   }
 
   @override
-  Future<void> selectCustomDns(String profileId) async {
-    if (_dnsCustomId == profileId) return;
+  Result<void> selectCustomDns(String profileId) {
+    if (_dnsCustomId == profileId) return Result.ok(null);
     _dnsCustomId = profileId;
     _prefs.setString('dnsCustomId', profileId);
+    return Result.ok(null);
   }
 
   @override
-  Future<void> setProxyPort(int port) async {
-    if (_proxyPort == port) return;
+  Result<void> setProxyPort(int port) {
+    if (_proxyPort == port) return Result.ok(null);
     _proxyPort = port;
     _prefs.setInt('proxyPort', port);
+    return Result.ok(null);
   }
 
   @override
-  Future<void> saveCustomDnsProfile(CustomDnsProfile profile) async {
+  Result<void> saveCustomDnsProfile(DnsProfile profile) {
+    final customProfile = CustomDnsProfile(
+      id: profile.id,
+      name: profile.name,
+      primary: profile.primary,
+      secondary: profile.secondary,
+    );
     final index = _customDnsProfiles.indexWhere((p) => p.id == profile.id);
     if (index >= 0) {
-      _customDnsProfiles[index] = profile;
+      _customDnsProfiles[index] = customProfile;
     } else {
-      _customDnsProfiles.add(profile);
+      _customDnsProfiles.add(customProfile);
     }
     _persistCustomDnsProfiles();
+    return Result.ok(null);
   }
 
   @override
-  Future<void> deleteCustomDnsProfile(String id) async {
+  Result<void> deleteCustomDnsProfile(String id) {
     final before = _customDnsProfiles.length;
     _customDnsProfiles.removeWhere((p) => p.id == id);
-    if (before == _customDnsProfiles.length) return;
+    if (before == _customDnsProfiles.length) return Result.ok(null);
     _persistCustomDnsProfiles();
     if (_dnsCustomId == id) {
       _dnsCustomId = null;
       _prefs.remove('dnsCustomId');
-      await setDnsPreset(_dnsPreset);
+      setDnsPreset(_dnsPreset);
     }
+    return Result.ok(null);
   }
 
   void _persistCustomDnsProfiles() {
@@ -163,7 +193,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   }
 
   @override
-  Future<void> load() async {
+  Result<void> load() {
     _connectOnBoot = _prefs.getBool('connectOnBoot');
     _autoLaunch = _prefs.getBool('autoLaunch');
     _minimizeToTray = _prefs.getBool('minimizeToTray');
@@ -188,5 +218,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
         // Malformed saved profiles are best-effort
       }
     }
+    return Result.ok(null);
   }
 }
