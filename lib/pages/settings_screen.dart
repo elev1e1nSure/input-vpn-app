@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:input_vpn/globals/app_constants.dart';
 import 'package:input_vpn/globals/app_state.dart';
 
@@ -10,6 +11,7 @@ import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/pages/advanced_settings_screen.dart';
 import 'package:input_vpn/pages/logs_screen.dart';
+import 'package:input_vpn/presentation/cubits/settings_cubit.dart';
 import 'package:input_vpn/services/update_service.dart';
 import 'package:input_vpn/widgets/settings_tiles.dart';
 
@@ -58,6 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appState = AppState.of(context);
+    final settingsLocale = context.watch<SettingsCubit>().state.locale;
     final s = AppStrings.of(context);
     if (_showAdvanced) {
       return AdvancedSettingsScreen(
@@ -122,8 +125,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             s.language,
             Icons.language,
             trailingText:
-                appState.locale.languageCode == 'ru' ? 'Русский' : 'English',
-            onTap: () => _showLanguageDialog(context, appState),
+                settingsLocale.languageCode == 'ru' ? 'Русский' : 'English',
+            onTap: () => _showLanguageDialog(context, appState, settingsLocale),
           ),
           buildSettingsSwitchTile(
             theme,
@@ -148,12 +151,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               appState.minimizeToTray,
               (val) => appState.setMinimizeToTray(val),
             ),
-          buildSettingsListTile(
-            theme,
-            s.advanced,
-            Icons.settings,
-            onTap: () => setState(() => _showAdvanced = true),
-          ),
+          // buildSettingsListTile(
+          //   theme,
+          //   s.advanced,
+          //   Icons.settings,
+          //   onTap: () => setState(() => _showAdvanced = true),
+          // ),
           buildSettingsListTile(
             theme,
             s.logs,
@@ -474,8 +477,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showLanguageDialog(BuildContext context, AppState appState) {
+  void _showLanguageDialog(
+    BuildContext context,
+    AppState appState,
+    Locale currentLocale,
+  ) {
     final s = AppStrings.of(context);
+    final settingsCubit = context.read<SettingsCubit>();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -485,22 +493,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             ListTile(
               title: const Text('English'),
-              trailing: appState.locale.languageCode == 'en'
+              trailing: currentLocale.languageCode == 'en'
                   ? const Icon(Icons.check, color: Colors.blue)
                   : null,
-              onTap: () {
+              onTap: () async {
                 appState.setLocale('en');
-                Navigator.pop(ctx);
+                await settingsCubit.setLocale('en');
+                if (ctx.mounted) Navigator.pop(ctx);
               },
             ),
             ListTile(
               title: const Text('Русский'),
-              trailing: appState.locale.languageCode == 'ru'
+              trailing: currentLocale.languageCode == 'ru'
                   ? const Icon(Icons.check, color: Colors.blue)
                   : null,
-              onTap: () {
+              onTap: () async {
                 appState.setLocale('ru');
-                Navigator.pop(ctx);
+                await settingsCubit.setLocale('ru');
+                if (ctx.mounted) Navigator.pop(ctx);
               },
             ),
           ],
