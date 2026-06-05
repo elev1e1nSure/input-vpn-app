@@ -752,11 +752,12 @@ class _ConnectButtonState extends State<_ConnectButton>
       animation: _pulse,
       builder: (context, child) {
         final primary = theme.colorScheme.primary;
+        final baseColor = theme.colorScheme.surface.withValues(alpha: 0.78);
         final buttonColor = isConnected
             ? Color.lerp(theme.scaffoldBackgroundColor, primary, 0.14)
             : _hovered
-                ? Color.lerp(theme.scaffoldBackgroundColor, primary, 0.07)
-                : theme.colorScheme.surface;
+                ? Color.lerp(baseColor, primary, 0.055)
+                : baseColor;
         final iconColor =
             isConnected ? theme.colorScheme.onPrimary : theme.iconTheme.color;
 
@@ -780,7 +781,7 @@ class _ConnectButtonState extends State<_ConnectButton>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 85),
+                    duration: const Duration(milliseconds: 140),
                     curve: Curves.easeOutCubic,
                     width: 184,
                     height: 184,
@@ -879,16 +880,16 @@ class _ServerCardState extends State<_ServerCard> {
         serverAddress?.trim().isNotEmpty ?? false ? serverAddress!.trim() : '—';
 
     final primary = theme.colorScheme.primary;
-    final baseSurface = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final baseColor = theme.colorScheme.surface.withValues(alpha: 0.78);
     final cardColor = Color.lerp(
-      baseSurface,
+      baseColor,
       primary,
-      _hovered ? 0.045 : 0.0,
+      _hovered ? 0.055 : 0.0,
     );
     final iconBackground = Color.lerp(
       theme.scaffoldBackgroundColor.withValues(alpha: 0.94),
       primary,
-      _hovered ? 0.045 : 0.0,
+      _hovered ? 0.055 : 0.0,
     );
 
     return MouseRegion(
@@ -898,7 +899,7 @@ class _ServerCardState extends State<_ServerCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 90),
+          duration: const Duration(milliseconds: 140),
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
@@ -908,7 +909,7 @@ class _ServerCardState extends State<_ServerCard> {
           child: Row(
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 90),
+                duration: const Duration(milliseconds: 140),
                 curve: Curves.easeOutCubic,
                 width: 40,
                 height: 40,
