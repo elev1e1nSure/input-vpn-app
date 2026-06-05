@@ -30,8 +30,9 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTT
 # Disable Windows macros that collide with C++ standard library functions.
 target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 
-# Request administrator privileges on Windows for Wintun TUN device.
-target_link_options(${BINARY_NAME} PRIVATE /MANIFESTUAC:"level='requireAdministrator'")
+# Disable the linker's auto-generated UAC manifest fragment so that the
+# requireAdministrator level set in runner.exe.manifest is the sole source.
+target_link_options(${BINARY_NAME} PRIVATE "/MANIFESTUAC:NO")
 
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
