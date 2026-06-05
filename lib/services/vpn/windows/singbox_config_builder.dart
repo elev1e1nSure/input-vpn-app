@@ -93,7 +93,7 @@ class SingBoxConfigBuilder {
         // direct outbound has no extra options).
         'servers': [
           {
-            'type': 'udp',
+            'type': 'tls',
             'tag': 'dns-remote',
             'server': _strip(remoteDnsServer),
             'domain_resolver': 'dns-direct',

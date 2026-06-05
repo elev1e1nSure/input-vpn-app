@@ -67,8 +67,24 @@ final class Success<T> extends Result<T> {
   final T value;
 }
 
-final class Failure<T> extends Result<T> {
+sealed class Failure<T> extends Result<T> {
   const Failure(this.message, {this.cause}) : super._();
   final String message;
   final Object? cause;
+}
+
+final class UnexpectedFailure<T> extends Failure<T> {
+  const UnexpectedFailure(super.message, {super.cause});
+}
+
+final class ParseFailure<T> extends Failure<T> {
+  const ParseFailure(super.message, {super.cause});
+}
+
+final class NetworkFailure<T> extends Failure<T> {
+  const NetworkFailure(super.message, {super.cause});
+}
+
+final class VpnFailure<T> extends Failure<T> {
+  const VpnFailure(super.message, {super.cause});
 }
