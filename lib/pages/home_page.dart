@@ -144,8 +144,6 @@ class _HomePageState extends State<HomePage> with WindowListener {
           initialConfig: _editingServer?.rawConfig,
           configId: _editingServer?.configId,
         );
-      case 5:
-        return const LogsScreen();
       default:
         return const SizedBox.shrink();
     }
@@ -367,13 +365,6 @@ class _Sidebar extends StatelessWidget {
               label: s.myServers,
               selected: selectedIndex == 1,
               onTap: () => onItemSelected(1),
-            ),
-            _SidebarItem(
-              expanded: expanded,
-              icon: Icons.article_outlined,
-              label: s.logs,
-              selected: selectedIndex == 5,
-              onTap: () => onItemSelected(5),
             ),
             _SidebarItem(
               expanded: expanded,

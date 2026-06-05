@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
@@ -22,7 +21,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(s.advanced),
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: onBack ?? () => Navigator.of(context).pop(),
         ),
       ),
@@ -34,7 +33,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
             buildSettingsSwitchTile(
               theme,
               s.proxyMode,
-              CupertinoIcons.arrow_swap,
+              Icons.swap_horiz,
               appState.isProxyMode,
               (val) => appState.setProxyMode(val),
             ),
@@ -42,19 +41,19 @@ class AdvancedSettingsScreen extends StatelessWidget {
           buildSettingsDisabledListTile(
             theme,
             s.vpnProtocol,
-            CupertinoIcons.shield_lefthalf_fill,
+            Icons.shield,
             trailingText: 'Auto',
           ),
           buildSettingsDisabledSwitchTile(
             theme,
             s.killSwitch,
-            CupertinoIcons.lock_shield,
+            Icons.lock,
             false,
           ),
           buildSettingsDisabledListTile(
             theme,
             s.splitTunneling,
-            CupertinoIcons.arrow_branch,
+            Icons.account_tree,
           ),
         ],
       ),
@@ -69,7 +68,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
   ) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(CupertinoIcons.number, color: theme.iconTheme.color),
+      leading: Icon(Icons.numbers, color: theme.iconTheme.color),
       title: Text(s.proxyPort, style: theme.textTheme.bodyLarge),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -82,7 +81,7 @@ class AdvancedSettingsScreen extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Icon(
-            CupertinoIcons.chevron_forward,
+            Icons.chevron_right,
             size: 16,
             color: theme.iconTheme.color?.withValues(alpha: 0.3),
           ),

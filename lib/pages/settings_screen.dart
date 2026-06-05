@@ -9,6 +9,7 @@ import 'package:input_vpn/globals/themes.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/pages/advanced_settings_screen.dart';
+import 'package:input_vpn/pages/logs_screen.dart';
 import 'package:input_vpn/services/update_service.dart';
 import 'package:input_vpn/widgets/settings_tiles.dart';
 
@@ -89,7 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: 'export',
                   child: Row(
                     children: [
-                      const Icon(Icons.copy_all, size: 18),
+                      const Icon(Icons.copy, size: 18),
                       const SizedBox(width: 12),
                       Text(s.exportSettings),
                     ],
@@ -99,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: 'import',
                   child: Row(
                     children: [
-                      const Icon(Icons.paste, size: 18),
+                      const Icon(Icons.content_paste, size: 18),
                       const SizedBox(width: 12),
                       Text(s.importSettings),
                     ],
@@ -145,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             buildSettingsSwitchTile(
               theme,
               s.autoLaunch,
-              Icons.launch,
+              Icons.open_in_new,
               appState.autoLaunch,
               (val) => appState.setAutoLaunch(val),
             ),
@@ -153,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             buildSettingsSwitchTile(
               theme,
               s.minimizeToTray,
-              Icons.web_asset_off,
+              Icons.minimize,
               appState.minimizeToTray,
               (val) => appState.setMinimizeToTray(val),
             ),
@@ -162,6 +163,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             s.advanced,
             Icons.settings,
             onTap: () => setState(() => _showAdvanced = true),
+          ),
+          buildSettingsListTile(
+            theme,
+            s.logs,
+            Icons.article,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LogsScreen()),
+            ),
           ),
           const SizedBox(height: 24),
           // ── ABOUT ──

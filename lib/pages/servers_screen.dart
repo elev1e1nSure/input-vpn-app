@@ -245,7 +245,7 @@ class _ServerTileState extends State<_ServerTile> {
                   cursor: SystemMouseCursors.click,
                   child: IconButton(
                     icon: Icon(
-                      Icons.edit_outlined,
+                      Icons.edit,
                       size: 18,
                       color: theme.iconTheme.color?.withValues(
                         alpha: _hovered ? 0.6 : 0.3,
@@ -258,7 +258,7 @@ class _ServerTileState extends State<_ServerTile> {
                   cursor: SystemMouseCursors.click,
                   child: IconButton(
                     icon: Icon(
-                      Icons.delete_outline,
+                      Icons.delete,
                       size: 18,
                       color: theme.colorScheme.error.withValues(
                         alpha: _hovered ? 0.8 : 0.4,

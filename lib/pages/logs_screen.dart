@@ -155,7 +155,7 @@ class _LogsScreenState extends State<LogsScreen>
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: IconButton(
-                icon: const Icon(Icons.copy_outlined, size: 20),
+                icon: const Icon(Icons.copy, size: 20),
                 onPressed: () => _copyLog(context),
               ),
             ),
@@ -166,7 +166,7 @@ class _LogsScreenState extends State<LogsScreen>
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: IconButton(
-                icon: const Icon(Icons.save_alt_outlined, size: 20),
+                icon: const Icon(Icons.save, size: 20),
                 onPressed: () => _saveLog(context),
               ),
             ),
@@ -178,7 +178,7 @@ class _LogsScreenState extends State<LogsScreen>
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
+                  icon: const Icon(Icons.delete, size: 20),
                   onPressed: () => _clearLog(context),
                 ),
               ),
