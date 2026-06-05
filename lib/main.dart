@@ -114,29 +114,29 @@ class MyApp extends StatelessWidget {
         ],
         child: Builder(
           builder: (context) => MaterialApp.router(
-          theme:
-              context.watch<SettingsCubit>().state.themeMode == ThemeMode.dark
-                  ? darkTheme
-                  : lightTheme,
-          locale: context.watch<SettingsCubit>().state.locale,
-          localizationsDelegates: const [
-            AppStringsDelegate(),
-            GlobalMaterialLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('en'),
-            Locale('ru'),
-          ],
-          builder: (context, child) {
-            // Ensure AppStrings is loaded before the router builds pages.
-            // Fallback to English during the first frame if needed.
-            final _ = AppStrings.of(context);
-            return child!;
-          },
-          routerConfig: appRouter,
-        ),
+            theme:
+                context.watch<SettingsCubit>().state.themeMode == ThemeMode.dark
+                    ? darkTheme
+                    : lightTheme,
+            locale: context.watch<SettingsCubit>().state.locale,
+            localizationsDelegates: const [
+              AppStringsDelegate(),
+              GlobalMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en'),
+              Locale('ru'),
+            ],
+            builder: (context, child) {
+              // Ensure AppStrings is loaded before the router builds pages.
+              // Fallback to English during the first frame if needed.
+              final _ = AppStrings.of(context);
+              return child!;
+            },
+            routerConfig: appRouter,
+          ),
         ),
       ),
     );
