@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.19)
 project(runner LANGUAGES CXX)
 
 # Define the application target. To change its name, change BINARY_NAME in the
@@ -13,7 +13,6 @@ add_executable(${BINARY_NAME} WIN32
   "win32_window.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
   "Runner.rc"
-  "runner.exe.manifest"
 )
 
 # Apply the standard set of build settings. This can be removed for applications
@@ -30,9 +29,18 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTT
 # Disable Windows macros that collide with C++ standard library functions.
 target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 
-# Disable the linker's auto-generated UAC manifest fragment so that the
-# requireAdministrator level set in runner.exe.manifest is the sole source.
-target_link_options(${BINARY_NAME} PRIVATE "/MANIFESTUAC:NO")
+# Release: requireAdministrator so the app elevates once at launch (needed for TUN).
+# Debug: asInvoker so flutter run can attach its debug pipe without UAC barriers.
+# Generator expressions are used because the VS generator is multi-config and
+# CMAKE_BUILD_TYPE is always empty for it (requires CMake 3.19+).
+target_sources(${BINARY_NAME} PRIVATE
+  "$<IF:$<CONFIG:Release>,${CMAKE_CURRENT_SOURCE_DIR}/runner.exe.manifest,${CMAKE_CURRENT_SOURCE_DIR}/runner.debug.manifest>"
+)
+# Suppress the linker's auto-generated UAC fragment for Release only so that
+# runner.exe.manifest is the sole source of the requestedExecutionLevel.
+target_link_options(${BINARY_NAME} PRIVATE
+  "$<$<CONFIG:Release>:/MANIFESTUAC:NO>"
+)
 
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
