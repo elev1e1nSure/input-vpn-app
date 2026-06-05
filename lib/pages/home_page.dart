@@ -481,14 +481,14 @@ class _SidebarItemState extends State<_SidebarItem> {
                       Text(
                         widget.label,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: widget.selected
-                              ? FontWeight.w600
-                              : FontWeight.normal,
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           color: widget.selected
                               ? theme.colorScheme.primary
                               : theme.textTheme.bodyMedium?.color
-                                  ?.withValues(alpha: 0.7),
+                                  ?.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -570,7 +570,8 @@ class _HomeTab extends StatelessWidget {
                                     statusText,
                                     style:
                                         theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                           ),

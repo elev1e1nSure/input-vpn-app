@@ -1,7 +1,7 @@
 [Setup]
 AppId={{7F8E9D2A-4B1C-5F3A-9E2D-8A7B6C5D4E3F}}
 AppName=Input VPN
-AppVersion=1.2.8
+AppVersion=1.2.9
 AppPublisher=Input VPN
 DefaultDirName={autopf}\InputVPN
 DefaultGroupName=Input VPN
@@ -31,6 +31,18 @@ Filename: "{app}\input_vpn.exe"; Description: "Запустить Input VPN"; Fl
 var
   DeleteDataPage: TNewNotebookPage;
   DeleteDataCheckbox: TNewCheckBox;
+
+procedure InitializeWizard();
+var
+  UninstKey: String;
+  IsUpgrade: Boolean;
+begin
+  UninstKey := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{7F8E9D2A-4B1C-5F3A-9E2D-8A7B6C5D4E3F}_is1';
+  IsUpgrade := RegKeyExists(HKLM, UninstKey) or
+               RegKeyExists(HKLM, 'SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{7F8E9D2A-4B1C-5F3A-9E2D-8A7B6C5D4E3F}_is1');
+  if IsUpgrade then
+    WizardForm.Caption := 'Обновление Input VPN';
+end;
 
 procedure InitializeUninstallProgressForm();
 var
