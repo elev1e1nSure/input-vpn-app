@@ -83,7 +83,29 @@
 
 ## Для разработчиков
 
-Если хочешь собрать из исходников, смотри [`README_длядебила.md`](./README_длядебила.md) — там инструкции по сборке, зависимости и упаковке через Inno Setup.
+### Требования
+
+- Flutter stable, включён Windows desktop
+- Visual Studio 2022 — обязателен воркload **"Desktop development with C++"**
+- `sing-box.exe` (v1.13.x, Win64) + `wintun.dll` → положить в `windows/runner/resources/`
+- Inno Setup 6 — только для сборки установщика
+
+### Сборка
+
+```powershell
+flutter pub get
+flutter build windows --release
+# Portable: build\windows\x64\runner\Release\
+```
+
+### Установщик
+
+```powershell
+iscc installer.iss
+# Результат: Output\InputVPN-Setup.exe
+```
+
+Архитектура, соглашения и правила кода — в [`CLAUDE.md`](./CLAUDE.md).
 
 ## Лицензия
 
