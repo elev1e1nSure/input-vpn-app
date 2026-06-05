@@ -251,12 +251,8 @@ class _ModeToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.colorScheme.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: theme.dividerTheme.color ??
-              theme.colorScheme.onSurface.withValues(alpha: 0.1),
-        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -280,7 +276,7 @@ class _ModeToggle extends StatelessWidget {
   }
 }
 
-class _ModePill extends StatelessWidget {
+class _ModePill extends StatefulWidget {
   const _ModePill({
     required this.label,
     required this.icon,
@@ -294,36 +290,53 @@ class _ModePill extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_ModePill> createState() => _ModePillState();
+}
+
+class _ModePillState extends State<_ModePill> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final active = widget.active;
+    final backgroundAlpha = active
+        ? 0.24
+        : _hovered
+            ? 0.13
+            : 0.08;
+    final foreground = active
+        ? primary
+        : theme.colorScheme.onSurface.withValues(alpha: _hovered ? 0.82 : 0.68);
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: active ? theme.colorScheme.primary : Colors.transparent,
+            color: primary.withValues(alpha: backgroundAlpha),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                icon,
+                widget.icon,
                 size: 14,
-                color: active
-                    ? Colors.white
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                color: foreground,
               ),
               const SizedBox(width: 6),
               Text(
-                label,
+                widget.label,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: active
-                      ? Colors.white
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: foreground,
                   fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -889,9 +902,6 @@ class _ServerCardState extends State<_ServerCard> {
         serverAddress?.trim().isNotEmpty ?? false ? serverAddress!.trim() : '—';
 
     final primary = theme.colorScheme.primary;
-    final borderNormal = theme.dividerTheme.color ??
-        theme.colorScheme.onSurface.withValues(alpha: 0.15);
-    final borderHover = primary.withValues(alpha: 0.35);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -904,11 +914,10 @@ class _ServerCardState extends State<_ServerCard> {
           curve: Curves.easeOut,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: theme.cardTheme.color ?? theme.colorScheme.surface,
+            color: _hovered
+                ? primary.withValues(alpha: 0.08)
+                : theme.cardTheme.color ?? theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _hovered ? borderHover : borderNormal,
-            ),
           ),
           child: Row(
             children: [
