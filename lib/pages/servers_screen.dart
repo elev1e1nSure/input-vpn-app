@@ -324,7 +324,7 @@ class _AddButtonState extends State<_AddButton> {
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: _hovered ? theme.colorScheme.onPrimary : primary,
+                color: _hovered ? Colors.white : primary,
               ),
             ),
           ),
