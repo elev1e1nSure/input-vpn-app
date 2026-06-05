@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:input_vpn/core/result.dart';
 
 /// Remote API for public IP and geolocation lookups.
 class IpLookupApi {
@@ -6,8 +7,8 @@ class IpLookupApi {
 
   final Dio _dio;
 
-  /// Returns the current public IPv4 address or null on failure.
-  Future<String?> fetchPublicIp() async {
+  /// Returns the current public IPv4 address.
+  Future<Result<String>> fetchPublicIp() async {
     try {
       final response = await _dio.get<String>(
         'https://api.ipify.org',
@@ -18,14 +19,19 @@ class IpLookupApi {
         ),
       );
       final ip = response.data?.trim();
-      return (ip != null && ip.isNotEmpty) ? ip : null;
-    } on Exception catch (_) {
-      return null;
+      if (ip != null && ip.isNotEmpty) {
+        return Result.ok(ip);
+      }
+      return const Result.err('Empty IP response');
+    } on DioException catch (e) {
+      return Result.err('IP lookup failed: ${e.type}');
+    } on Exception catch (e) {
+      return Result.err('IP lookup failed: $e');
     }
   }
 
-  /// Returns the ISO-3166 alpha-2 country code for the current IP or null.
-  Future<String?> fetchCountryCode() async {
+  /// Returns the ISO-3166 alpha-2 country code for the current IP.
+  Future<Result<String>> fetchCountryCode() async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         'http://ip-api.com/json/',
@@ -35,9 +41,14 @@ class IpLookupApi {
         ),
       );
       final countryCode = response.data?['countryCode'] as String?;
-      return (countryCode != null && countryCode.isNotEmpty) ? countryCode : null;
-    } on Exception catch (_) {
-      return null;
+      if (countryCode != null && countryCode.isNotEmpty) {
+        return Result.ok(countryCode);
+      }
+      return const Result.err('Empty country code');
+    } on DioException catch (e) {
+      return Result.err('Country lookup failed: ${e.type}');
+    } on Exception catch (e) {
+      return Result.err('Country lookup failed: $e');
     }
   }
 }

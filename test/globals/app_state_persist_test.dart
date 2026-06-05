@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:input_vpn/core/di.dart';
@@ -12,6 +13,9 @@ class _MockVpnService extends Mock implements VpnService {}
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
+
   group('AppState persist helpers', () {
     late AppState state;
     late _MockVpnService mockVpn;
@@ -27,6 +31,7 @@ void main() {
       when(() => mockVpn.watchStats()).thenAnswer((_) => const Stream.empty());
       when(() => mockVpn.dispose()).thenAnswer((_) => Future.value());
       state = AppState(vpnService: mockVpn, subscriptionService: mockSubs);
+      await pumpEventQueue();
     });
 
     tearDown(() {

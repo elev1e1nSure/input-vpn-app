@@ -27,10 +27,16 @@ sealed class Result<T> {
   bool get isFailure => this is Failure<T>;
 
   /// Get the value or throw if failure.
-  T get value => (this as Success<T>).value;
+  T get value => switch (this) {
+        Success(:final value) => value,
+        Failure() => throw StateError('Called value on a failure result'),
+      };
 
   /// Get the error message or `null` if success.
-  String? get error => (this as Failure<T>?)?.message;
+  String? get error => switch (this) {
+        Failure(:final message) => message,
+        Success() => null,
+      };
 
   /// Transform value if success, pass through failure.
   Result<R> map<R>(R Function(T value) fn) {

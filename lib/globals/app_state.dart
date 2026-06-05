@@ -143,11 +143,9 @@ class AppState extends ChangeNotifier {
     return Provider.of<AppState>(context, listen: listen);
   }
 
-  ThemeData _theme = darkTheme;
+  late ThemeData _theme = darkTheme;
 
-  ThemeData get theme {
-    return _theme;
-  }
+  ThemeData get theme => _theme;
 
   bool get isConnected => _vpnConnection.isConnected;
 

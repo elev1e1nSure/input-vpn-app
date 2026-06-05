@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:input_vpn/core/result.dart';
 import 'package:input_vpn/data/remote/ip_lookup_api.dart';
 
 class _MockDio extends Mock implements Dio {}
@@ -34,11 +35,12 @@ void main() {
         ),
       ).thenAnswer((_) async => response);
 
-      final ip = await api.fetchPublicIp();
-      expect(ip, '1.2.3.4');
+      final result = await api.fetchPublicIp();
+      expect(result.isSuccess, true);
+      expect(result.value, '1.2.3.4');
     });
 
-    test('fetchPublicIp returns null on empty data', () async {
+    test('fetchPublicIp returns failure on empty data', () async {
       final response = Response<String>(
         data: null,
         statusCode: 200,
@@ -51,8 +53,8 @@ void main() {
         ),
       ).thenAnswer((_) async => response);
 
-      final ip = await api.fetchPublicIp();
-      expect(ip, null);
+      final result = await api.fetchPublicIp();
+      expect(result.isFailure, true);
     });
 
     test('fetchCountryCode returns country code on success', () async {
@@ -68,11 +70,12 @@ void main() {
         ),
       ).thenAnswer((_) async => response);
 
-      final country = await api.fetchCountryCode();
-      expect(country, 'US');
+      final result = await api.fetchCountryCode();
+      expect(result.isSuccess, true);
+      expect(result.value, 'US');
     });
 
-    test('fetchCountryCode returns null on error', () async {
+    test('fetchCountryCode returns failure on DioException', () async {
       when(
         () => mockDio.get<Map<String, dynamic>>(
           any(),
@@ -83,8 +86,9 @@ void main() {
         type: DioExceptionType.connectionTimeout,
       ));
 
-      final country = await api.fetchCountryCode();
-      expect(country, null);
+      final result = await api.fetchCountryCode();
+      expect(result.isFailure, true);
+      expect(result.error, contains('connectionTimeout'));
     });
   });
 }

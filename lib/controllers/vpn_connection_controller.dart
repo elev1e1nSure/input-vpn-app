@@ -32,6 +32,7 @@ class VpnConnectionController extends ChangeNotifier {
   bool _isConnected = false;
   bool _isConnecting = false;
   bool _isDisconnecting = false;
+  bool _operationInProgress = false;
 
   bool get isConnected => _isConnected;
   bool get isConnecting => _isConnecting;
@@ -92,25 +93,37 @@ class VpnConnectionController extends ChangeNotifier {
     vpn.setDnsServers(remoteDns: remote, directDns: direct);
   }
 
-  /// Connect using [parsedConfig]. Returns immediately; state transitions
-  /// are delivered via [watchStatus] and reflected in [isConnecting] / [isConnected].
+  /// Connect using [parsedConfig]. State transitions are delivered
+  /// via [watchStatus]. Ignores concurrent calls.
   Future<void> connect(ParsedConfig parsedConfig) async {
-    if (_isConnected || _isConnecting) return;
-    await _vpn.connect(parsedConfig);
+    if (_isConnected || _isConnecting || _operationInProgress) return;
+    _operationInProgress = true;
+    try {
+      await _vpn.connect(parsedConfig);
+    } finally {
+      _operationInProgress = false;
+    }
   }
 
-  /// Disconnect the active VPN session.
+  /// Disconnect the active VPN session. Ignores concurrent calls.
   Future<void> disconnect() async {
-    if (_isDisconnecting || !_isConnected) return;
+    if (_isDisconnecting || !_isConnected || _operationInProgress) return;
     _isDisconnecting = true;
+    _operationInProgress = true;
     notifyListeners();
-    await _vpn.disconnect();
-    _isDisconnecting = false;
-    notifyListeners();
+    try {
+      await _vpn.disconnect();
+    } finally {
+      _operationInProgress = false;
+      // _isDisconnecting is cleared by _onStatus or here as fallback
+      _isDisconnecting = false;
+      notifyListeners();
+    }
   }
 
   /// Toggle between connected and disconnected states.
   Future<void> toggle(ParsedConfig? parsedConfig) async {
+    if (_operationInProgress) return;
     if (_isConnected) {
       await disconnect();
       return;

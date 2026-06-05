@@ -75,7 +75,11 @@ void main() {
       // Fake connected state
       statusController.add(Connected(since: DateTime.now()));
       await pumpEventQueue();
-      await controller.disconnect();
+      expect(controller.isConnected, true);
+      // disconnect will set isDisconnecting, await mock, then clear
+      final future = controller.disconnect();
+      expect(controller.isDisconnecting, true);
+      await future;
       expect(controller.isDisconnecting, false);
     });
 
@@ -109,6 +113,33 @@ void main() {
       await pumpEventQueue();
       await controller.toggle(_dummyConfig());
       verifyNever(() => mockVpn.disconnect());
+    });
+
+    test('concurrent connect is ignored', () async {
+      final config = _dummyConfig();
+      // Make connect hang
+      when(() => mockVpn.connect(any())).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      final f1 = controller.connect(config);
+      // Second connect should be ignored because _operationInProgress is true
+      await controller.connect(config);
+      await f1;
+      verify(() => mockVpn.connect(any())).called(1);
+    });
+
+    test('concurrent disconnect is ignored', () async {
+      statusController.add(Connected(since: DateTime.now()));
+      await pumpEventQueue();
+      // Make disconnect hang
+      when(() => mockVpn.disconnect()).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      final f1 = controller.disconnect();
+      // Second disconnect should be ignored
+      await controller.disconnect();
+      await f1;
+      verify(() => mockVpn.disconnect()).called(1);
     });
 
     test('dispose does not call disconnect when already disconnected', () {
