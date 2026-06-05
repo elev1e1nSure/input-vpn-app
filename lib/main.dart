@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:input_vpn/core/di.dart';
+import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/globals/themes.dart';
@@ -15,8 +16,11 @@ import 'package:input_vpn/presentation/cubits/network_info_cubit.dart';
 import 'package:input_vpn/presentation/cubits/settings_cubit.dart';
 import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
 import 'package:input_vpn/services/app_logger.dart';
+import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn/windows/network_utils.dart';
 import 'package:input_vpn/services/vpn/windows/singbox_service_manager.dart';
+import 'package:input_vpn/services/vpn_service.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -96,15 +100,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => getIt<SettingsCubit>()),
-        BlocProvider(create: (context) => getIt<VpnCubit>()),
-        BlocProvider(create: (context) => getIt<ConfigCubit>()),
-        BlocProvider(create: (context) => getIt<NetworkInfoCubit>()),
-      ],
-      child: Builder(
-        builder: (context) => MaterialApp.router(
+    return ChangeNotifierProvider<AppState>(
+      create: (_) => AppState(
+        vpnService: getIt<VpnService>(),
+        subscriptionService: getIt<SubscriptionService>(),
+      ),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => getIt<SettingsCubit>()),
+          BlocProvider(create: (context) => getIt<VpnCubit>()),
+          BlocProvider(create: (context) => getIt<ConfigCubit>()),
+          BlocProvider(create: (context) => getIt<NetworkInfoCubit>()),
+        ],
+        child: Builder(
+          builder: (context) => MaterialApp.router(
           theme:
               context.watch<SettingsCubit>().state.themeMode == ThemeMode.dark
                   ? darkTheme
@@ -127,6 +136,7 @@ class MyApp extends StatelessWidget {
             return child!;
           },
           routerConfig: appRouter,
+        ),
         ),
       ),
     );
