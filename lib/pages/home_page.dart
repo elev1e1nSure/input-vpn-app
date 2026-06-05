@@ -166,40 +166,9 @@ class _HomePageState extends State<HomePage> with WindowListener {
         ),
         Expanded(
           child: RepaintBoundary(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              transitionBuilder: (child, animation) {
-                final positionAnimation = Tween<Offset>(
-                  begin: const Offset(0.03, 0.0),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                ));
-                final scaleAnimation = Tween<double>(
-                  begin: 0.97,
-                  end: 1.0,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                ));
-                return FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: positionAnimation,
-                    child: ScaleTransition(
-                      scale: scaleAnimation,
-                      child: child,
-                    ),
-                  ),
-                );
-              },
-              child: KeyedSubtree(
-                key: ValueKey<int>(_selectedIndex),
-                child: _buildBody(),
-              ),
+            child: KeyedSubtree(
+              key: ValueKey<int>(_selectedIndex),
+              child: _buildBody(),
             ),
           ),
         ),
@@ -442,9 +411,7 @@ class _SidebarItemState extends State<_SidebarItem> {
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeInOut,
+        child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
@@ -484,11 +451,11 @@ class _SidebarItemState extends State<_SidebarItem> {
                           fontSize: 14,
                           fontWeight: widget.selected
                               ? FontWeight.w700
-                              : FontWeight.w500,
+                              : FontWeight.w600,
                           color: widget.selected
                               ? theme.colorScheme.primary
                               : theme.textTheme.bodyMedium?.color
-                                  ?.withValues(alpha: 0.8),
+                                  ?.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
