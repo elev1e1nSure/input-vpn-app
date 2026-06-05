@@ -313,11 +313,10 @@ class _AddButtonState extends State<_AddButton> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
-              color: _hovered ? primary : Colors.transparent,
+              color: _hovered
+                  ? primary.withValues(alpha: 0.15)
+                  : primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: _hovered ? primary : primary.withValues(alpha: 0.4),
-              ),
             ),
             child: Text(
               widget.label,
