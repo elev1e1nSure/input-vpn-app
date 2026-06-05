@@ -136,7 +136,7 @@ class SingBoxProcessFfi {
       } catch (e) {
         AppLogger.warn('SingBoxProcessFfi: cleanup attempt ${i + 1} failed: $e');
         if (i < maxRetries - 1) {
-          await Future.delayed(delays[i]);
+          await Future<void>.delayed(delays[i]);
         }
       }
     }

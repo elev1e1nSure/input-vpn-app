@@ -394,12 +394,6 @@ class _SidebarStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isConnected =
-        context.select<AppState, bool>((a) => a.isConnected);
-    final dotColor = isConnected
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurface.withValues(alpha: 0.25);
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: AnimatedOpacity(

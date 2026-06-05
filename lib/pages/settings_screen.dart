@@ -311,7 +311,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AppState appState,
     AppStrings s,
   ) {
-    final isRu = s.language == 'Язык';
     final display = appState.customDns != 'Default'
         ? appState.customDns
         : DnsPreset.byId(appState.dnsPreset)?.servers.join(', ') ?? '';
