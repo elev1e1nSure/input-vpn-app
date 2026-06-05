@@ -127,17 +127,17 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
   String _getEffectiveName() {
     final userName = _nameController.text.trim();
     if (userName.isNotEmpty) return userName;
-    
+
     final parsed = VpnUrlParser.tryParse(_configController.text.trim());
     if (parsed != null && parsed.remark.isNotEmpty) return parsed.remark;
-    
+
     return '';
   }
 
   void _submit(BuildContext context) {
     final appState = AppState.of(context, listen: false);
     final effectiveName = _getEffectiveName();
-    
+
     if (widget.configId != null) {
       // Edit mode
       appState.updateConfig(
@@ -177,7 +177,9 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  widget.configId != null ? s.editConfiguration : s.addConfiguration,
+                  widget.configId != null
+                      ? s.editConfiguration
+                      : s.addConfiguration,
                   style: theme.textTheme.titleLarge,
                 ),
                 const Spacer(),
@@ -188,16 +190,21 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                       valueListenable: _configController,
                       builder: (context, configValue, child) {
                         // Check if config has a name in the URL
-                        final parsed = VpnUrlParser.tryParse(configValue.text.trim());
-                        final configHasName = parsed != null && parsed.remark.isNotEmpty;
+                        final parsed =
+                            VpnUrlParser.tryParse(configValue.text.trim());
+                        final configHasName =
+                            parsed != null && parsed.remark.isNotEmpty;
                         final userHasName = nameValue.text.trim().isNotEmpty;
-                        
+
                         // Can add if: config is not empty AND (user provided name OR config has name)
-                        final bool canAdd = configValue.text.trim().isNotEmpty && 
-                            (userHasName || configHasName);
-                        
+                        final bool canAdd =
+                            configValue.text.trim().isNotEmpty &&
+                                (userHasName || configHasName);
+
                         return MouseRegion(
-                          cursor: canAdd ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
+                          cursor: canAdd
+                              ? SystemMouseCursors.click
+                              : SystemMouseCursors.forbidden,
                           child: IconButton(
                             icon: Icon(
                               CupertinoIcons.checkmark_alt,

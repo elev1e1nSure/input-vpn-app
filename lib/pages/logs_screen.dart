@@ -86,8 +86,7 @@ class _LogsScreenState extends State<LogsScreen>
     });
   }
 
-  String get _currentText =>
-      _tabs.index == 0 ? _eventsText : _singboxText;
+  String get _currentText => _tabs.index == 0 ? _eventsText : _singboxText;
 
   Future<void> _copyLog(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: _currentText));

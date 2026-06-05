@@ -42,7 +42,8 @@ class ServersScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 13,
-                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                color:
+                    theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 24),
@@ -53,9 +54,11 @@ class ServersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSubtitle(BuildContext context, AppState appState, VpnServer server) {
+  Widget _buildSubtitle(
+      BuildContext context, AppState appState, VpnServer server) {
     final theme = Theme.of(context);
-    final configs = appState.userConfigs.where((c) => c.id == server.configId).toList();
+    final configs =
+        appState.userConfigs.where((c) => c.id == server.configId).toList();
     if (configs.isEmpty) {
       return _subtitleText(theme, server.country);
     }

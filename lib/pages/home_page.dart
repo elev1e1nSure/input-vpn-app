@@ -53,7 +53,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
     if (!kIsWeb && Platform.isWindows) {
       try {
         windowManager.removeListener(this);
-        AppState.of(context, listen: false).removeListener(_onMinimizeToTrayChanged);
+        AppState.of(context, listen: false)
+            .removeListener(_onMinimizeToTrayChanged);
         if (_trayInitialized) {
           TrayManager.destroy();
         }
@@ -78,7 +79,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
   @override
   void onWindowClose() async {
     final appState = AppState.of(context, listen: false);
-    debugPrint('onWindowClose triggered, minimizeToTray=${appState.minimizeToTray}');
+    debugPrint(
+        'onWindowClose triggered, minimizeToTray=${appState.minimizeToTray}');
 
     if (appState.minimizeToTray) {
       try {
@@ -96,7 +98,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
       try {
         await appState.toggleConnection().timeout(const Duration(seconds: 10));
       } catch (e) {
-        debugPrint('onWindowClose: disconnect failed or timed out ($e), forcing cleanup');
+        debugPrint(
+            'onWindowClose: disconnect failed or timed out ($e), forcing cleanup');
         // Best-effort fallback: remove the TUN adapter and reset DNS.
         await NetworkUtils.globalCleanup();
       }
@@ -115,7 +118,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
   Widget _buildBody() {
     switch (_selectedIndex) {
       case 0:
-        return _HomeTab(onSwitchToServers: () => setState(() => _selectedIndex = 1));
+        return _HomeTab(
+            onSwitchToServers: () => setState(() => _selectedIndex = 1));
       case 1:
         return ServersScreen(
           onSwitchToAddConfig: () => setState(() => _selectedIndex = 3),
@@ -131,7 +135,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
       case 2:
         return const SettingsScreen();
       case 3:
-        return AddConfigScreen(onBack: () => setState(() => _selectedIndex = 1));
+        return AddConfigScreen(
+            onBack: () => setState(() => _selectedIndex = 1));
       case 4:
         return AddConfigScreen(
           onBack: () => setState(() => _selectedIndex = 1),
@@ -155,7 +160,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
           expanded: _sidebarExpanded,
           selectedIndex: _selectedIndex,
           onItemSelected: (i) => setState(() => _selectedIndex = i),
-          onToggleExpand: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+          onToggleExpand: () =>
+              setState(() => _sidebarExpanded = !_sidebarExpanded),
         ),
         VerticalDivider(
           width: 1,
@@ -486,7 +492,9 @@ class _SidebarItemState extends State<_SidebarItem> {
                         widget.label,
                         style: theme.textTheme.labelSmall?.copyWith(
                           fontSize: 13,
-                          fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: widget.selected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                           color: widget.selected
                               ? theme.colorScheme.primary
                               : theme.textTheme.bodyMedium?.color
@@ -523,10 +531,8 @@ class _HomeTab extends StatelessWidget {
 
     final hasServer =
         context.select<AppState, bool>((a) => a.selectedServer != null);
-    final isConnected =
-        context.select<AppState, bool>((a) => a.isConnected);
-    final isConnecting =
-        context.select<AppState, bool>((a) => a.isConnecting);
+    final isConnected = context.select<AppState, bool>((a) => a.isConnected);
+    final isConnecting = context.select<AppState, bool>((a) => a.isConnecting);
     final isDisconnecting =
         context.select<AppState, bool>((a) => a.isDisconnecting);
     final isReconnecting =
@@ -572,7 +578,8 @@ class _HomeTab extends StatelessWidget {
                                 ? _SessionTimer(fallback: statusText)
                                 : Text(
                                     statusText,
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -686,10 +693,8 @@ class _ConnectButtonState extends State<_ConnectButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isConnected =
-        context.select<AppState, bool>((a) => a.isConnected);
-    final isConnecting =
-        context.select<AppState, bool>((a) => a.isConnecting);
+    final isConnected = context.select<AppState, bool>((a) => a.isConnected);
+    final isConnecting = context.select<AppState, bool>((a) => a.isConnecting);
     final isDisconnecting =
         context.select<AppState, bool>((a) => a.isDisconnecting);
 
@@ -865,8 +870,8 @@ class _ServerCardState extends State<_ServerCard> {
         serverAddress?.trim().isNotEmpty == true ? serverAddress!.trim() : '—';
 
     final primary = theme.colorScheme.primary;
-    final borderNormal =
-        theme.dividerTheme.color ?? theme.colorScheme.onSurface.withValues(alpha: 0.15);
+    final borderNormal = theme.dividerTheme.color ??
+        theme.colorScheme.onSurface.withValues(alpha: 0.15);
     final borderHover = primary.withValues(alpha: 0.35);
 
     return MouseRegion(
@@ -912,14 +917,15 @@ class _ServerCardState extends State<_ServerCard> {
                   children: [
                     Text(
                       server != null ? _stripFlags(server.name) : s.noServer,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                          fontSize: 17, fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     if (server != null)
                       Text(
                         selectedServerIp,
-                        style: theme.textTheme.titleLarge?.copyWith(fontSize: 15),
+                        style:
+                            theme.textTheme.titleLarge?.copyWith(fontSize: 15),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -934,10 +940,8 @@ class _ServerCardState extends State<_ServerCard> {
   }
 }
 
-
 String _stripFlags(String s) =>
     s.replaceAll(RegExp(r'[\u{1F1E0}-\u{1F1FF}]', unicode: true), '').trim();
-
 
 /// Session timer shown in AppBar when connected.
 /// Uses StreamBuilder on statusStream — no notifyListeners needed.

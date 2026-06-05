@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 class UpdateInfo {
-  const UpdateInfo({required this.version, required this.downloadUrl, this.releaseNotes});
+  const UpdateInfo(
+      {required this.version, required this.downloadUrl, this.releaseNotes});
 
   final String version;
   final String downloadUrl;
@@ -33,9 +34,11 @@ class UpdateService {
       return null;
     }
 
-    final assets = (data['assets'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final assets =
+        (data['assets'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
     final installer = assets.firstWhere(
-      (asset) => (asset['name'] as String?)?.toLowerCase().contains('setup') ?? false,
+      (asset) =>
+          (asset['name'] as String?)?.toLowerCase().contains('setup') ?? false,
       orElse: () => <String, dynamic>{},
     );
     final downloadUrl = installer['browser_download_url'] as String?;
@@ -55,7 +58,8 @@ class UpdateService {
     void Function(int received, int total)? onProgress,
   }) async {
     final tempDir = await Directory.systemTemp.createTemp('inputvpn-update-');
-    final file = File('${tempDir.path}${Platform.pathSeparator}InputVPN-Setup.exe');
+    final file =
+        File('${tempDir.path}${Platform.pathSeparator}InputVPN-Setup.exe');
 
     await _dio.download(
       info.downloadUrl,
@@ -69,7 +73,8 @@ class UpdateService {
 
   Future<void> installAndExit(String installerPath) async {
     if (!Platform.isWindows) {
-      throw const ProcessException('InputVPN-Setup.exe', [], 'Updates supported only on Windows');
+      throw const ProcessException(
+          'InputVPN-Setup.exe', [], 'Updates supported only on Windows');
     }
 
     await Process.start(
@@ -83,7 +88,8 @@ class UpdateService {
   int _compareVersions(String a, String b) {
     final aParts = a.split('.');
     final bParts = b.split('.');
-    final maxLen = aParts.length > bParts.length ? aParts.length : bParts.length;
+    final maxLen =
+        aParts.length > bParts.length ? aParts.length : bParts.length;
     for (var i = 0; i < maxLen; i++) {
       final aNum = i < aParts.length ? int.tryParse(aParts[i]) ?? 0 : 0;
       final bNum = i < bParts.length ? int.tryParse(bParts[i]) ?? 0 : 0;

@@ -75,8 +75,8 @@ void main() {
     });
 
     test('parses Shadowsocks legacy', () {
-      final whole = base64
-          .encode(utf8.encode('aes-256-gcm:secret@1.2.3.4:8388'));
+      final whole =
+          base64.encode(utf8.encode('aes-256-gcm:secret@1.2.3.4:8388'));
       final c = VpnUrlParser.parse('ss://$whole#Legacy');
       expect(c.method, 'aes-256-gcm');
       expect(c.password, 'secret');
@@ -85,7 +85,8 @@ void main() {
     });
 
     test('parses Trojan', () {
-      const link = 'trojan://pa%24sword@trojan.example.com:443?sni=trojan.example.com#Trojan';
+      const link =
+          'trojan://pa%24sword@trojan.example.com:443?sni=trojan.example.com#Trojan';
       final c = VpnUrlParser.parse(link);
       expect(c.type, ProxyType.trojan);
       expect(c.password, r'pa$sword');
@@ -94,8 +95,7 @@ void main() {
     });
 
     test('parses Hysteria2', () {
-      const link =
-          'hy2://auth@hy.example.com:443?sni=hy.example.com#HY2';
+      const link = 'hy2://auth@hy.example.com:443?sni=hy.example.com#HY2';
       final c = VpnUrlParser.parse(link);
       expect(c.type, ProxyType.hysteria2);
       expect(c.password, 'auth');
@@ -112,8 +112,7 @@ void main() {
     final subs = SubscriptionService();
 
     test('parses plain newline-separated body', () {
-      const body =
-          'vless://uuid@a.example.com:443?security=tls#a\n'
+      const body = 'vless://uuid@a.example.com:443?security=tls#a\n'
           'trojan://pwd@b.example.com:443?sni=b#b\n';
       final r = subs.parseContent(body);
       expect(r.configs, hasLength(2));
@@ -122,8 +121,7 @@ void main() {
     });
 
     test('parses base64 wrapped body', () {
-      const inner =
-          'vless://uuid@a.example.com:443?security=tls#a\n'
+      const inner = 'vless://uuid@a.example.com:443?security=tls#a\n'
           'trojan://pwd@b.example.com:443?sni=b#b';
       final encoded = base64.encode(utf8.encode(inner));
       final r = subs.parseContent(encoded);
@@ -131,8 +129,7 @@ void main() {
     });
 
     test('extracts profile-title from inline header comment', () {
-      const body =
-          '# profile-title: My Subscription\n'
+      const body = '# profile-title: My Subscription\n'
           'vless://uuid@a.example.com:443#a';
       final r = subs.parseContent(body);
       expect(r.title, 'My Subscription');

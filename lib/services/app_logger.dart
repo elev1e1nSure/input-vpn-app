@@ -59,8 +59,7 @@ class AppLogger {
       return;
     }
     final now = DateTime.now();
-    final ts =
-        '${now.year}-${_pad(now.month)}-${_pad(now.day)} '
+    final ts = '${now.year}-${_pad(now.month)}-${_pad(now.day)} '
         '${_pad(now.hour)}:${_pad(now.minute)}:${_pad(now.second)}';
     final line = '[$ts] $level $message\n';
     try {

@@ -9,8 +9,7 @@ import 'package:win32/win32.dart';
 /// All public methods are no-ops on non-Windows platforms so the rest of
 /// the app can call them unconditionally.
 class WindowsStartupManager {
-  static const _runKey =
-      r'Software\Microsoft\Windows\CurrentVersion\Run';
+  static const _runKey = r'Software\Microsoft\Windows\CurrentVersion\Run';
   static const _appName = 'InputVPN';
 
   /// Opens the registry key with [access], executes [action], then closes it.

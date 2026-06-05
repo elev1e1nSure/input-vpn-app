@@ -68,7 +68,9 @@ Widget buildSettingsSwitchTile(
       onChanged: onChanged,
       thumbColor: WidgetStateProperty.all(Colors.white),
       trackColor: WidgetStateProperty.all(
-        value ? theme.colorScheme.primary.withValues(alpha: 0.5) : theme.colorScheme.surfaceContainerHighest,
+        value
+            ? theme.colorScheme.primary.withValues(alpha: 0.5)
+            : theme.colorScheme.surfaceContainerHighest,
       ),
       overlayColor: WidgetStateProperty.all(Colors.transparent),
     ),
@@ -82,8 +84,7 @@ Widget buildSettingsDisabledListTile(
   IconData icon, {
   String? trailingText,
 }) {
-  final dimColor =
-      theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.35);
+  final dimColor = theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.35);
   return ListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
     leading: Icon(icon, color: dimColor),
@@ -117,8 +118,7 @@ Widget buildSettingsDisabledSwitchTile(
   IconData icon,
   bool value,
 ) {
-  final dimColor =
-      theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.35);
+  final dimColor = theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.35);
   return ListTile(
     contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
     leading: Icon(icon, color: dimColor),

@@ -44,7 +44,8 @@ void main() {
     });
 
     test('Trojan defaults to TLS', () {
-      final out = outboundFor('trojan://pwd@trojan.example.com:443?sni=trojan.example.com#t');
+      final out = outboundFor(
+          'trojan://pwd@trojan.example.com:443?sni=trojan.example.com#t');
       expect(out['type'], 'trojan');
       expect(out['password'], 'pwd');
       expect(out['tls']['enabled'], true);

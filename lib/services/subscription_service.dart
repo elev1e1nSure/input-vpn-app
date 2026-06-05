@@ -20,8 +20,7 @@ class SubscriptionService {
     final lines = decoded
         .split(RegExp(r'\r?\n'))
         .map((l) => l.trim())
-        .where((l) =>
-            l.isNotEmpty && !l.startsWith('#') && !l.startsWith('//'))
+        .where((l) => l.isNotEmpty && !l.startsWith('#') && !l.startsWith('//'))
         .toList();
 
     final configs = <ParsedConfig>[];
@@ -45,7 +44,8 @@ class SubscriptionService {
   }
 
   /// Download a subscription URL and parse it.
-  Future<SubscriptionResult> fetch(String url, {CancelToken? cancelToken}) async {
+  Future<SubscriptionResult> fetch(String url,
+      {CancelToken? cancelToken}) async {
     final res = await _dio.get<String>(
       url,
       cancelToken: cancelToken,
@@ -131,7 +131,7 @@ class SubscriptionService {
         if (uri.pathSegments.isNotEmpty) {
           final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
           if (segments.isEmpty) return null;
-          
+
           // Helper to check if string looks like a token (long random string without separators)
           bool looksLikeToken(String s) {
             // Token: long (>15 chars) or contains only alphanumeric without underscores/hyphens
@@ -140,7 +140,7 @@ class SubscriptionService {
             // If has no separators, likely a token
             return !s.contains('_') && !s.contains('-') && !s.contains(' ');
           }
-          
+
           String result;
           if (segments.length >= 2 && looksLikeToken(segments.last)) {
             // Use second-to-last if last looks like a token (e.g., /name/uuid)
@@ -149,7 +149,7 @@ class SubscriptionService {
             // Use last segment
             result = segments.last;
           }
-          
+
           return result.replaceFirst(RegExp(r'\.(json|yaml|yml|txt)$'), '');
         }
       }

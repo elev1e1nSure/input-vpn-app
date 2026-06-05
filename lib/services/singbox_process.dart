@@ -37,7 +37,8 @@ class SingBoxProcess {
   /// Whether the last [start] used service mode.
   bool _serviceMode = false;
 
-  bool get isRunning => _serviceMode ? _serviceModeRunning : _processHandle != 0;
+  bool get isRunning =>
+      _serviceMode ? _serviceModeRunning : _processHandle != 0;
   bool _serviceModeRunning = false;
   int get processId => _processId;
   File? get logFile => _logFile;
@@ -148,7 +149,8 @@ class SingBoxProcess {
       if (!installed) {
         // Service was never installed (UAC denied or removed externally).
         // Fall back to legacy elevated launch so the user isn't stuck.
-        AppLogger.warn('SingBoxProcess: service not installed — falling back to elevated launch');
+        AppLogger.warn(
+            'SingBoxProcess: service not installed — falling back to elevated launch');
       } else {
         // start() updates the task's command to the current config path
         // and runs it as SYSTEM instantly via schtasks /run.

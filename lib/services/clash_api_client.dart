@@ -76,9 +76,8 @@ class ClashApiClient {
           options: Options(responseType: ResponseType.stream),
         );
         final stream = rs.data!.stream;
-        final lineStream = stream
-            .map(utf8.decode)
-            .transform(const LineSplitter());
+        final lineStream =
+            stream.map(utf8.decode).transform(const LineSplitter());
         await for (final line in lineStream) {
           if (line.trim().isEmpty) continue;
           try {

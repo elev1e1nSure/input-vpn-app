@@ -17,7 +17,6 @@ void main() {
     registerFallbackValue(_FakeParsedConfig());
   });
 
-
   group('VpnConnectionController', () {
     late VpnConnectionController controller;
     late _MockVpnService mockVpn;
@@ -26,7 +25,8 @@ void main() {
     setUp(() {
       mockVpn = _MockVpnService();
       statusController = StreamController<ConnectionStatus>.broadcast();
-      when(() => mockVpn.watchStatus()).thenAnswer((_) => statusController.stream);
+      when(() => mockVpn.watchStatus())
+          .thenAnswer((_) => statusController.stream);
       when(() => mockVpn.dispose()).thenAnswer((_) => Future.value());
       when(() => mockVpn.disconnect()).thenAnswer((_) => Future.value());
       controller = VpnConnectionController(vpnService: mockVpn);
@@ -155,11 +155,11 @@ void main() {
 }
 
 ParsedConfig _dummyConfig() => const ParsedConfig(
-  type: ProxyType.vless,
-  server: 'example.com',
-  port: 443,
-  remark: 'test',
-  uuid: 'uuid',
-  security: 'tls',
-  raw: 'vless://uuid@example.com:443',
-);
+      type: ProxyType.vless,
+      server: 'example.com',
+      port: 443,
+      remark: 'test',
+      uuid: 'uuid',
+      security: 'tls',
+      raw: 'vless://uuid@example.com:443',
+    );

@@ -81,36 +81,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (value) {
-              if (value == 'export') _exportSettings(appState, s);
-              if (value == 'import') _importSettings(appState, s);
-            },
-            itemBuilder: (ctx) => [
-              PopupMenuItem(
-                value: 'export',
-                child: Row(
-                  children: [
-                    const Icon(Icons.copy_all, size: 18),
-                    const SizedBox(width: 12),
-                    Text(s.exportSettings),
-                  ],
+                if (value == 'export') _exportSettings(appState, s);
+                if (value == 'import') _importSettings(appState, s);
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  value: 'export',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.copy_all, size: 18),
+                      const SizedBox(width: 12),
+                      Text(s.exportSettings),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'import',
-                child: Row(
-                  children: [
-                    const Icon(Icons.paste, size: 18),
-                    const SizedBox(width: 12),
-                    Text(s.importSettings),
-                  ],
+                PopupMenuItem(
+                  value: 'import',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.paste, size: 18),
+                      const SizedBox(width: 12),
+                      Text(s.importSettings),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-    body: ListView(
+        ],
+      ),
+      body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
           const SizedBox(height: 8),
@@ -342,7 +342,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showDnsPicker(BuildContext context, AppState appState, AppStrings s) {
     final theme = Theme.of(context);
     final isRu = s.language == 'Язык';
-    final customDnsController = TextEditingController(text: appState.customDns == 'Default' ? '' : appState.customDns);
+    final customDnsController = TextEditingController(
+        text: appState.customDns == 'Default' ? '' : appState.customDns);
     String? error;
 
     showModalBottomSheet<void>(
@@ -371,7 +372,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 16),
               ...DnsPreset.presets.map((preset) {
-                final selected = preset.id == appState.dnsPreset && appState.customDns == 'Default';
+                final selected = preset.id == appState.dnsPreset &&
+                    appState.customDns == 'Default';
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(
@@ -421,7 +423,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final dns = customDnsController.text.trim();
                       if (dns.isEmpty) {
                         setModalState(() {
-                          error = isRu ? 'Введите DNS адрес' : 'Enter DNS address';
+                          error =
+                              isRu ? 'Введите DNS адрес' : 'Enter DNS address';
                         });
                         return;
                       }

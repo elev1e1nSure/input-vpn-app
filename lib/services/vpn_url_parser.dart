@@ -126,21 +126,27 @@ class VpnUrlParser {
       type: ProxyType.vmess,
       server: host,
       port: port,
-      remark: (obj['ps'] ?? '').toString().isNotEmpty
-          ? obj['ps'].toString()
-          : host,
+      remark:
+          (obj['ps'] ?? '').toString().isNotEmpty ? obj['ps'].toString() : host,
       uuid: uuid,
       method: (obj['scy'] ?? 'auto').toString(),
       network: (obj['net'] ?? 'tcp').toString(),
       security: (obj['tls'] ?? 'none').toString(),
       sni: (obj['sni'] ?? '').toString().isEmpty ? null : obj['sni'].toString(),
-      alpn: (obj['alpn'] ?? '').toString().isEmpty ? null : obj['alpn'].toString(),
+      alpn: (obj['alpn'] ?? '').toString().isEmpty
+          ? null
+          : obj['alpn'].toString(),
       fingerprint:
           (obj['fp'] ?? '').toString().isEmpty ? null : obj['fp'].toString(),
-      path: (obj['path'] ?? '').toString().isEmpty ? null : obj['path'].toString(),
-      host: (obj['host'] ?? '').toString().isEmpty ? null : obj['host'].toString(),
-      headerType:
-          (obj['type'] ?? '').toString().isEmpty ? null : obj['type'].toString(),
+      path: (obj['path'] ?? '').toString().isEmpty
+          ? null
+          : obj['path'].toString(),
+      host: (obj['host'] ?? '').toString().isEmpty
+          ? null
+          : obj['host'].toString(),
+      headerType: (obj['type'] ?? '').toString().isEmpty
+          ? null
+          : obj['type'].toString(),
       transport: Map<String, dynamic>.from(obj),
       raw: link,
     );
@@ -152,7 +158,8 @@ class VpnUrlParser {
   // trojan://<password>@<host>:<port>?sni=...&type=ws&path=...#<remark>
   static ParsedConfig _parseTrojan(String link) {
     final password = Uri.decodeComponent(Uri.parse(link).userInfo);
-    if (password.isEmpty) throw const FormatException('trojan: missing password');
+    if (password.isEmpty)
+      throw const FormatException('trojan: missing password');
     final c = _parseCommonUri(link, 'trojan');
     final qp = c.qp;
     return ParsedConfig(
@@ -182,11 +189,9 @@ class VpnUrlParser {
   //   3) ss://base64(method:password)@host:port?plugin=...#remark
   static ParsedConfig _parseShadowsocks(String link) {
     final hashIdx = link.indexOf('#');
-    final core =
-        hashIdx == -1 ? link.substring(5) : link.substring(5, hashIdx);
-    final remark = hashIdx == -1
-        ? ''
-        : Uri.decodeComponent(link.substring(hashIdx + 1));
+    final core = hashIdx == -1 ? link.substring(5) : link.substring(5, hashIdx);
+    final remark =
+        hashIdx == -1 ? '' : Uri.decodeComponent(link.substring(hashIdx + 1));
 
     String method = '';
     String password = '';

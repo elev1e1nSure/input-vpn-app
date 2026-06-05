@@ -36,7 +36,8 @@ class IpService {
         ),
       );
       final countryCode = response.data?['countryCode'] as String?;
-      debugPrint('IpService: countryCode response: $countryCode, full data: ${response.data}');
+      debugPrint(
+          'IpService: countryCode response: $countryCode, full data: ${response.data}');
       if (countryCode != null && countryCode.isNotEmpty) return countryCode;
     } catch (e) {
       debugPrint('IpService: Failed to fetch country code: $e');

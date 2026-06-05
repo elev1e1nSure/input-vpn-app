@@ -42,7 +42,8 @@ sealed class Result<T> {
   Result<R> map<R>(R Function(T value) fn) {
     return switch (this) {
       Success(:final value) => Result.ok(fn(value)),
-      Failure(:final message, :final cause) => Result.err(message, cause: cause),
+      Failure(:final message, :final cause) =>
+        Result.err(message, cause: cause),
     };
   }
 

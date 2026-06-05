@@ -20,8 +20,8 @@ import 'package:input_vpn/services/app_logger.dart';
 ///   stop()      — taskkill sing-box.exe (no elevation).
 ///   isInstalled() — schtasks /query.
 class SingboxServiceManager {
-  static const String serviceName  = 'InputVPNService';
-  static const String _taskName    = 'InputVPNSingBox';
+  static const String serviceName = 'InputVPNService';
+  static const String _taskName = 'InputVPNSingBox';
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -34,8 +34,10 @@ class SingboxServiceManager {
       // Update the task command to point to the current config file.
       final changeArgs = [
         '/change',
-        '/tn', _taskName,
-        '/tr', '"$exePath" run -c "$configPath" --disable-color',
+        '/tn',
+        _taskName,
+        '/tr',
+        '"$exePath" run -c "$configPath" --disable-color',
       ];
       final change = await Process.run('schtasks.exe', changeArgs);
       debugPrint('schtasks change: exit=${change.exitCode} '
@@ -79,9 +81,11 @@ class SingboxServiceManager {
     AppLogger.info('ServiceManager: triggering $stopTask task');
     try {
       final run = await Process.run('schtasks.exe', ['/run', '/tn', stopTask]);
-      debugPrint('schtasks /run $stopTask: exit=${run.exitCode} stdout=${run.stdout} stderr=${run.stderr}');
+      debugPrint(
+          'schtasks /run $stopTask: exit=${run.exitCode} stdout=${run.stdout} stderr=${run.stderr}');
       if (run.exitCode != 0) {
-        AppLogger.warn('ServiceManager: $stopTask /run failed (exit=${run.exitCode}) — task not installed?');
+        AppLogger.warn(
+            'ServiceManager: $stopTask /run failed (exit=${run.exitCode}) — task not installed?');
         return false;
       }
     } catch (e) {
@@ -98,7 +102,8 @@ class SingboxServiceManager {
       }
     }
 
-    AppLogger.warn('ServiceManager: sing-box still running after $stopTask — timed out');
+    AppLogger.warn(
+        'ServiceManager: sing-box still running after $stopTask — timed out');
     return false;
   }
 
@@ -112,14 +117,17 @@ class SingboxServiceManager {
 
     // Fallback: direct taskkill (works when the app itself is elevated or
     // the stop task is not installed on older setups).
-    AppLogger.info('ServiceManager: fallback — direct taskkill /IM sing-box.exe /F');
+    AppLogger.info(
+        'ServiceManager: fallback — direct taskkill /IM sing-box.exe /F');
     try {
-      final result = await Process.run(
-          'taskkill', ['/IM', 'sing-box.exe', '/F']);
+      final result =
+          await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
       final ok = result.exitCode == 0 ||
           (result.stdout as String).contains('not found') ||
           (result.stderr as String).contains('not found');
-      if (ok) AppLogger.info('ServiceManager: sing-box stopped via taskkill fallback');
+      if (ok)
+        AppLogger.info(
+            'ServiceManager: sing-box stopped via taskkill fallback');
       return true; // treat "not running" as success
     } catch (e) {
       AppLogger.error('ServiceManager.stop error: $e');
@@ -133,8 +141,8 @@ class SingboxServiceManager {
   static Future<bool> isInstalled() async {
     if (!Platform.isWindows) return false;
     try {
-      final result = await Process.run(
-          'schtasks.exe', ['/query', '/tn', _taskName]);
+      final result =
+          await Process.run('schtasks.exe', ['/query', '/tn', _taskName]);
       return result.exitCode == 0;
     } catch (_) {
       return false;
@@ -152,5 +160,4 @@ class SingboxServiceManager {
       return false;
     }
   }
-
 }

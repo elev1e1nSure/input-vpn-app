@@ -126,21 +126,28 @@ class SingBoxProcessFfi {
   /// Retry network cleanup up to 3 times with delays.
   Future<void> _cleanupWithRetry() async {
     const maxRetries = 3;
-    const delays = [Duration(milliseconds: 500), Duration(seconds: 1), Duration(seconds: 2)];
+    const delays = [
+      Duration(milliseconds: 500),
+      Duration(seconds: 1),
+      Duration(seconds: 2)
+    ];
 
     for (int i = 0; i < maxRetries; i++) {
       try {
         await NetworkUtils.globalCleanup();
-        AppLogger.info('SingBoxProcessFfi: cleanup succeeded on attempt ${i + 1}');
+        AppLogger.info(
+            'SingBoxProcessFfi: cleanup succeeded on attempt ${i + 1}');
         return;
       } catch (e) {
-        AppLogger.warn('SingBoxProcessFfi: cleanup attempt ${i + 1} failed: $e');
+        AppLogger.warn(
+            'SingBoxProcessFfi: cleanup attempt ${i + 1} failed: $e');
         if (i < maxRetries - 1) {
           await Future<void>.delayed(delays[i]);
         }
       }
     }
-    AppLogger.error('SingBoxProcessFfi: cleanup failed after $maxRetries attempts');
+    AppLogger.error(
+        'SingBoxProcessFfi: cleanup failed after $maxRetries attempts');
   }
 
   /// Returns true if sing-box is currently running.

@@ -9,13 +9,13 @@ import 'package:google_fonts/google_fonts.dart';
 // --foreground:   oklch(0.97 0 0)      → #F5F5F5
 // --accent-green: oklch(0.78 0.22 145) → #4ADE80
 // --font-sans: 'Geist', 'Inter', system-ui — using Inter (google_fonts)
-const _bg      = Color(0xFF1A1A1A);
-const _muted   = Color(0xFF262626);
-const _border  = Color(0xFF303030);
+const _bg = Color(0xFF1A1A1A);
+const _muted = Color(0xFF262626);
+const _border = Color(0xFF303030);
 const _mutedFg = Color(0xFF8C8C8C);
-const _fg      = Color(0xFFF5F5F5);
-const _green   = Color(0xFF4ADE80);
-const _red     = Color(0xFFFF453A);
+const _fg = Color(0xFFF5F5F5);
+const _green = Color(0xFF4ADE80);
+const _red = Color(0xFFFF453A);
 
 TextTheme _buildTextTheme() => GoogleFonts.interTextTheme(const TextTheme(
       displayLarge: TextStyle(
@@ -24,9 +24,9 @@ TextTheme _buildTextTheme() => GoogleFonts.interTextTheme(const TextTheme(
           color: _fg, fontWeight: FontWeight.w600, letterSpacing: -0.5),
       titleMedium: TextStyle(
           color: _fg, fontWeight: FontWeight.w600, letterSpacing: -0.3),
-      bodyLarge:  TextStyle(color: _fg),
+      bodyLarge: TextStyle(color: _fg),
       bodyMedium: TextStyle(color: _mutedFg),
-      bodySmall:  TextStyle(color: _mutedFg),
+      bodySmall: TextStyle(color: _mutedFg),
       labelSmall: TextStyle(color: _mutedFg, letterSpacing: 0),
     ));
 
@@ -34,15 +34,15 @@ final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   scaffoldBackgroundColor: _bg,
   colorScheme: ColorScheme.dark(
-    primary:          _green,
-    secondary:        _green,
-    surface:          _muted,
-    error:            _red,
-    onPrimary:        _bg,
-    onSecondary:      _bg,
-    onSurface:        _fg,
-    onError:          _fg,
-    errorContainer:   _red.withValues(alpha: 0.12),
+    primary: _green,
+    secondary: _green,
+    surface: _muted,
+    error: _red,
+    onPrimary: _bg,
+    onSecondary: _bg,
+    onSurface: _fg,
+    onError: _fg,
+    errorContainer: _red.withValues(alpha: 0.12),
     onErrorContainer: _red,
   ),
   textTheme: _buildTextTheme(),

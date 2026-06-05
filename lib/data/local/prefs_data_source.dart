@@ -28,8 +28,7 @@ class PrefsDataSource {
   // --- JSON / complex objects ---
   String? getJson(String key) => _prefs.getString(key);
 
-  Future<bool> setJson(String key, String json) =>
-      _prefs.setString(key, json);
+  Future<bool> setJson(String key, String json) => _prefs.setString(key, json);
 
   // --- Removal ---
   Future<bool> remove(String key) => _prefs.remove(key);

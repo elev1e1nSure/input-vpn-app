@@ -50,7 +50,8 @@ void main() {
     });
 
     test('guard returns err on exception', () async {
-      final result = await Result.guard<int>(() async => throw Exception('oops'));
+      final result =
+          await Result.guard<int>(() async => throw Exception('oops'));
       expect(result.isFailure, true);
       expect(result.error, contains('oops'));
     });

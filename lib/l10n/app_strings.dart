@@ -22,14 +22,19 @@ class AppStrings {
   String get connecting => isRu ? 'Подключение...' : 'Connecting...';
   String get connected => isRu ? 'Подключено' : 'Connected';
   String get disconnecting => isRu ? 'Отключение...' : 'Disconnecting...';
-  String get readyToConnect => isRu ? 'Готово к подключению' : 'Ready to Connect';
-  String get pleaseAddConfig => isRu ? 'Добавьте конфигурацию' : 'Please add a configuration';
+  String get readyToConnect =>
+      isRu ? 'Готово к подключению' : 'Ready to Connect';
+  String get pleaseAddConfig =>
+      isRu ? 'Добавьте конфигурацию' : 'Please add a configuration';
   String get yourIpIsHidden => isRu ? 'Ваш IP скрыт' : 'Your IP is hidden';
-  String get securityLevelHigh => isRu ? 'Уровень защиты: высокий' : 'Security level: High';
+  String get securityLevelHigh =>
+      isRu ? 'Уровень защиты: высокий' : 'Security level: High';
   String get selectedServer => isRu ? 'Выбранный сервер' : 'Selected Server';
   String get noServer => isRu ? 'Нет сервера' : 'No Server';
-  String get addAConfiguration => isRu ? 'Добавить конфигурацию' : 'Add a configuration';
-  String get addConfigurationBtn => isRu ? 'Добавить конфигурацию' : 'Add Configuration';
+  String get addAConfiguration =>
+      isRu ? 'Добавить конфигурацию' : 'Add a configuration';
+  String get addConfigurationBtn =>
+      isRu ? 'Добавить конфигурацию' : 'Add Configuration';
   String get connect => isRu ? 'Подключить' : 'Connect';
   String get disconnect => isRu ? 'Отключить' : 'Disconnect';
   String get disconnectedStatus => isRu ? 'Отключено' : 'Disconnected';
@@ -43,8 +48,11 @@ class AppStrings {
   String get getConfig => isRu ? 'Получить' : 'Get Config';
 
   // --- Trust / Micro-info ---
-  String get configsStoredLocally => isRu ? 'Конфигурации хранятся локально' : 'Configs stored locally';
-  String get supportsWireGuardOpenVPN => isRu ? 'Поддержка VLESS / VMess / SS / Trojan' : 'VLESS / VMess / SS / Trojan support';
+  String get configsStoredLocally =>
+      isRu ? 'Конфигурации хранятся локально' : 'Configs stored locally';
+  String get supportsWireGuardOpenVPN => isRu
+      ? 'Поддержка VLESS / VMess / SS / Trojan'
+      : 'VLESS / VMess / SS / Trojan support';
 
   // --- Mock server states ---
   String get offline => isRu ? 'Offline' : 'Offline';
@@ -64,14 +72,17 @@ class AppStrings {
   String get deleteServer => isRu ? 'Удалить сервер' : 'Delete Server';
 
   // --- AddConfigScreen ---
-  String get addConfiguration => isRu ? 'Добавить конфигурацию' : 'Add Configuration';
-  String get editConfiguration => isRu ? 'Изменить конфигурацию' : 'Edit Configuration';
+  String get addConfiguration =>
+      isRu ? 'Добавить конфигурацию' : 'Add Configuration';
+  String get editConfiguration =>
+      isRu ? 'Изменить конфигурацию' : 'Edit Configuration';
   String get cancel => isRu ? 'Отмена' : 'Cancel';
   String get add => isRu ? 'Добавить' : 'Add';
   String get importFromFile => isRu ? 'Импорт' : 'Import';
   String get scanQRCode => isRu ? 'Скан QR' : 'Scan QR';
   String get displayName => isRu ? 'Название' : 'Name';
-  String get displayNameHint => isRu ? 'Напр. Мой Premium VLESS' : 'e.g. My Premium VLESS';
+  String get displayNameHint =>
+      isRu ? 'Напр. Мой Premium VLESS' : 'e.g. My Premium VLESS';
   String get type => isRu ? 'Тип' : 'Type';
   String get configOrUrl => isRu ? 'Конфиг или ссылка' : 'Config or link';
   String get supportedFormats => isRu
@@ -80,7 +91,8 @@ class AppStrings {
   String get save => isRu ? 'Сохранить' : 'Save';
   String get delete => isRu ? 'Удалить' : 'Delete';
   String get vlessVmessSs => isRu ? 'VLESS / VMess / SS' : 'VLESS / VMess / SS';
-  String get subscriptionUrl => isRu ? 'Ссылка на подписку' : 'Subscription URL';
+  String get subscriptionUrl =>
+      isRu ? 'Ссылка на подписку' : 'Subscription URL';
 
   // --- Settings ---
   String get settings => isRu ? 'Настройки' : 'Settings';
@@ -90,10 +102,13 @@ class AppStrings {
   String get about => isRu ? 'О ПРИЛОЖЕНИИ' : 'ABOUT';
   String get vpnProtocol => isRu ? 'Протокол VPN' : 'VPN Protocol';
   String get killSwitch => isRu ? 'Kill Switch' : 'Kill Switch';
-  String get connectOnBoot => isRu ? 'Подключать при запуске' : 'Connect on Boot';
-  String get autoLaunch => isRu ? 'Запускать при старте Windows' : 'Launch on startup';
+  String get connectOnBoot =>
+      isRu ? 'Подключать при запуске' : 'Connect on Boot';
+  String get autoLaunch =>
+      isRu ? 'Запускать при старте Windows' : 'Launch on startup';
   String get darkMode => isRu ? 'Тёмная тема' : 'Dark Mode';
-  String get splitTunneling => isRu ? 'Раздельное туннелирование' : 'Split Tunneling';
+  String get splitTunneling =>
+      isRu ? 'Раздельное туннелирование' : 'Split Tunneling';
   String get customDns => isRu ? 'DNS' : 'Custom DNS';
   String get customDnsProfilesTitle =>
       isRu ? 'Пользовательские DNS' : 'Custom DNS Profiles';
@@ -107,21 +122,26 @@ class AppStrings {
   String get proxyMode => isRu ? 'Режим прокси' : 'Proxy Mode';
   String get vpnMode => isRu ? 'Режим VPN' : 'VPN Mode';
   String get version => isRu ? 'Версия' : 'Version';
-  String get checkForUpdates => isRu ? 'Проверить обновления' : 'Check for Updates';
+  String get checkForUpdates =>
+      isRu ? 'Проверить обновления' : 'Check for Updates';
   String get upToDate => isRu ? 'Актуальная версия' : 'Up to Date';
-  String get updateAvailable => isRu ? 'Доступно обновление' : 'Update Available';
+  String get updateAvailable =>
+      isRu ? 'Доступно обновление' : 'Update Available';
   String get updateNow => isRu ? 'Обновить' : 'Update Now';
-  String get downloadingUpdate => isRu ? 'Скачивание обновления' : 'Downloading update';
+  String get downloadingUpdate =>
+      isRu ? 'Скачивание обновления' : 'Downloading update';
   String get updateReady => isRu ? 'Готово к установке' : 'Ready to install';
-  String get updateWillClose =>
-      isRu ? 'Приложение закроется для установки обновления.' : 'The app will close to install the update.';
+  String get updateWillClose => isRu
+      ? 'Приложение закроется для установки обновления.'
+      : 'The app will close to install the update.';
   String get check => isRu ? 'Проверить' : 'Check';
   String get minimizeToTray => isRu ? 'Сворачивать в трей' : 'Minimize to Tray';
   String get language => isRu ? 'Язык' : 'Language';
   String get exportSettings => isRu ? 'Экспорт настроек' : 'Export Settings';
   String get importSettings => isRu ? 'Импорт настроек' : 'Import Settings';
-  String get settingsCopied =>
-      isRu ? 'Настройки скопированы в буфер обмена' : 'Settings copied to clipboard';
+  String get settingsCopied => isRu
+      ? 'Настройки скопированы в буфер обмена'
+      : 'Settings copied to clipboard';
   String get settingsImported =>
       isRu ? 'Настройки применены' : 'Settings imported';
   String get settingsImportFailed =>
@@ -171,7 +191,8 @@ class AppStrings {
   // --- Misc ---
   String get copy => isRu ? 'Копировать' : 'Copy';
   String get dismiss => isRu ? 'Закрыть' : 'Dismiss';
-  String get unexpectedError => isRu ? 'Неожиданная ошибка' : 'Unexpected error';
+  String get unexpectedError =>
+      isRu ? 'Неожиданная ошибка' : 'Unexpected error';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

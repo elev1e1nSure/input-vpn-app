@@ -60,8 +60,8 @@ class NetworkUtils {
       }
     ''';
     try {
-      await Process.run('powershell',
-          ['-NoProfile', '-NonInteractive', '-Command', script]);
+      await Process.run(
+          'powershell', ['-NoProfile', '-NonInteractive', '-Command', script]);
     } catch (e) {
       debugPrint('NetworkUtils: resetAllDns error: $e');
     }

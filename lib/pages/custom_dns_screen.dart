@@ -63,7 +63,8 @@ class _CustomDnsScreenState extends State<CustomDnsScreen> {
                           cursor: SystemMouseCursors.click,
                           child: IconButton(
                             icon: const Icon(Icons.delete),
-                            onPressed: () => _confirmDelete(appState, s, profile),
+                            onPressed: () =>
+                                _confirmDelete(appState, s, profile),
                           ),
                         ),
                       ],

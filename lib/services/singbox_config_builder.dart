@@ -47,7 +47,8 @@ class SingBoxConfigBuilder {
   /// (otherwise the log goes to stdout, which is detached when we spawn the
   /// process via ShellExecuteEx).
   String build(ParsedConfig p, {String? logPath}) =>
-      const JsonEncoder.withIndent('  ').convert(buildJson(p, logPath: logPath));
+      const JsonEncoder.withIndent('  ')
+          .convert(buildJson(p, logPath: logPath));
 
   Map<String, dynamic> buildJson(ParsedConfig p, {String? logPath}) {
     final outbound = _buildOutbound(p);
@@ -268,7 +269,8 @@ class SingBoxConfigBuilder {
         'enabled': true,
         if (p.sni != null) 'server_name': p.sni,
         if (p.alpn != null) 'alpn': p.alpn!.split(','),
-        'insecure': p.transport['insecure'] == '1' || p.transport['insecure'] == 'true',
+        'insecure':
+            p.transport['insecure'] == '1' || p.transport['insecure'] == 'true',
       },
     };
     return out;
@@ -316,16 +318,14 @@ class SingBoxConfigBuilder {
     ParsedConfig p, {
     bool defaultEnabled = false,
   }) {
-    final hasTls = p.security == 'tls' ||
-        p.security == 'reality' ||
-        defaultEnabled;
+    final hasTls =
+        p.security == 'tls' || p.security == 'reality' || defaultEnabled;
     if (!hasTls) return;
 
     final tls = <String, dynamic>{
       'enabled': true,
       if (p.sni != null && p.sni!.isNotEmpty) 'server_name': p.sni,
-      if (p.alpn != null && p.alpn!.isNotEmpty)
-        'alpn': p.alpn!.split(','),
+      if (p.alpn != null && p.alpn!.isNotEmpty) 'alpn': p.alpn!.split(','),
       'insecure': p.transport['allowInsecure'] == '1' ||
           p.transport['insecure'] == '1' ||
           p.transport['insecure'] == 'true',
@@ -366,8 +366,7 @@ class SingBoxConfigBuilder {
         out['transport'] = {
           'type': 'ws',
           if (p.path != null) 'path': p.path,
-          if (p.host != null)
-            'headers': {'Host': p.host},
+          if (p.host != null) 'headers': {'Host': p.host},
           if (p.transport['max-early-data'] != null)
             'max_early_data':
                 int.tryParse(p.transport['max-early-data'].toString()) ?? 0,
