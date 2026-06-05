@@ -27,7 +27,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WindowListener {
   int _selectedIndex = 0;
   int _tabTransitionDirection = 1;
-  bool _sidebarExpanded = true;
+  bool _sidebarExpanded = false;
   bool _trayInitialized = false;
   VpnServer? _editingServer;
 
@@ -248,30 +248,23 @@ class _ModeToggle extends StatelessWidget {
     final s = AppStrings.of(context);
     final isProxy = context.select<AppState, bool>((a) => a.isProxyMode);
     final appState = AppState.of(context, listen: false);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ModePill(
-            label: s.vpnLabel,
-            icon: Icons.shield,
-            active: !isProxy,
-            onTap: () => appState.setProxyMode(false),
-          ),
-          const SizedBox(width: 4),
-          _ModePill(
-            label: s.socks5Label,
-            icon: Icons.wifi_tethering,
-            active: isProxy,
-            onTap: () => appState.setProxyMode(true),
-          ),
-        ],
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ModePill(
+          label: s.vpnLabel,
+          icon: Icons.shield,
+          active: !isProxy,
+          onTap: () => appState.setProxyMode(false),
+        ),
+        const SizedBox(width: 8),
+        _ModePill(
+          label: s.socks5Label,
+          icon: Icons.wifi_tethering,
+          active: isProxy,
+          onTap: () => appState.setProxyMode(true),
+        ),
+      ],
     );
   }
 }
@@ -302,13 +295,13 @@ class _ModePillState extends State<_ModePill> {
     final primary = theme.colorScheme.primary;
     final active = widget.active;
     final backgroundAlpha = active
-        ? 0.24
+        ? 0.2
         : _hovered
-            ? 0.13
-            : 0.08;
+            ? 0.1
+            : 0.055;
     final foreground = active
         ? primary
-        : theme.colorScheme.onSurface.withValues(alpha: _hovered ? 0.82 : 0.68);
+        : theme.colorScheme.onSurface.withValues(alpha: _hovered ? 0.8 : 0.66);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -319,7 +312,7 @@ class _ModePillState extends State<_ModePill> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
           decoration: BoxDecoration(
             color: primary.withValues(alpha: backgroundAlpha),
             borderRadius: BorderRadius.circular(18),
@@ -329,13 +322,14 @@ class _ModePillState extends State<_ModePill> {
             children: [
               Icon(
                 widget.icon,
-                size: 14,
+                size: 15,
                 color: foreground,
               ),
               const SizedBox(width: 6),
               Text(
                 widget.label,
                 style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 13,
                   color: foreground,
                   fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                 ),
