@@ -616,6 +616,7 @@ class _HomeTab extends StatelessWidget {
                                           fontSize: 30,
                                           fontWeight: FontWeight.w900,
                                           height: 1.02,
+                                          letterSpacing: 0,
                                         ),
                                       ),
                               ),

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
@@ -171,7 +170,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                 MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: IconButton(
-                    icon: const Icon(CupertinoIcons.back),
+                    icon: const Icon(Icons.arrow_back),
                     onPressed: widget.onBack,
                   ),
                 ),
@@ -207,7 +206,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                               : SystemMouseCursors.forbidden,
                           child: IconButton(
                             icon: Icon(
-                              CupertinoIcons.checkmark_alt,
+                              Icons.check,
                               color: canAdd
                                   ? theme.colorScheme.primary
                                   : theme.textTheme.bodyMedium?.color
@@ -239,7 +238,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                   Row(
                     children: [
                       _buildActionChip(
-                        icon: CupertinoIcons.arrow_down_doc,
+                        icon: Icons.file_download,
                         label: s.importFromFile,
                         onTap: () {
                           // TODO: implement file import
@@ -253,7 +252,7 @@ class _AddConfigScreenState extends State<AddConfigScreen> {
                       ),
                       const SizedBox(width: 10),
                       _buildActionChip(
-                        icon: CupertinoIcons.qrcode,
+                        icon: Icons.qr_code_scanner,
                         label: s.scanQRCode,
                         onTap: () {
                           // TODO: implement QR scan

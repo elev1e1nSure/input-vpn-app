@@ -71,7 +71,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(s.settings),
+        title: Text(
+          s.settings,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         leading: Navigator.of(context).canPop()
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),

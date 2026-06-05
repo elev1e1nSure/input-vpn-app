@@ -104,7 +104,12 @@ class ServersScreen extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(AppStrings.of(context).myServers),
+        title: Text(
+          AppStrings.of(context).myServers,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -191,27 +196,94 @@ class _ServerTileState extends State<_ServerTile> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (_) => widget.onDelete(),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? primary.withValues(alpha: 0.12)
-                : _hovered
-                    ? Color.lerp(
-                        theme.colorScheme.surface,
-                        primary,
-                        0.055,
-                      )
-                    : theme.colorScheme.surface.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: ListTile(
+      child: isSelected
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 140),
+                curve: Curves.easeOutCubic,
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.12),
+                ),
+                child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 6,
+                ),
+                onTap: widget.onTap,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.public,
+                      size: 20,
+                      color: primary.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  _stripFlags(widget.server.name),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                subtitle: widget.subtitle,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.edit,
+                          size: 18,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.3),
+                        ),
+                        onPressed: widget.onEdit,
+                      ),
+                    ),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.delete,
+                          size: 18,
+                          color: theme.colorScheme.error.withValues(alpha: 0.4),
+                        ),
+                        onPressed: widget.onDelete,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hovered = true),
+              onExit: (_) => setState(() => _hovered = false),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 140),
+                  curve: Curves.easeOutCubic,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: _hovered
+                        ? Color.lerp(
+                            theme.colorScheme.surface,
+                            primary,
+                            0.055,
+                          )
+                        : theme.colorScheme.surface.withValues(alpha: 0.78),
+                  ),
+                  child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 18,
               vertical: 6,
@@ -276,6 +348,10 @@ class _ServerTileState extends State<_ServerTile> {
               ],
             ),
           ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -301,9 +377,7 @@ class _AddButtonState extends State<_AddButton> {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final baseColor = theme.colorScheme.surface.withValues(alpha: 0.78);
-    final color = _hovered
-        ? Color.lerp(baseColor, primary, 0.055)
-        : baseColor;
+    final color = _hovered ? Color.lerp(baseColor, primary, 0.055) : baseColor;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,

@@ -15,7 +15,7 @@ class PremiumScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              CupertinoIcons.star_circle_fill,
+              Icons.star,
               size: 80,
               color: theme.colorScheme.primary,
             ),
