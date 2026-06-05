@@ -3,6 +3,9 @@ import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/vpn_server.dart';
 
+String _stripFlags(String s) =>
+    s.replaceAll(RegExp(r'[\u{1F1E0}-\u{1F1FF}]', unicode: true), '').trim();
+
 class ServersScreen extends StatelessWidget {
   const ServersScreen({
     super.key,
@@ -207,36 +210,25 @@ class _ServerTileState extends State<_ServerTile> {
               vertical: 4,
             ),
             onTap: widget.onTap,
-            leading: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+            leading: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? primary.withValues(alpha: 0.5)
-                      : Colors.transparent,
-                  width: 1.5,
-                ),
               ),
               child: Center(
-                child: TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(
-                    begin: theme.iconTheme.color?.withValues(alpha: 0.25),
-                    end: isSelected
-                        ? primary.withValues(alpha: 0.8)
-                        : theme.iconTheme.color?.withValues(alpha: 0.25),
-                  ),
-                  duration: const Duration(milliseconds: 200),
-                  builder: (_, color, __) =>
-                      Icon(Icons.public, size: 20, color: color),
+                child: Icon(
+                  Icons.public,
+                  size: 20,
+                  color: isSelected
+                      ? primary.withValues(alpha: 0.8)
+                      : theme.iconTheme.color?.withValues(alpha: 0.25),
                 ),
               ),
             ),
             title: Text(
-              widget.server.name,
+              _stripFlags(widget.server.name),
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                 color: isSelected ? theme.colorScheme.onSurface : null,
@@ -246,25 +238,6 @@ class _ServerTileState extends State<_ServerTile> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Green dot when selected
-                if (isSelected)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: primary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: primary.withValues(alpha: 0.5),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: IconButton(

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -846,7 +845,6 @@ class _PublicIpText extends StatelessWidget {
 }
 
 /// Server card at the bottom — feature-card style from Просека design system.
-/// Hover: border lightens, scale 1.015, icon goes green, liquid fill from cursor.
 class _ServerCard extends StatefulWidget {
   const _ServerCard({
     required this.onTap,
@@ -862,27 +860,8 @@ class _ServerCard extends StatefulWidget {
   State<_ServerCard> createState() => _ServerCardState();
 }
 
-class _ServerCardState extends State<_ServerCard>
-    with SingleTickerProviderStateMixin {
+class _ServerCardState extends State<_ServerCard> {
   bool _hovered = false;
-  Offset _fillOrigin = const Offset(0.5, 0.5);
-  late final AnimationController _fill;
-
-  @override
-  void initState() {
-    super.initState();
-    _fill = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-      reverseDuration: const Duration(milliseconds: 350),
-    );
-  }
-
-  @override
-  void dispose() {
-    _fill.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -899,121 +878,65 @@ class _ServerCardState extends State<_ServerCard>
     final borderNormal =
         theme.dividerTheme.color ?? theme.colorScheme.onSurface.withValues(alpha: 0.15);
     final borderHover = primary.withValues(alpha: 0.35);
-    final iconNormal = theme.iconTheme.color?.withValues(alpha: 0.35) ?? Colors.white38;
-    final iconHover = primary.withValues(alpha: 0.75);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) {
-        setState(() => _hovered = true);
-        _fill.forward();
-      },
-      onHover: (event) {
-        final box = context.findRenderObject() as RenderBox?;
-        if (box == null) return;
-        final local = box.globalToLocal(event.position);
-        setState(() => _fillOrigin = Offset(
-              (local.dx / box.size.width).clamp(0.0, 1.0),
-              (local.dy / box.size.height).clamp(0.0, 1.0),
-            ));
-      },
-      onExit: (_) {
-        setState(() => _hovered = false);
-        _fill.reverse();
-      },
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _hovered ? 1.015 : 1.0,
-          duration: const Duration(milliseconds: 250),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          child: AnimatedBuilder(
-            animation: _fill,
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: theme.cardTheme.color ?? theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _hovered ? borderHover : borderNormal,
-                      ),
-                    ),
-                    child: child,
-                  ),
-                  // Liquid fill overlay — green circle expanding from cursor
-                  if (_fill.value > 0)
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: CustomPaint(
-                          painter: _LiquidFillPainter(
-                            progress: _fill.value,
-                            origin: _fillOrigin,
-                            color: primary.withValues(alpha: 0.07),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOut,
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.scaffoldBackgroundColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _hovered
-                          ? primary.withValues(alpha: 0.4)
-                          : Colors.transparent,
-                    ),
-                  ),
-                  child: Center(
-                    child: TweenAnimationBuilder<Color?>(
-                      tween: ColorTween(
-                        begin: iconNormal,
-                        end: _hovered ? iconHover : iconNormal,
-                      ),
-                      duration: const Duration(milliseconds: 250),
-                      builder: (_, color, __) =>
-                          Icon(Icons.public, size: 20, color: color),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        server != null ? server.name : s.noServer,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                            fontSize: 17, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 2),
-                      if (server != null)
-                        Text(
-                          selectedServerIp,
-                          style: theme.textTheme.titleLarge
-                              ?.copyWith(fontSize: 15),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color ?? theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _hovered ? borderHover : borderNormal,
             ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.public,
+                    size: 20,
+                    color: _hovered
+                        ? primary.withValues(alpha: 0.75)
+                        : theme.iconTheme.color?.withValues(alpha: 0.35),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      server != null ? _stripFlags(server.name) : s.noServer,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                          fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    if (server != null)
+                      Text(
+                        selectedServerIp,
+                        style: theme.textTheme.titleLarge?.copyWith(fontSize: 15),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1021,40 +944,9 @@ class _ServerCardState extends State<_ServerCard>
   }
 }
 
-/// Paints an expanding circle from [origin] (0–1 coords) filling the widget.
-/// Used for the liquid-fill hover effect on [_ServerCard].
-class _LiquidFillPainter extends CustomPainter {
-  const _LiquidFillPainter({
-    required this.progress,
-    required this.origin,
-    required this.color,
-  });
 
-  final double progress;
-  final Offset origin;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(origin.dx * size.width, origin.dy * size.height);
-    // Max radius to cover all four corners from wherever the cursor is
-    final maxR = [
-      center.distance,
-      (center - Offset(size.width, 0)).distance,
-      (center - Offset(0, size.height)).distance,
-      (center - Offset(size.width, size.height)).distance,
-    ].reduce(math.max);
-
-    final t = Curves.easeOutCubic.transform(progress);
-    canvas.drawCircle(center, maxR * t, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_LiquidFillPainter old) =>
-      old.progress != progress ||
-      old.origin != origin ||
-      old.color != color;
-}
+String _stripFlags(String s) =>
+    s.replaceAll(RegExp(r'[\u{1F1E0}-\u{1F1FF}]', unicode: true), '').trim();
 
 
 /// Session timer shown in AppBar when connected.
