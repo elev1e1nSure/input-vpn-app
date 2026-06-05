@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:input_vpn/globals/app_constants.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/pages/settings_screen.dart';
 import 'package:input_vpn/pages/servers_screen.dart';
@@ -407,7 +408,7 @@ class _SidebarStatus extends StatelessWidget {
         child: expanded
             ? Center(
                 child: Text(
-                  'v1.2.0',
+                  kAppVersionLabel,
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 11,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
