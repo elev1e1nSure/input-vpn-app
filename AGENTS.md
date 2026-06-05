@@ -1,4 +1,4 @@
-# AGENTS.md — Input VPN
+# CLAUDE.md — Input VPN
 
 Flutter Windows VPN client powered by sing-box. This file is the authoritative reference for architecture, conventions, and engineering rules.
 

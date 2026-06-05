@@ -323,7 +323,7 @@ class _AddButtonState extends State<_AddButton> {
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
+                color: primary,
               ),
             ),
           ),

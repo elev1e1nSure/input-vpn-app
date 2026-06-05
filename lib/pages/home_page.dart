@@ -26,6 +26,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with WindowListener {
   int _selectedIndex = 0;
+  int _tabTransitionDirection = 1;
   bool _sidebarExpanded = true;
   bool _trayInitialized = false;
   VpnServer? _editingServer;
@@ -118,16 +119,17 @@ class _HomePageState extends State<HomePage> with WindowListener {
     switch (_selectedIndex) {
       case 0:
         return _HomeTab(
-            onSwitchToServers: () => setState(() => _selectedIndex = 1));
+          onSwitchToServers: () => _selectTab(1),
+        );
       case 1:
         return ServersScreen(
-          onSwitchToAddConfig: () => setState(() => _selectedIndex = 3),
-          onServerSelected: () => setState(() => _selectedIndex = 0),
-          onBack: () => setState(() => _selectedIndex = 0),
+          onSwitchToAddConfig: () => _selectTab(3),
+          onServerSelected: () => _selectTab(0),
+          onBack: () => _selectTab(0),
           onEditServer: (server) {
             setState(() {
               _editingServer = server;
-              _selectedIndex = 4;
+              _setSelectedIndex(4);
             });
           },
         );
@@ -135,10 +137,11 @@ class _HomePageState extends State<HomePage> with WindowListener {
         return const SettingsScreen();
       case 3:
         return AddConfigScreen(
-            onBack: () => setState(() => _selectedIndex = 1));
+          onBack: () => _selectTab(1),
+        );
       case 4:
         return AddConfigScreen(
-          onBack: () => setState(() => _selectedIndex = 1),
+          onBack: () => _selectTab(1),
           initialName: _editingServer?.name,
           initialConfig: _editingServer?.rawConfig,
           configId: _editingServer?.configId,
@@ -146,6 +149,16 @@ class _HomePageState extends State<HomePage> with WindowListener {
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  void _selectTab(int index) {
+    if (index == _selectedIndex) return;
+    setState(() => _setSelectedIndex(index));
+  }
+
+  void _setSelectedIndex(int index) {
+    _tabTransitionDirection = index > _selectedIndex ? 1 : -1;
+    _selectedIndex = index;
   }
 
   @override
@@ -156,7 +169,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
         _Sidebar(
           expanded: _sidebarExpanded,
           selectedIndex: _selectedIndex,
-          onItemSelected: (i) => setState(() => _selectedIndex = i),
+          onItemSelected: _selectTab,
           onToggleExpand: () =>
               setState(() => _sidebarExpanded = !_sidebarExpanded),
         ),
@@ -166,9 +179,22 @@ class _HomePageState extends State<HomePage> with WindowListener {
         ),
         Expanded(
           child: RepaintBoundary(
-            child: KeyedSubtree(
-              key: ValueKey<int>(_selectedIndex),
-              child: _buildBody(),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 140),
+              reverseDuration: const Duration(milliseconds: 100),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) {
+                return _TabPageTransition(
+                  animation: animation,
+                  direction: _tabTransitionDirection,
+                  child: child,
+                );
+              },
+              child: KeyedSubtree(
+                key: ValueKey<int>(_selectedIndex),
+                child: _buildBody(),
+              ),
             ),
           ),
         ),
@@ -177,7 +203,42 @@ class _HomePageState extends State<HomePage> with WindowListener {
   }
 }
 
-/// VPN / SOCKS5 toggle — keeps UI in sync with proxy mode.
+class _TabPageTransition extends StatelessWidget {
+  const _TabPageTransition({
+    required this.animation,
+    required this.direction,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final int direction;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (animation.status == AnimationStatus.reverse) {
+      return child;
+    }
+
+    final offset = Tween<double>(
+      begin: 6.0 * direction,
+      end: 0,
+    ).animate(animation);
+
+    return AnimatedBuilder(
+      animation: offset,
+      child: child,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(offset.value, 0),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+/// VPN / SOCKS5 toggle - keeps UI in sync with proxy mode.
 class _ModeToggle extends StatelessWidget {
   const _ModeToggle();
 
