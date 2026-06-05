@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:input_vpn/globals/app_constants.dart';
 import 'package:input_vpn/globals/app_state.dart';
 
-import 'package:input_vpn/globals/themes.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/pages/advanced_settings_screen.dart';
@@ -59,7 +58,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appState = AppState.of(context);
-    final bool isDark = theme.brightness == Brightness.dark;
     final s = AppStrings.of(context);
     if (_showAdvanced) {
       return AdvancedSettingsScreen(
@@ -126,15 +124,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailingText:
                 appState.locale.languageCode == 'ru' ? 'Русский' : 'English',
             onTap: () => _showLanguageDialog(context, appState),
-          ),
-          buildSettingsSwitchTile(
-            theme,
-            s.darkMode,
-            Icons.dark_mode,
-            isDark,
-            (val) {
-              appState.changeTheme(val ? darkTheme : lightTheme);
-            },
           ),
           buildSettingsSwitchTile(
             theme,
