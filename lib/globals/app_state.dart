@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:input_vpn/globals/themes.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:input_vpn/functions/extract_country_code.dart';
 import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';

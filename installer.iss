@@ -1,7 +1,7 @@
 [Setup]
 AppId={{7F8E9D2A-4B1C-5F3A-9E2D-8A7B6C5D4E3F}}
 AppName=Input VPN
-AppVersion=1.0.5
+AppVersion=1.1.0
 DefaultDirName={autopf}\InputVPN
 DefaultGroupName=Input VPN
 OutputBaseFilename=InputVPN-Setup
