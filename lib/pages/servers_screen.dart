@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/vpn_server.dart';
@@ -30,7 +29,7 @@ class ServersScreen extends StatelessWidget {
             Icon(
               Icons.dns,
               size: 48,
-              color: theme.iconTheme.color?.withValues(alpha: 0.15),
+              color: theme.iconTheme.color?.withValues(alpha: 0.12),
             ),
             const SizedBox(height: 16),
             Text(s.noServersYet, style: theme.textTheme.titleMedium),
@@ -40,25 +39,11 @@ class ServersScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 13,
-                color: theme.textTheme.bodyMedium?.color?.withValues(
-                  alpha: 0.5,
-                ),
+                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 24),
-            CupertinoButton.filled(
-              borderRadius: BorderRadius.circular(12),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              onPressed: onSwitchToAddConfig,
-              child: Text(
-                s.addConfig,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ),
+            _AddButton(label: s.addConfig, onTap: onSwitchToAddConfig),
           ],
         ),
       ),
@@ -69,59 +54,40 @@ class ServersScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final configs = appState.userConfigs.where((c) => c.id == server.configId).toList();
     if (configs.isEmpty) {
-      return Text(
-        server.country,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontSize: 13,
-          color: theme.textTheme.bodyMedium?.color?.withValues(
-            alpha: 0.7,
-          ),
-        ),
-      );
+      return _subtitleText(theme, server.country);
     }
-    
+
     final config = configs.first;
-    debugPrint('_buildSubtitle: config.type=${config.type.name}, hasSubStats=${config.hasSubStats}, subUpload=${config.subUpload}, subDownload=${config.subDownload}');
-    // Check if this is a subscription with stats
     if (config.type.name == 'subscription' && config.hasSubStats) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            server.country,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 13,
-              color: theme.textTheme.bodyMedium?.color?.withValues(
-                alpha: 0.7,
-              ),
-            ),
-          ),
+          _subtitleText(theme, server.country),
           const SizedBox(height: 2),
           Text(
             '${config.subUsedHuman} / ${config.subTotalHuman}',
             style: theme.textTheme.bodySmall?.copyWith(
               fontSize: 11,
-              color: config.hasUnlimitedTraffic || config.subRemaining > 0 
-                  ? theme.colorScheme.primary 
+              color: config.hasUnlimitedTraffic || config.subRemaining > 0
+                  ? theme.colorScheme.primary
                   : theme.colorScheme.error,
             ),
           ),
         ],
       );
     }
-    
-    // Default: just show country
-    return Text(
-      server.country,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        fontSize: 13,
-        color: theme.textTheme.bodyMedium?.color?.withValues(
-          alpha: 0.7,
-        ),
-      ),
-    );
+
+    return _subtitleText(theme, server.country);
   }
+
+  Text _subtitleText(ThemeData theme, String text) => Text(
+        text,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontSize: 13,
+          color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +113,6 @@ class ServersScreen extends StatelessWidget {
           ? _buildEmptyState(context)
           : RefreshIndicator(
               onRefresh: () async {
-                // Refresh stats for all subscription configs
                 for (final config in appState.userConfigs) {
                   if (config.subUrl != null) {
                     await appState.refreshSubscriptionStats(config.id);
@@ -155,96 +120,240 @@ class ServersScreen extends StatelessWidget {
                 }
               },
               child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              itemCount: servers.length,
-              separatorBuilder: (context, index) =>
-                  Divider(color: theme.dividerTheme.color, indent: 64),
-              itemBuilder: (context, index) {
-                final server = servers[index];
-                final isSelected = appState.selectedServer?.id == server.id;
-                return Dismissible(
-                  key: Key(server.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: theme.colorScheme.error,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 24),
-                    child: const Icon(
-                      Icons.delete,
-                      color: Colors.white,
-                    ),
-                  ),
-                  onDismissed: (_) {
-                    appState.removeConfig(server.configId);
-                  },
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 4,
-                    ),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: theme.scaffoldBackgroundColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.public,
-                          size: 20,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      server.name,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: servers.length,
+                separatorBuilder: (_, __) => Divider(
+                  color: theme.dividerTheme.color,
+                  indent: 72,
+                  endIndent: 0,
+                  height: 1,
+                ),
+                itemBuilder: (context, index) {
+                  final server = servers[index];
+                  final isSelected = appState.selectedServer?.id == server.id;
+                  return _ServerTile(
+                    server: server,
+                    isSelected: isSelected,
                     subtitle: _buildSubtitle(context, appState, server),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.edit_outlined,
-                              size: 18,
-                              color: theme.iconTheme.color?.withValues(alpha: 0.5),
-                            ),
-                            onPressed: () => onEditServer(server),
-                          ),
-                        ),
-                        MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: theme.colorScheme.error
-                                  .withValues(alpha: 0.7),
-                            ),
-                            onPressed: () {
-                              appState.removeConfig(server.configId);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
                     onTap: () {
                       appState.selectServer(server);
                       onServerSelected();
                     },
+                    onEdit: () => onEditServer(server),
+                    onDelete: () => appState.removeConfig(server.configId),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+}
+
+/// Single server row with hover state and selected indicator.
+class _ServerTile extends StatefulWidget {
+  const _ServerTile({
+    required this.server,
+    required this.isSelected,
+    required this.subtitle,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final VpnServer server;
+  final bool isSelected;
+  final Widget subtitle;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  State<_ServerTile> createState() => _ServerTileState();
+}
+
+class _ServerTileState extends State<_ServerTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final isSelected = widget.isSelected;
+
+    return Dismissible(
+      key: Key(widget.server.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        color: theme.colorScheme.error,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (_) => widget.onDelete(),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          color: isSelected
+              ? primary.withValues(alpha: 0.06)
+              : _hovered
+                  ? primary.withValues(alpha: 0.03)
+                  : Colors.transparent,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 4,
+            ),
+            onTap: widget.onTap,
+            leading: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? primary.withValues(alpha: 0.5)
+                      : Colors.transparent,
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: TweenAnimationBuilder<Color?>(
+                  tween: ColorTween(
+                    begin: theme.iconTheme.color?.withValues(alpha: 0.25),
+                    end: isSelected
+                        ? primary.withValues(alpha: 0.8)
+                        : theme.iconTheme.color?.withValues(alpha: 0.25),
                   ),
-                );
-              },
+                  duration: const Duration(milliseconds: 200),
+                  builder: (_, color, __) =>
+                      Icon(Icons.public, size: 20, color: color),
+                ),
+              ),
+            ),
+            title: Text(
+              widget.server.name,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                color: isSelected ? theme.colorScheme.onSurface : null,
+              ),
+            ),
+            subtitle: widget.subtitle,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Green dot when selected
+                if (isSelected)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: primary.withValues(alpha: 0.5),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: theme.iconTheme.color?.withValues(
+                        alpha: _hovered ? 0.6 : 0.3,
+                      ),
+                    ),
+                    onPressed: widget.onEdit,
+                  ),
+                ),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: theme.colorScheme.error.withValues(
+                        alpha: _hovered ? 0.8 : 0.4,
+                      ),
+                    ),
+                    onPressed: widget.onDelete,
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Просека-style button for empty state.
+class _AddButton extends StatefulWidget {
+  const _AddButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_AddButton> createState() => _AddButtonState();
+}
+
+class _AddButtonState extends State<_AddButton> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() {
+        _hovered = false;
+        _pressed = false;
+      }),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedScale(
+          scale: _pressed ? 0.96 : 1.0,
+          duration: const Duration(milliseconds: 100),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: _hovered ? primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: _hovered ? primary : primary.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              widget.label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: _hovered ? theme.colorScheme.onPrimary : primary,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
