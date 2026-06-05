@@ -26,19 +26,14 @@ import 'package:input_vpn/presentation/cubits/network_info_cubit.dart';
 import 'package:input_vpn/presentation/cubits/settings_cubit.dart';
 import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
 import 'package:input_vpn/services/dio_factory.dart';
-import 'package:input_vpn/services/singbox_vpn_service.dart';
+import 'package:input_vpn/services/vpn_service_factory.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
 VpnService _defaultVpnBackend() {
-  if (!kIsWeb && Platform.isWindows && SingBoxVpnService.isSupported) {
-    final proxy = prefs.getBool('proxyMode') ?? false;
-    final service = prefs.getBool('serviceMode') ?? false;
-    return SingBoxVpnService(proxyMode: proxy, serviceMode: service);
-  }
-  return MockVpnService();
+  return VpnServiceFactory.createVpnService();
 }
 
 late SharedPreferences prefs;

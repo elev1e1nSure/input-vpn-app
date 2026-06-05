@@ -11,7 +11,7 @@ import 'package:input_vpn/services/vpn_url_parser.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/domain/repositories/config_repository.dart';
 
-class ConfigRepositoryImpl implements ConfigRepository {
+class ConfigRepositoryImpl {
   ConfigRepositoryImpl({required SubscriptionService subscriptionService})
       : _subs = subscriptionService;
 
@@ -144,7 +144,7 @@ class ConfigRepositoryImpl implements ConfigRepository {
     } catch (e) {
       debugPrint('Failed to load subscription "$name": $e');
     } finally {
-      saveState();
+      unawaited(saveState());
     }
   }
 
@@ -170,10 +170,9 @@ class ConfigRepositoryImpl implements ConfigRepository {
     if (_selectedServer?.configId == configId) {
       _selectedServer = _userServers.isNotEmpty ? _userServers.first : null;
     }
-    saveState();
+    unawaited(saveState());
   }
 
-  @override
   Future<void> updateConfig(
       String configId, String newName, String newRawConfig) async {
     final configIndex = _userConfigs.indexWhere((c) => c.id == configId);
@@ -230,10 +229,9 @@ class ConfigRepositoryImpl implements ConfigRepository {
       }
     }
 
-    saveState();
+    unawaited(saveState());
   }
 
-  @override
   Future<void> selectServer(VpnServer server) async {
     _selectedServer = server;
     saveState();
@@ -265,14 +263,13 @@ class ConfigRepositoryImpl implements ConfigRepository {
               ? info.expire!.millisecondsSinceEpoch ~/ 1000
               : null,
         );
-        saveState();
+        unawaited(saveState());
       }
     } catch (e) {
       debugPrint('Failed to refresh subscription stats: $e');
     }
   }
 
-  @override
   Future<void> saveState() async {
     try {
       final configsJson = await Future(
@@ -295,7 +292,6 @@ class ConfigRepositoryImpl implements ConfigRepository {
     }
   }
 
-  @override
   Future<void> loadState() async {
     try {
       final configsJson = sharedPrefs.getString('userConfigs');

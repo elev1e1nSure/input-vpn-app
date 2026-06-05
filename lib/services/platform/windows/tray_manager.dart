@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:input_vpn/globals/app_state.dart';
-import 'package:input_vpn/services/network_utils.dart';
+import 'package:input_vpn/services/vpn/windows/network_utils.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:window_manager/window_manager.dart';
 
