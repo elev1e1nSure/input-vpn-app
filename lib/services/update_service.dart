@@ -79,7 +79,7 @@ class UpdateService {
 
     await Process.start(
       installerPath,
-      const ['/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART'],
+      const ['/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS'],
       mode: ProcessStartMode.detached,
     );
     exit(0);

@@ -1,23 +1,30 @@
 [Setup]
 AppId={{7F8E9D2A-4B1C-5F3A-9E2D-8A7B6C5D4E3F}}
 AppName=Input VPN
-AppVersion=1.1.0
+AppVersion=1.2.1
+AppPublisher=Input VPN
 DefaultDirName={autopf}\InputVPN
 DefaultGroupName=Input VPN
 OutputBaseFilename=InputVPN-Setup
 Compression=lzma
 SolidCompression=yes
 SetupIconFile=assets\images\app_icon.ico
+UninstallDisplayIcon={app}\input_vpn.exe
 DisableWelcomePage=yes
 DisableDirPage=yes
 DisableReadyPage=yes
+CloseApplications=yes
+CloseApplicationsFilter=*input_vpn.exe,*sing-box.exe
 
 [Files]
 Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
-Name: "{group}\Input VPN"; Filename: "{app}\input_vpn.exe"
-Name: "{commondesktop}\Input VPN"; Filename: "{app}\input_vpn.exe"
+Name: "{group}\Input VPN"; Filename: "{app}\input_vpn.exe"; IconFilename: "{app}\input_vpn.exe"
+Name: "{commondesktop}\Input VPN"; Filename: "{app}\input_vpn.exe"; IconFilename: "{app}\input_vpn.exe"
+
+[Run]
+Filename: "{app}\input_vpn.exe"; Description: "Запустить Input VPN"; Flags: nowait postinstall skipifsilent
 
 [Code]
 

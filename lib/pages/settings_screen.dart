@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:input_vpn/globals/app_constants.dart';
 import 'package:input_vpn/globals/app_state.dart';
 
 import 'package:input_vpn/globals/themes.dart';
@@ -23,7 +24,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const String _currentVersion = '1.1.0';
+  static final String _currentVersion = kAppVersion;
   bool _checking = false;
   bool _showAdvanced = false;
   UpdateInfo? _updateInfo;
