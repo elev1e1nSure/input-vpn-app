@@ -10,16 +10,15 @@ import 'package:input_vpn/models/connection_status.dart';
 import 'package:input_vpn/models/custom_dns_profile.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/models/parsed_config.dart';
-import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/singbox_vpn_service.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 import 'package:input_vpn/services/vpn_url_parser.dart';
-import 'package:input_vpn/services/tray_manager.dart';
 import 'package:input_vpn/services/windows_startup_manager.dart';
 import 'package:input_vpn/services/ip_service.dart';
 import 'package:input_vpn/controllers/network_info_controller.dart';
 import 'package:input_vpn/controllers/settings_controller.dart';
+import 'package:input_vpn/controllers/vpn_connection_controller.dart';
 import 'package:input_vpn/core/di.dart';
 import 'package:input_vpn/models/vpn_server.dart';
 import 'package:input_vpn/models/vpn_config.dart';
@@ -46,7 +45,9 @@ VpnService _defaultVpnBackend() {
 
 class AppState extends ChangeNotifier {
   AppState({VpnService? vpnService, SubscriptionService? subscriptionService})
-      : _vpn = vpnService ?? _defaultVpnBackend(),
+      : _vpnConnection = VpnConnectionController(
+          vpnService: vpnService ?? _defaultVpnBackend(),
+        ),
         _subs = subscriptionService ?? SubscriptionService() {
     _connectOnBoot = sharedPrefs.getBool('connectOnBoot') ?? false;
     _autoLaunch = sharedPrefs.getBool('autoLaunch') ?? false;
@@ -59,7 +60,7 @@ class AppState extends ChangeNotifier {
     _dnsCustomId = sharedPrefs.getString('dnsCustomId');
     _loadPersistedState();
 
-    _statusSub = _vpn.watchStatus().listen(_onStatus);
+    _vpnConnection.addListener(notifyListeners);
     _settingsController = getIt<SettingsController>();
     _settingsController.addListener(notifyListeners);
     _networkInfo.addListener(notifyListeners);
@@ -69,17 +70,16 @@ class AppState extends ChangeNotifier {
     // Auto-connect on launch if enabled and a server is available.
     if (_connectOnBoot && _selectedServer != null) {
       _autoConnectTimer = Timer(const Duration(seconds: 1), () {
-        if (!_isConnected && !_isConnecting) {
+        if (!_vpnConnection.isConnected && !_vpnConnection.isConnecting) {
           toggleConnection();
         }
       });
     }
   }
 
-  final VpnService _vpn;
+  final VpnConnectionController _vpnConnection;
   final SubscriptionService _subs;
   late final SettingsController _settingsController;
-  StreamSubscription<ConnectionStatus>? _statusSub;
   Timer? _autoConnectTimer;
   Timer? _errorTimer;
 
@@ -108,51 +108,24 @@ class AppState extends ChangeNotifier {
 
   /// Whether the Windows backend is running in SOCKS-proxy mode (no
   /// TUN device, no UAC). Returns false on non-Windows or non-singbox backends.
-  bool get isProxyMode {
-    final vpn = _vpn;
-    return vpn is SingBoxVpnService ? vpn.proxyMode : false;
-  }
+  bool get isProxyMode => _vpnConnection.isProxyMode;
 
-  /// Toggle between SOCKS proxy mode and full TUN VPN mode.
-  /// Will disconnect first if currently connected.
   Future<void> setProxyMode(bool enabled) async {
-    final vpn = _vpn;
-    if (vpn is! SingBoxVpnService) return;
-    await vpn.disconnect();
-    vpn.setProxyMode(enabled);
+    await _vpnConnection.setProxyMode(enabled);
     await sharedPrefs.setBool('proxyMode', enabled);
-    notifyListeners();
   }
 
-  /// Live connection status stream — use with StreamBuilder for session timer.
-  Stream<ConnectionStatus> get statusStream => _vpn.watchStatus();
+  Stream<ConnectionStatus> get statusStream => _vpnConnection.statusStream;
 
-  /// Whether the VPN service is in an auto-reconnect cycle after a crash.
-  bool get isReconnecting {
-    final vpn = _vpn;
-    return vpn is SingBoxVpnService ? vpn.isReconnecting : false;
-  }
+  bool get isReconnecting => _vpnConnection.isReconnecting;
 
-  /// Current reconnect attempt number (1-based, 0 when not reconnecting).
-  int get reconnectAttempt {
-    final vpn = _vpn;
-    return vpn is SingBoxVpnService ? vpn.reconnectAttempt : 0;
-  }
+  int get reconnectAttempt => _vpnConnection.reconnectAttempt;
 
-  /// Whether sing-box launches as a Windows Service (no UAC per connection).
-  bool get isServiceMode {
-    final vpn = _vpn;
-    return vpn is SingBoxVpnService ? vpn.serviceMode : false;
-  }
+  bool get isServiceMode => _vpnConnection.isServiceMode;
 
-  /// Enable / disable Windows Service mode. Disconnects first if connected.
   Future<void> setServiceMode(bool enabled) async {
-    final vpn = _vpn;
-    if (vpn is! SingBoxVpnService) return;
-    if (_isConnected) await vpn.disconnect();
-    vpn.setServiceMode(enabled);
+    await _vpnConnection.setServiceMode(enabled);
     await sharedPrefs.setBool('serviceMode', enabled);
-    notifyListeners();
   }
 
   Locale _locale = const Locale('en');
@@ -176,21 +149,11 @@ class AppState extends ChangeNotifier {
     return _theme;
   }
 
-  bool _isConnected = false;
+  bool get isConnected => _vpnConnection.isConnected;
 
-  bool get isConnected {
-    return _isConnected;
-  }
+  bool get isDisconnecting => _vpnConnection.isDisconnecting;
 
-  bool _isDisconnecting = false;
-
-  bool get isDisconnecting => _isDisconnecting;
-
-  bool _isConnecting = false;
-
-  bool get isConnecting {
-    return _isConnecting;
-  }
+  bool get isConnecting => _vpnConnection.isConnecting;
 
   VpnServer? _selectedServer;
 
@@ -302,8 +265,8 @@ class AppState extends ChangeNotifier {
   void selectServer(VpnServer server) {
     _selectedServer = server;
     _savePersistedState().ignore();
-    if (_isConnected) {
-      _vpn.disconnect();
+    if (isConnected) {
+      _vpnConnection.disconnect();
     }
     refreshPublicIp();
     notifyListeners();
@@ -465,7 +428,7 @@ class AppState extends ChangeNotifier {
     }
     if (_selectedServer?.configId == configId) {
       _selectedServer = _userServers.isNotEmpty ? _userServers.first : null;
-      _vpn.disconnect();
+      _vpnConnection.disconnect();
     }
     _savePersistedState().ignore();
     notifyListeners();
@@ -570,60 +533,19 @@ class AppState extends ChangeNotifier {
   Future<void> toggleConnection() async {
     final server = _selectedServer;
     if (server == null) return;
-    if (_isConnected) {
-      _isDisconnecting = true;
-      notifyListeners();
-      await _vpn.disconnect();
-      _isDisconnecting = false;
-      notifyListeners();
-      return;
-    }
-    if (_isConnecting) return;
     final parsed = _parsedByServerId[server.id];
-    if (parsed == null) {
+    if (parsed == null && !isConnected) {
       _lastError = 'Selected server has no parsed VPN configuration.';
       _scheduleErrorClear();
       notifyListeners();
       return;
     }
-    await _vpn.connect(parsed);
-  }
-
-  void _onStatus(ConnectionStatus status) {
-    switch (status) {
-      case Connecting():
-        _isConnecting = true;
-        _isConnected = false;
-        TrayManager.updateTooltip('Connecting...');
-        AppLogger.info(
-          'Connecting to ${_selectedServer?.name ?? 'unknown server'}',
-        );
-      case Connected():
-        _isConnecting = false;
-        _isConnected = true;
-        TrayManager.updateTooltip('Connected');
-        AppLogger.info(
-          'Connected to ${_selectedServer?.name ?? 'unknown server'}'
-          ' (${_selectedServer?.city ?? ''})',
-        );
-        // Задержка 2 сек для установления туннеля
-        Future.delayed(const Duration(seconds: 2), () => refreshPublicIp());
-      case Disconnected(failure: final f):
-        _isConnecting = false;
-        _isDisconnecting = false;
-        _isConnected = false;
-        if (f != null) {
-          _lastError = f.message;
-          _scheduleErrorClear();
-          AppLogger.error('Disconnected with error: ${f.message}');
-        } else {
-          AppLogger.info('Disconnected');
-        }
-        TrayManager.updateTooltip('Disconnected');
-        // Задержка 1 сек для восстановления сети
-        Future.delayed(const Duration(seconds: 1), () => refreshPublicIp());
+    await _vpnConnection.toggle(parsed);
+    if (isConnected) {
+      Future.delayed(const Duration(seconds: 2), () => refreshPublicIp());
+    } else if (!isConnecting) {
+      Future.delayed(const Duration(seconds: 1), () => refreshPublicIp());
     }
-    notifyListeners();
   }
 
   void _persistBool(String key, bool Function() getter,
@@ -818,13 +740,7 @@ class AppState extends ChangeNotifier {
   }
 
   void _applyDnsSelection() {
-    final vpn = _vpn;
-    if (vpn is! SingBoxVpnService) return;
-    final servers = _currentDnsServers();
-    final remote =
-        servers.isNotEmpty ? 'tls://${servers.first}' : 'tls://1.1.1.1';
-    final direct = servers.length > 1 ? servers[1] : '8.8.8.8';
-    vpn.setDnsServers(remoteDns: remote, directDns: direct);
+    _vpnConnection.applyDns(_currentDnsServers());
   }
 
   List<String> _currentDnsServers() {
@@ -909,15 +825,11 @@ class AppState extends ChangeNotifier {
   void dispose() {
     _errorTimer?.cancel();
     _autoConnectTimer?.cancel();
-    _statusSub?.cancel();
+    _vpnConnection.removeListener(notifyListeners);
     _settingsController.removeListener(notifyListeners);
     _networkInfo.removeListener(notifyListeners);
     _networkInfo.dispose();
-    // Disconnect VPN to ensure TUN adapter cleanup on app exit
-    if (_isConnected) {
-      _vpn.disconnect().ignore();
-    }
-    _vpn.dispose();
+    _vpnConnection.dispose();
     super.dispose();
   }
 }
