@@ -407,7 +407,7 @@ class _SidebarStatus extends StatelessWidget {
         child: expanded
             ? Center(
                 child: Text(
-                  'v1.1.0',
+                  'v1.2.0',
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 11,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
