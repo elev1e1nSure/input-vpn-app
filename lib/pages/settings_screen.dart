@@ -9,7 +9,6 @@ import 'package:input_vpn/globals/themes.dart';
 import 'package:input_vpn/l10n/app_strings.dart';
 import 'package:input_vpn/models/dns_preset.dart';
 import 'package:input_vpn/pages/advanced_settings_screen.dart';
-import 'package:input_vpn/pages/custom_dns_screen.dart';
 import 'package:input_vpn/services/update_service.dart';
 import 'package:input_vpn/widgets/settings_tiles.dart';
 
@@ -312,14 +311,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AppState appState,
     AppStrings s,
   ) {
-    final current = DnsPreset.byId(appState.dnsPreset);
-    final custom = appState.selectedCustomDnsProfile;
     final isRu = s.language == 'Язык';
-    final display = custom != null
-        ? custom.servers.join(', ')
-        : (current != null && current.servers.isNotEmpty
-            ? current.servers.join(', ')
-            : (isRu ? 'По умолчанию системы' : 'System default'));
+    final display = appState.customDns != 'Default'
+        ? appState.customDns
+        : DnsPreset.byId(appState.dnsPreset)?.servers.join(', ') ?? '';
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
       leading: Icon(Icons.cloud, color: theme.iconTheme.color),
@@ -348,105 +343,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showDnsPicker(BuildContext context, AppState appState, AppStrings s) {
     final theme = Theme.of(context);
     final isRu = s.language == 'Язык';
-    final parentContext = context;
+    final customDnsController = TextEditingController(text: appState.customDns == 'Default' ? '' : appState.customDns);
+    String? error;
+
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.dividerTheme.color,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
               Text(
                 s.dnsServer,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               ...DnsPreset.presets.map((preset) {
-                final selected = preset.id == appState.dnsPreset;
-                final subtitle = preset.servers.isNotEmpty
-                    ? preset.servers.join(', ')
-                    : (isRu ? 'По умолчанию системы' : 'System default');
+                final selected = preset.id == appState.dnsPreset && appState.customDns == 'Default';
                 return ListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: Text(
-                    subtitle,
+                    preset.label(isRu),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: selected ? theme.colorScheme.primary : null,
                       fontWeight: selected ? FontWeight.bold : null,
                     ),
                   ),
-                  subtitle: Text(preset.label(isRu)),
+                  subtitle: Text(preset.servers.join(', ')),
                   trailing: selected
                       ? Icon(Icons.check, color: theme.colorScheme.primary)
                       : null,
                   onTap: () {
                     appState.setDnsPreset(preset.id);
+                    appState.setCustomDns('Default');
                     Navigator.pop(ctx);
                   },
                 );
               }),
-              if (appState.customDnsProfiles.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: Text(
-                      s.customDnsProfilesTitle,
-                      style: theme.textTheme.titleSmall,
-                    ),
-                  ),
+              const SizedBox(height: 8),
+              Text(
+                isRu ? 'Кастомный DNS' : 'Custom DNS',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: customDnsController,
+                decoration: InputDecoration(
+                  labelText: isRu ? 'IP адрес DNS' : 'DNS IP address',
+                  hintText: '1.1.1.1',
+                  errorText: error,
                 ),
-                ...appState.customDnsProfiles.map((profile) {
-                  final selected = profile.id == appState.dnsCustomId;
-                  return ListTile(
-                    title: Text(
-                      profile.name,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: selected ? theme.colorScheme.primary : null,
-                        fontWeight: selected ? FontWeight.bold : null,
-                      ),
-                    ),
-                    subtitle: Text(profile.servers.join(', ')),
-                    trailing: selected
-                        ? Icon(Icons.check, color: theme.colorScheme.primary)
-                        : null,
-                    onTap: () {
-                      appState.selectCustomDns(profile.id);
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(s.cancel),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () {
+                      final dns = customDnsController.text.trim();
+                      if (dns.isEmpty) {
+                        setModalState(() {
+                          error = isRu ? 'Введите DNS адрес' : 'Enter DNS address';
+                        });
+                        return;
+                      }
+                      appState.setCustomDns(dns);
                       Navigator.pop(ctx);
                     },
-                  );
-                }),
-              ],
-              const SizedBox(height: 8),
-              ListTile(
-                leading: Icon(Icons.tune, color: theme.iconTheme.color),
-                title: Text(s.manageCustomDns),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.of(parentContext).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const CustomDnsScreen(),
-                    ),
-                  );
-                },
+                    child: Text(s.save),
+                  ),
+                ],
               ),
             ],
           ),

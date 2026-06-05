@@ -744,9 +744,8 @@ class AppState extends ChangeNotifier {
   }
 
   List<String> _currentDnsServers() {
-    final custom = selectedCustomDnsProfile;
-    if (custom != null && custom.servers.isNotEmpty) {
-      return custom.servers;
+    if (_customDns != 'Default' && _customDns.isNotEmpty) {
+      return [_customDns];
     }
     final preset = DnsPreset.byId(_dnsPreset);
     if (preset != null && preset.servers.isNotEmpty) {

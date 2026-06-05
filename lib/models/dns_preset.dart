@@ -36,20 +36,6 @@ class DnsPreset {
       servers: ['8.8.8.8', '8.8.4.4'],
       icon: Icons.search,
     ),
-    DnsPreset(
-      id: 'adguard',
-      labelEn: 'AdGuard',
-      labelRu: 'AdGuard',
-      servers: ['94.140.14.14', '94.140.15.15'],
-      icon: Icons.shield,
-    ),
-    DnsPreset(
-      id: 'system',
-      labelEn: 'System',
-      labelRu: 'Системный',
-      servers: [],
-      icon: Icons.settings,
-    ),
   ];
 
   static DnsPreset? byId(String id) {
