@@ -125,15 +125,10 @@ class ServersScreen extends StatelessWidget {
                   }
                 }
               },
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+              child: ListView.builder(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 itemCount: servers.length,
-                separatorBuilder: (_, __) => Divider(
-                  color: theme.dividerTheme.color,
-                  indent: 72,
-                  endIndent: 0,
-                  height: 1,
-                ),
                 itemBuilder: (context, index) {
                   final server = servers[index];
                   final isSelected = appState.selectedServer?.id == server.id;
@@ -201,23 +196,34 @@ class _ServerTileState extends State<_ServerTile> {
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          color: isSelected
-              ? primary.withValues(alpha: 0.06)
-              : _hovered
-                  ? primary.withValues(alpha: 0.03)
-                  : Colors.transparent,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? primary.withValues(alpha: 0.12)
+                : _hovered
+                    ? Color.lerp(
+                        theme.colorScheme.surface,
+                        primary,
+                        0.055,
+                      )
+                    : theme.colorScheme.surface.withValues(alpha: 0.78),
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 4,
+              horizontal: 18,
+              vertical: 6,
             ),
             onTap: widget.onTap,
             leading: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
+                color: isSelected
+                    ? primary.withValues(alpha: 0.16)
+                    : theme.scaffoldBackgroundColor,
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -233,7 +239,7 @@ class _ServerTileState extends State<_ServerTile> {
             title: Text(
               _stripFlags(widget.server.name),
               style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 color: isSelected ? theme.colorScheme.onSurface : null,
               ),
             ),
@@ -294,6 +300,11 @@ class _AddButtonState extends State<_AddButton> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
+    final baseColor = theme.colorScheme.surface.withValues(alpha: 0.78);
+    final color = _hovered
+        ? Color.lerp(baseColor, primary, 0.055)
+        : baseColor;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
@@ -310,13 +321,12 @@ class _AddButtonState extends State<_AddButton> {
           scale: _pressed ? 0.96 : 1.0,
           duration: const Duration(milliseconds: 100),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
-              color: _hovered
-                  ? primary.withValues(alpha: 0.15)
-                  : primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(999),
+              color: color,
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
               widget.label,
