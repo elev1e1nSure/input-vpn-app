@@ -17,6 +17,7 @@ import 'package:input_vpn/models/proxy_type.dart';
 class SingBoxConfigBuilder {
   const SingBoxConfigBuilder({
     this.clashApiPort = 9090,
+    this.clashApiSecret = '',
     this.tunMtu = 9000,
     this.tunInterfaceName = 'InputVPNTun',
     this.remoteDnsServer = 'tls://1.1.1.1',
@@ -26,6 +27,10 @@ class SingBoxConfigBuilder {
   });
 
   final int clashApiPort;
+
+  /// Bearer secret for the Clash control API. When non-empty, sing-box rejects
+  /// requests to `external_controller` that lack `Authorization: Bearer ...`.
+  final String clashApiSecret;
   final int tunMtu;
   final String tunInterfaceName;
   final String remoteDnsServer;
@@ -152,6 +157,7 @@ class SingBoxConfigBuilder {
       'experimental': {
         'clash_api': {
           'external_controller': '127.0.0.1:$clashApiPort',
+          if (clashApiSecret.isNotEmpty) 'secret': clashApiSecret,
           'default_mode': 'rule',
         },
         'cache_file': {
