@@ -6,22 +6,26 @@ class NetworkUtils {
   /// The name of the TUN interface used in SingBoxConfigBuilder.
   static const String tunInterfaceName = 'InputVPNTun';
 
-  /// Performs a deep cleanup of the network state.
-  /// Should be called after stop to remove any leftover TUN adapter and
-  /// restore DNS. A single PowerShell invocation is used to minimise
-  /// process-startup overhead (was previously 3–4 separate spawns).
+  /// Removes leftover network state created by THIS app: routes and the TUN
+  /// adapter named `InputVPN*`. A single PowerShell invocation is used to
+  /// minimise process-startup overhead.
+  ///
+  /// Important: this intentionally does NOT touch DNS on physical adapters.
+  /// The app runs sing-box in TUN mode with `auto_route`/`strict_route`/
+  /// `hijack-dns`, so DNS is handled entirely inside sing-box via the TUN
+  /// device — the app never reconfigures physical-NIC DNS. Removing the
+  /// `InputVPN*` adapter is sufficient; blanket-resetting every adapter to
+  /// DHCP would clobber users' manually-configured static DNS that the app
+  /// never changed.
   static Future<void> globalCleanup() async {
     if (!Platform.isWindows) return;
 
-    debugPrint('NetworkUtils: starting global cleanup...');
+    debugPrint('NetworkUtils: starting scoped cleanup (InputVPN* only)...');
     const script = r'''
       Get-NetRoute | Where-Object { $_.InterfaceAlias -like "InputVPN*" } |
         Remove-NetRoute -Confirm:$false -ErrorAction SilentlyContinue
       Get-NetAdapter | Where-Object { $_.Name -like "InputVPN*" } |
         Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue
-      Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
-        netsh interface ip set dns name="$($_.Name)" source=dhcp 2>$null
-      }
     ''';
     try {
       await Process.run('powershell', [
@@ -30,14 +34,14 @@ class NetworkUtils {
         '-Command',
         script,
       ]);
-      debugPrint('NetworkUtils: global cleanup finished.');
+      debugPrint('NetworkUtils: scoped cleanup finished.');
     } on Exception catch (e) {
       debugPrint('NetworkUtils: cleanup error: $e');
     }
   }
 
   /// Force deletes the Wintun/TUN interface (standalone helper, rarely needed
-  /// directly — prefer [globalCleanup] which also resets DNS).
+  /// directly — prefer [globalCleanup], which also clears leftover routes).
   static Future<void> deleteTunInterface() async {
     debugPrint('NetworkUtils: deleting TUN interface $tunInterfaceName...');
     try {
@@ -49,22 +53,6 @@ class NetworkUtils {
       ]);
     } on Exception catch (e) {
       debugPrint('NetworkUtils: deleteTunInterface error: $e');
-    }
-  }
-
-  /// Resets DNS settings for ALL interfaces to DHCP (automatic).
-  static Future<void> resetAllDns() async {
-    debugPrint('NetworkUtils: resetting all DNS to DHCP...');
-    const script = r'''
-      Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
-        netsh interface ip set dns name="$($_.Name)" source=dhcp 2>$null
-      }
-    ''';
-    try {
-      await Process.run(
-          'powershell', ['-NoProfile', '-NonInteractive', '-Command', script]);
-    } on Exception catch (e) {
-      debugPrint('NetworkUtils: resetAllDns error: $e');
     }
   }
 

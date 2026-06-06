@@ -92,11 +92,13 @@ begin
     Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM input_vpn.exe /F /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM sing-box.exe /F /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-    // 2. Remove TUN adapter and reset DNS via PowerShell
+    // 2. Remove only the app's own TUN adapter. Do NOT reset DNS on physical
+    //    adapters: the app runs sing-box in TUN mode (hijack-dns) and never
+    //    reconfigures physical-NIC DNS, so a blanket DHCP reset would clobber
+    //    users' manually-set static DNS that this app never changed.
     Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
       '-NoProfile -NonInteractive -Command "' +
-        'Get-NetAdapter | Where-Object { $_.Name -like ''InputVPN*'' } | Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue; ' +
-        'Get-NetAdapter | Where-Object { $_.Status -eq ''Up'' } | ForEach-Object { netsh interface ip set dns name=""$($_.Name)"" source=dhcp }"',
+        'Get-NetAdapter | Where-Object { $_.Name -like ''InputVPN*'' } | Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue"',
       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
     // 3. Clean up any leftover scheduled tasks from old installs
