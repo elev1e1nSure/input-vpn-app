@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:input_vpn/core/di.dart';
+import 'package:input_vpn/data/local/secure_blob_store.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
@@ -28,6 +29,10 @@ import 'package:window_manager/window_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
+  // Load credential blobs from encrypted storage, migrating any cleartext
+  // values left in SharedPreferences by older versions.
+  secureStore = SecureBlobStore();
+  await secureStore.init(migrateFrom: sharedPrefs);
   configureDependencies(sharedPrefs);
   await AppLogger.init();
 

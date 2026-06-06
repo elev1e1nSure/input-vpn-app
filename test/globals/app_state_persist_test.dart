@@ -1,6 +1,8 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:input_vpn/core/di.dart';
+import 'package:input_vpn/data/local/secure_blob_store.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/services/subscription_service.dart';
@@ -22,8 +24,39 @@ void main() {
     late _MockSubscriptionService mockSubs;
 
     setUp(() async {
+      // In-memory mock for the flutter_secure_storage method channel so the
+      // credential store works deterministically without native plugins.
+      final fakeSecure = <String, String>{};
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
+        (call) async {
+          final args = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
+          switch (call.method) {
+            case 'read':
+              return fakeSecure[args['key'] as String];
+            case 'write':
+              fakeSecure[args['key'] as String] = args['value'] as String;
+              return null;
+            case 'delete':
+              fakeSecure.remove(args['key'] as String);
+              return null;
+            case 'readAll':
+              return Map<String, String>.of(fakeSecure);
+            case 'deleteAll':
+              fakeSecure.clear();
+              return null;
+            case 'containsKey':
+              return fakeSecure.containsKey(args['key'] as String);
+          }
+          return null;
+        },
+      );
+
       SharedPreferences.setMockInitialValues({});
       sharedPrefs = await SharedPreferences.getInstance();
+      secureStore = SecureBlobStore();
+      await secureStore.init();
       getIt.allowReassignment = true;
       configureDependencies(sharedPrefs);
       mockVpn = _MockVpnService();

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:input_vpn/core/result.dart';
+import 'package:input_vpn/data/local/secure_blob_store.dart';
 import 'package:input_vpn/domain/repositories/vpn_config_repository.dart';
 import 'package:input_vpn/functions/extract_country_code.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
@@ -282,18 +283,18 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
     try {
       final configsJson =
           jsonEncode(_userConfigs.map((c) => c.toJson()).toList());
-      sharedPrefs.setString('userConfigs', configsJson);
+      secureStore.set('userConfigs', configsJson);
 
       final serversJson =
           jsonEncode(_userServers.map((s) => s.toJson()).toList());
-      sharedPrefs.setString('userServers', serversJson);
+      secureStore.set('userServers', serversJson);
 
       sharedPrefs.setString('selectedServerId', _selectedServer?.id ?? '');
 
       final parsedJson = jsonEncode(
         _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
       );
-      sharedPrefs.setString('parsedByServerId', parsedJson);
+      secureStore.set('parsedByServerId', parsedJson);
     } on Exception catch (e) {
       debugPrint('Failed to save persisted state: $e');
     }
@@ -303,7 +304,7 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
   @override
   Result<void> loadState() {
     try {
-      final configsJson = sharedPrefs.getString('userConfigs');
+      final configsJson = secureStore.get('userConfigs');
       if (configsJson != null && configsJson.isNotEmpty) {
         final list = jsonDecode(configsJson) as List<dynamic>;
         for (final item in list) {
@@ -312,7 +313,7 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
         }
       }
 
-      final serversJson = sharedPrefs.getString('userServers');
+      final serversJson = secureStore.get('userServers');
       if (serversJson != null && serversJson.isNotEmpty) {
         final list = jsonDecode(serversJson) as List<dynamic>;
         for (final item in list) {
@@ -329,7 +330,7 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
             );
       }
 
-      final parsedJson = sharedPrefs.getString('parsedByServerId');
+      final parsedJson = secureStore.get('parsedByServerId');
       if (parsedJson != null && parsedJson.isNotEmpty) {
         final map = jsonDecode(parsedJson) as Map<String, dynamic>;
         for (final entry in map.entries) {
