@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:input_vpn/core/di.dart';
+import 'package:input_vpn/data/local/secure_blob_store.dart';
 import 'package:input_vpn/globals/app_state.dart';
 import 'package:input_vpn/globals/router.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
@@ -18,6 +19,7 @@ import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
 import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn/windows/network_utils.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_process.dart';
 import 'package:input_vpn/services/vpn/windows/singbox_service_manager.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +29,10 @@ import 'package:window_manager/window_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sharedPrefs = await SharedPreferences.getInstance();
+  // Load credential blobs from encrypted storage, migrating any cleartext
+  // values left in SharedPreferences by older versions.
+  secureStore = SecureBlobStore();
+  await secureStore.init(migrateFrom: sharedPrefs);
   configureDependencies(sharedPrefs);
   await AppLogger.init();
 
@@ -85,14 +91,12 @@ Future<void> _syncServiceModeFlag() async {
   }
 }
 
-/// Kill any orphaned sing-box.exe processes to clean up TUN adapters.
+/// Clean up only the sing-box.exe process THIS app spawned in a previous run,
+/// identified by the persisted owner PID. Third-party sing-box / VPN clients
+/// are never touched.
 Future<void> _cleanupSingBoxProcesses() async {
-  try {
-    await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
-    debugPrint('Cleaned up orphaned sing-box processes');
-  } on Exception catch (_) {
-    // No sing-box processes running or taskkill failed - that's OK
-  }
+  await SingBoxProcess.cleanupOrphan();
+  debugPrint('Cleaned up orphaned sing-box process (owned PID only)');
 }
 
 class MyApp extends StatelessWidget {

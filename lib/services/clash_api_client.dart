@@ -19,8 +19,19 @@ import 'package:input_vpn/services/dio_factory.dart';
 /// Reference:
 ///   https://sing-box.sagernet.org/configuration/experimental/clash-api/
 class ClashApiClient {
-  ClashApiClient({this.host = '127.0.0.1', this.port = 9090, Dio? dio})
-      : _dio = dio ?? DioFactory.forClashApi();
+  ClashApiClient({
+    this.host = '127.0.0.1',
+    this.port = 9090,
+    String secret = '',
+    Dio? dio,
+  }) : _dio = dio ?? DioFactory.forClashApi() {
+    // sing-box's clash_api is bound to 127.0.0.1, but a bearer secret prevents
+    // other local processes (or a malicious page hitting localhost) from
+    // driving the control API. Sent on every request when configured.
+    if (secret.isNotEmpty) {
+      _dio.options.headers['Authorization'] = 'Bearer $secret';
+    }
+  }
 
   final String host;
   final int port;

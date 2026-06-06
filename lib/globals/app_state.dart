@@ -8,6 +8,7 @@ import 'package:input_vpn/controllers/network_info_controller.dart';
 import 'package:input_vpn/controllers/settings_controller.dart';
 import 'package:input_vpn/controllers/vpn_connection_controller.dart';
 import 'package:input_vpn/data/local/prefs_data_source.dart';
+import 'package:input_vpn/data/local/secure_blob_store.dart';
 import 'package:input_vpn/functions/extract_country_code.dart';
 import 'package:input_vpn/globals/shared_prefs.dart';
 import 'package:input_vpn/globals/themes.dart';
@@ -656,7 +657,7 @@ class AppState extends ChangeNotifier {
 
   void _loadPersistedState() {
     try {
-      final configsJson = sharedPrefs.getString('userConfigs');
+      final configsJson = secureStore.get('userConfigs');
       if (configsJson != null && configsJson.isNotEmpty) {
         final list = jsonDecode(configsJson) as List<dynamic>;
         for (final item in list) {
@@ -665,7 +666,7 @@ class AppState extends ChangeNotifier {
         }
       }
 
-      final serversJson = sharedPrefs.getString('userServers');
+      final serversJson = secureStore.get('userServers');
       if (serversJson != null && serversJson.isNotEmpty) {
         final list = jsonDecode(serversJson) as List<dynamic>;
         for (final item in list) {
@@ -682,7 +683,7 @@ class AppState extends ChangeNotifier {
             );
       }
 
-      final parsedJson = sharedPrefs.getString('parsedByServerId');
+      final parsedJson = secureStore.get('parsedByServerId');
       if (parsedJson != null && parsedJson.isNotEmpty) {
         final map = jsonDecode(parsedJson) as Map<String, dynamic>;
         for (final entry in map.entries) {
@@ -706,14 +707,16 @@ class AppState extends ChangeNotifier {
 
   Future<void> _savePersistedState() async {
     try {
-      // Offload heavy JSON encoding to a microtask so it doesn't block animations
+      // Offload heavy JSON encoding to a microtask so it doesn't block animations.
+      // Credential blobs go to encrypted secure storage; only the
+      // non-sensitive selected-server id stays in SharedPreferences.
       final configsJson = await Future(
           () => jsonEncode(_userConfigs.map((c) => c.toJson()).toList()));
-      await sharedPrefs.setString('userConfigs', configsJson);
+      secureStore.set('userConfigs', configsJson);
 
       final serversJson = await Future(
           () => jsonEncode(_userServers.map((s) => s.toJson()).toList()));
-      await sharedPrefs.setString('userServers', serversJson);
+      secureStore.set('userServers', serversJson);
 
       await sharedPrefs.setString(
           'selectedServerId', _selectedServer?.id ?? '');
@@ -721,7 +724,7 @@ class AppState extends ChangeNotifier {
       final parsedJson = await Future(() => jsonEncode(
             _parsedByServerId.map((k, v) => MapEntry(k, v.toJson())),
           ));
-      await sharedPrefs.setString('parsedByServerId', parsedJson);
+      secureStore.set('parsedByServerId', parsedJson);
 
       final customDnsJson = await Future(() => jsonEncode(
             _customDnsProfiles.map((p) => p.toJson()).toList(),

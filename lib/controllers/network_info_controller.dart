@@ -18,9 +18,7 @@ class NetworkInfoController extends ChangeNotifier {
     try {
       _publicIp = await IpService.fetchPublicIp();
       _countryCode = await IpService.fetchCountryCode();
-      debugPrint(
-        'NetworkInfoController: publicIp=$_publicIp, countryCode=$_countryCode',
-      );
+      // Do not log publicIp/countryCode — they are sensitive user data.
       notifyListeners();
     } finally {
       _isRefreshing = false;

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:input_vpn/models/connection_failure.dart';
 import 'package:input_vpn/models/connection_status.dart';
@@ -22,7 +23,7 @@ import 'package:input_vpn/services/vpn_service.dart';
 ///   2. Once the Clash API answers -> emits [Connected].
 ///   3. [disconnect] calls stop on the backend and emits [Disconnected].
 class SingBoxVpnService implements VpnService {
-  SingBoxVpnService({
+  factory SingBoxVpnService({
     SingBoxProcess? process,
     SingBoxConfigBuilder? configBuilder,
     ClashApiClient? clashApi,
@@ -30,18 +31,52 @@ class SingBoxVpnService implements VpnService {
     bool serviceMode = false,
     String remoteDns = 'tls://1.1.1.1',
     String directDns = '8.8.8.8',
-  })  : _process = process ?? SingBoxProcess(),
+  }) {
+    // One random secret per backend instance, shared between the generated
+    // sing-box config and the Clash API client so the control API is
+    // authenticated even though it is bound to localhost.
+    final secret = _generateClashSecret();
+    return SingBoxVpnService._(
+      process: process ?? SingBoxProcess(),
+      config: configBuilder ??
+          SingBoxConfigBuilder(
+            proxyMode: proxyMode,
+            remoteDnsServer: remoteDns,
+            directDnsServer: directDns,
+            clashApiSecret: secret,
+          ),
+      clash: clashApi ?? ClashApiClient(secret: secret),
+      proxyMode: proxyMode,
+      serviceMode: serviceMode,
+      remoteDns: remoteDns,
+      directDns: directDns,
+      clashSecret: secret,
+    );
+  }
+
+  SingBoxVpnService._({
+    required SingBoxProcess process,
+    required SingBoxConfigBuilder config,
+    required ClashApiClient clash,
+    required bool proxyMode,
+    required bool serviceMode,
+    required String remoteDns,
+    required String directDns,
+    required String clashSecret,
+  })  : _process = process,
+        _config = config,
+        _clash = clash,
+        _proxyMode = proxyMode,
+        _serviceMode = serviceMode,
         _remoteDnsServer = remoteDns,
         _directDnsServer = directDns,
-        _config = configBuilder ??
-            SingBoxConfigBuilder(
-              proxyMode: proxyMode,
-              remoteDnsServer: remoteDns,
-              directDnsServer: directDns,
-            ),
-        _clash = clashApi ?? ClashApiClient(),
-        _proxyMode = proxyMode,
-        _serviceMode = serviceMode;
+        _clashSecret = clashSecret;
+
+  static String _generateClashSecret() {
+    final rng = Random.secure();
+    final bytes = List<int>.generate(24, (_) => rng.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
 
   final SingBoxProcess _process;
   SingBoxConfigBuilder _config;
@@ -50,6 +85,7 @@ class SingBoxVpnService implements VpnService {
   bool _serviceMode;
   String _remoteDnsServer;
   String _directDnsServer;
+  final String _clashSecret;
 
   /// Whether sing-box is configured as a local SOCKS proxy (no TUN, no UAC).
   bool get proxyMode => _proxyMode;
@@ -68,6 +104,7 @@ class SingBoxVpnService implements VpnService {
       proxyMode: value,
       remoteDnsServer: _remoteDnsServer,
       directDnsServer: _directDnsServer,
+      clashApiSecret: _clashSecret,
     );
   }
 
@@ -81,6 +118,7 @@ class SingBoxVpnService implements VpnService {
       proxyMode: _proxyMode,
       remoteDnsServer: remoteDns,
       directDnsServer: directDns,
+      clashApiSecret: _clashSecret,
     );
   }
 

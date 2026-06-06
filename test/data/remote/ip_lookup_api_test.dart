@@ -55,7 +55,7 @@ void main() {
 
     test('fetchCountryCode returns country code on success', () async {
       final response = Response<Map<String, dynamic>>(
-        data: <String, dynamic>{'countryCode': 'US'},
+        data: <String, dynamic>{'country': 'US'},
         requestOptions: RequestOptions(),
       );
       when(
