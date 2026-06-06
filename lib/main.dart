@@ -18,6 +18,7 @@ import 'package:input_vpn/presentation/cubits/vpn_cubit.dart';
 import 'package:input_vpn/services/app_logger.dart';
 import 'package:input_vpn/services/subscription_service.dart';
 import 'package:input_vpn/services/vpn/windows/network_utils.dart';
+import 'package:input_vpn/services/vpn/windows/singbox_process.dart';
 import 'package:input_vpn/services/vpn/windows/singbox_service_manager.dart';
 import 'package:input_vpn/services/vpn_service.dart';
 import 'package:provider/provider.dart';
@@ -85,14 +86,12 @@ Future<void> _syncServiceModeFlag() async {
   }
 }
 
-/// Kill any orphaned sing-box.exe processes to clean up TUN adapters.
+/// Clean up only the sing-box.exe process THIS app spawned in a previous run,
+/// identified by the persisted owner PID. Third-party sing-box / VPN clients
+/// are never touched.
 Future<void> _cleanupSingBoxProcesses() async {
-  try {
-    await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
-    debugPrint('Cleaned up orphaned sing-box processes');
-  } on Exception catch (_) {
-    // No sing-box processes running or taskkill failed - that's OK
-  }
+  await SingBoxProcess.cleanupOrphan();
+  debugPrint('Cleaned up orphaned sing-box process (owned PID only)');
 }
 
 class MyApp extends StatelessWidget {

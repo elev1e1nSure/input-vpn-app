@@ -45,6 +45,71 @@ class SingBoxProcess {
     return dir;
   }
 
+  /// File that records the PID of the sing-box.exe **this app** spawned.
+  /// Used to clean up only our own orphaned process after a crash — never
+  /// third-party sing-box instances. Static so startup cleanup can read it
+  /// without an existing [SingBoxProcess] instance.
+  static Future<File> _ownerPidFile() async {
+    final base = await getApplicationSupportDirectory();
+    final dir = Directory(p.join(base.path, 'singbox'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return File(p.join(dir.path, 'owner.pid'));
+  }
+
+  Future<void> _writeOwnerPid(int pid) async {
+    try {
+      await (await _ownerPidFile()).writeAsString('$pid', flush: true);
+    } on Exception catch (_) {}
+  }
+
+  Future<void> _clearOwnerPid() async {
+    try {
+      final f = await _ownerPidFile();
+      if (await f.exists()) await f.delete();
+    } on Exception catch (_) {}
+  }
+
+  /// True if a process with [pid] exists **and** is sing-box.exe. The double
+  /// filter guards against PID reuse so we never kill an unrelated process.
+  static Future<bool> _isOwnedPidAlive(int pid) async {
+    if (pid <= 0) return false;
+    try {
+      final r = await Process.run('tasklist', [
+        '/FI',
+        'PID eq $pid',
+        '/FI',
+        'IMAGENAME eq sing-box.exe',
+        '/FO',
+        'CSV',
+        '/NH',
+      ]);
+      return r.stdout.toString().toLowerCase().contains('sing-box.exe');
+    } on Exception catch (_) {
+      return false;
+    }
+  }
+
+  /// Kill ONLY the sing-box.exe this app spawned in a previous run, identified
+  /// by the persisted owner PID. Verifies the PID still maps to sing-box.exe
+  /// before killing, so third-party sing-box processes are never touched.
+  /// Safe to call at startup or on termination signals.
+  static Future<void> cleanupOrphan() async {
+    try {
+      final f = await _ownerPidFile();
+      if (!await f.exists()) return;
+      final pid = int.tryParse((await f.readAsString()).trim());
+      try {
+        await f.delete();
+      } on Exception catch (_) {}
+      if (pid == null || pid <= 0) return;
+      if (await _isOwnedPidAlive(pid)) {
+        await Process.run('taskkill', ['/PID', '$pid', '/F', '/T']);
+      }
+    } on Exception catch (_) {
+      // No owned process or taskkill failed — that's OK.
+    }
+  }
+
   Future<String> tailLog({int maxLines = 30}) async {
     final f = _logFile;
     if (f == null || !await f.exists()) return '<no log file>';
@@ -152,6 +217,7 @@ class SingBoxProcess {
     _normalProc = proc;
     _normalProcExited = false;
     _processId = proc.pid;
+    await _writeOwnerPid(proc.pid);
 
     unawaited(proc.exitCode.then((_) {
       _normalProcExited = true;
@@ -177,6 +243,7 @@ class SingBoxProcess {
     }
 
     final proc = _normalProc;
+    final ownedPid = _processId;
     debugPrint('SingBoxProcess: stopping process (pid=$_processId)...');
 
     if (proc != null) {
@@ -191,12 +258,15 @@ class SingBoxProcess {
       _normalProc = null;
     }
 
-    // Safety net: ensure no stray sing-box process remains.
-    if (await _isSingBoxRunningByName()) {
+    // Safety net: ensure OUR sing-box process is gone. Scoped to the PID we
+    // spawned (and re-verified to still be sing-box.exe) so we never kill
+    // third-party sing-box / VPN clients running on the same machine.
+    if (await _isOwnedPidAlive(ownedPid)) {
       try {
-        await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F', '/T']);
+        await Process.run('taskkill', ['/PID', '$ownedPid', '/F', '/T']);
       } on Exception catch (_) {}
     }
+    await _clearOwnerPid();
 
     _processId = 0;
 
@@ -210,16 +280,8 @@ class SingBoxProcess {
     if (_serviceMode) return _serviceModeRunning;
     final proc = _normalProc;
     if (proc != null) return !_normalProcExited;
-    return await _isSingBoxRunningByName();
-  }
-
-  Future<bool> _isSingBoxRunningByName() async {
-    try {
-      final r = await Process.run('tasklist',
-          ['/FI', 'IMAGENAME eq sing-box.exe', '/FO', 'CSV', '/NH']);
-      return r.stdout.toString().toLowerCase().contains('sing-box.exe');
-    } on Exception catch (_) {
-      return false;
-    }
+    // No live handle: only report alive if OUR previously-spawned PID is still
+    // a sing-box.exe. Avoids treating a third-party sing-box as our process.
+    return await _isOwnedPidAlive(_processId);
   }
 }
