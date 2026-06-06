@@ -50,15 +50,23 @@ class VpnRepositoryImpl implements VpnServiceRepository {
       Result.ok(_vpn.watchStatus());
 
   @override
-  Result<void> connect(ParsedConfig config) {
-    _vpn.connect(config);
-    return const Result.ok(null);
+  Future<Result<void>> connect(ParsedConfig config) async {
+    try {
+      await _vpn.connect(config);
+      return const Result.ok(null);
+    } on Exception catch (e) {
+      return Result.err('Connection failed: $e', cause: e);
+    }
   }
 
   @override
-  Result<void> disconnect() {
-    _vpn.disconnect();
-    return const Result.ok(null);
+  Future<Result<void>> disconnect() async {
+    try {
+      await _vpn.disconnect();
+      return const Result.ok(null);
+    } on Exception catch (e) {
+      return Result.err('Disconnect failed: $e', cause: e);
+    }
   }
 
   @override
@@ -90,22 +98,22 @@ class VpnRepositoryImpl implements VpnServiceRepository {
   Result<int> getReconnectAttempt() => Result.ok(reconnectAttempt);
 
   @override
-  Result<void> setProxyMode(bool enabled) {
+  Future<Result<void>> setProxyMode(bool enabled) async {
     final vpn = _vpn;
     if (vpn is! SingBoxVpnService) return const Result.ok(null);
     if (_isConnected) {
-      disconnect();
+      await disconnect();
     }
     vpn.setProxyMode(enabled);
     return const Result.ok(null);
   }
 
   @override
-  Result<void> setServiceMode(bool enabled) {
+  Future<Result<void>> setServiceMode(bool enabled) async {
     final vpn = _vpn;
     if (vpn is! SingBoxVpnService) return const Result.ok(null);
     if (_isConnected) {
-      disconnect();
+      await disconnect();
     }
     vpn.setServiceMode(enabled);
     return const Result.ok(null);

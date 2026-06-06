@@ -5,7 +5,7 @@ class DisconnectVpn {
   DisconnectVpn(this.repository);
   final VpnServiceRepository repository;
 
-  Result<void> call() {
+  Future<Result<void>> call() {
     return repository.disconnect();
   }
 }

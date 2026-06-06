@@ -6,26 +6,15 @@ class ToggleVpnConnection {
   ToggleVpnConnection(this.repository);
   final VpnServiceRepository repository;
 
-  Result<void> call(ParsedConfig? config) {
-    final isConnected = repository.getIsConnected();
-    final isConnecting = repository.getIsConnecting();
-
-    return isConnected.when(
-      onSuccess: (connected) {
-        if (connected) {
-          return repository.disconnect();
-        }
-        return isConnecting.when(
-          onSuccess: (connecting) {
-            if (!connecting && config != null) {
-              return repository.connect(config);
-            }
-            return const Result.ok(null);
-          },
-          onFailure: (msg, cause) => Result.err(msg, cause: cause),
-        );
-      },
-      onFailure: (msg, cause) => Result.err(msg, cause: cause),
-    );
+  Future<Result<void>> call(ParsedConfig? config) async {
+    final connected = repository.getIsConnected().getOrElse(false);
+    if (connected) {
+      return repository.disconnect();
+    }
+    final connecting = repository.getIsConnecting().getOrElse(false);
+    if (!connecting && config != null) {
+      return repository.connect(config);
+    }
+    return const Result.ok(null);
   }
 }

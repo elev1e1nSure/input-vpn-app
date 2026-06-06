@@ -6,7 +6,7 @@ class ConnectVpn {
   ConnectVpn(this.repository);
   final VpnServiceRepository repository;
 
-  Result<void> call(ParsedConfig config) {
+  Future<Result<void>> call(ParsedConfig config) {
     return repository.connect(config);
   }
 }

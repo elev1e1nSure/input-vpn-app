@@ -9,6 +9,7 @@ class VpnState {
     this.isServiceMode = false,
     this.isReconnecting = false,
     this.reconnectAttempt = 0,
+    this.errorMessage,
   });
   final ConnectionStatus connectionStatus;
   final VpnServer? selectedServer;
@@ -16,6 +17,10 @@ class VpnState {
   final bool isServiceMode;
   final bool isReconnecting;
   final int reconnectAttempt;
+
+  /// Last connect/disconnect error surfaced to the UI, or null. Cleared by
+  /// passing `clearError: true` to [copyWith].
+  final String? errorMessage;
 
   bool get isConnected => connectionStatus is Connected;
   bool get isConnecting => connectionStatus is Connecting;
@@ -27,6 +32,8 @@ class VpnState {
     bool? isServiceMode,
     bool? isReconnecting,
     int? reconnectAttempt,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return VpnState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
@@ -35,6 +42,7 @@ class VpnState {
       isServiceMode: isServiceMode ?? this.isServiceMode,
       isReconnecting: isReconnecting ?? this.isReconnecting,
       reconnectAttempt: reconnectAttempt ?? this.reconnectAttempt,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

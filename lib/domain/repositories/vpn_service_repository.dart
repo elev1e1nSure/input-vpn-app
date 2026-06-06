@@ -4,8 +4,14 @@ import 'package:input_vpn/models/parsed_config.dart';
 
 abstract class VpnServiceRepository {
   Result<Stream<ConnectionStatus>> watchStatus();
-  Result<void> connect(ParsedConfig config);
-  Result<void> disconnect();
+
+  /// Connect and await the real backend result. Returns a failure [Result]
+  /// (never throws) when the underlying connect fails.
+  Future<Result<void>> connect(ParsedConfig config);
+
+  /// Disconnect and await the real backend result.
+  Future<Result<void>> disconnect();
+
   Result<void> dispose();
 
   Result<bool> getIsConnected();
@@ -15,8 +21,8 @@ abstract class VpnServiceRepository {
   Result<bool> getIsReconnecting();
   Result<int> getReconnectAttempt();
 
-  Result<void> setProxyMode(bool enabled);
-  Result<void> setServiceMode(bool enabled);
+  Future<Result<void>> setProxyMode(bool enabled);
+  Future<Result<void>> setServiceMode(bool enabled);
   Result<void> setDnsServers(
       {required String remoteDns, required String directDns});
 }

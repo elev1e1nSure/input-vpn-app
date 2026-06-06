@@ -314,8 +314,14 @@ class SingBoxVpnService implements VpnService {
     });
   }
 
+  bool _disposed = false;
+
   @override
   Future<void> dispose() async {
+    // Idempotent: the backend is a shared singleton and may be disposed from
+    // more than one holder during teardown.
+    if (_disposed) return;
+    _disposed = true;
     await _hardStop();
     await _statusCtrl.close();
     await _statsCtrl.close();

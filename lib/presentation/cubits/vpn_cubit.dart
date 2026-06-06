@@ -27,8 +27,11 @@ class VpnCubit extends Cubit<VpnState> {
 
   @override
   Future<void> close() {
+    // Only cancel our own subscription. The VpnService/repository is a shared
+    // singleton (see DI) — disposing it here would tear down the backend for
+    // any other holder and double-dispose at app shutdown. Its lifecycle is
+    // owned at the app level, not by this factory-scoped cubit.
     _statusSub?.cancel();
-    _vpnRepository.dispose();
     return super.close();
   }
 
@@ -44,17 +47,26 @@ class VpnCubit extends Cubit<VpnState> {
 
   Future<void> toggleConnection(ParsedConfig? config) async {
     if (state.isConnecting) return;
-    _toggleVpnConnection(config);
+    if (state.errorMessage != null) emit(state.copyWith(clearError: true));
+    final result = await _toggleVpnConnection(config);
+    if (result.isFailure) {
+      emit(state.copyWith(errorMessage: result.error));
+    }
+  }
+
+  /// Clear the last surfaced connect/disconnect error.
+  void clearError() {
+    if (state.errorMessage != null) emit(state.copyWith(clearError: true));
   }
 
   Future<void> setProxyMode(bool enabled) async {
-    _vpnRepository.setProxyMode(enabled);
+    await _vpnRepository.setProxyMode(enabled);
     final result = _vpnRepository.getIsProxyMode();
     emit(state.copyWith(isProxyMode: result.getOrElse(false)));
   }
 
   Future<void> setServiceMode(bool enabled) async {
-    _vpnRepository.setServiceMode(enabled);
+    await _vpnRepository.setServiceMode(enabled);
     final result = _vpnRepository.getIsServiceMode();
     emit(state.copyWith(isServiceMode: result.getOrElse(false)));
   }
