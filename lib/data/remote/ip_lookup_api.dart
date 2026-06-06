@@ -31,16 +31,18 @@ class IpLookupApi {
   }
 
   /// Returns the ISO-3166 alpha-2 country code for the current IP.
+  ///
+  /// Uses an HTTPS endpoint so the lookup is not sent in cleartext.
   Future<Result<String>> fetchCountryCode() async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        'http://ip-api.com/json/',
+        'https://api.country.is/',
         options: Options(
           sendTimeout: const Duration(seconds: 5),
           receiveTimeout: const Duration(seconds: 5),
         ),
       );
-      final countryCode = response.data?['countryCode'] as String?;
+      final countryCode = response.data?['country'] as String?;
       if (countryCode != null && countryCode.isNotEmpty) {
         return Result.ok(countryCode);
       }
