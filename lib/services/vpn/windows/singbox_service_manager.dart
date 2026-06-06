@@ -107,33 +107,13 @@ class SingboxServiceManager {
     return false;
   }
 
-  /// Kill sing-box.exe. Tries the SYSTEM-level [InputVPNStop] scheduled task
-  /// first; falls back to a direct taskkill if the task is missing.
+  /// Kill sing-box.exe via the SYSTEM-level [InputVPNStop] scheduled task.
+  /// Returns false if the task is not installed — callers should fall back
+  /// to SingBoxProcess.stop() which uses scoped PID-based cleanup.
   static Future<bool> stop() async {
     if (!Platform.isWindows) return false;
-    AppLogger.info('ServiceManager: stopping sing-box');
-
-    if (await stopViaSchtask()) return true;
-
-    // Fallback: direct taskkill (works when the app itself is elevated or
-    // the stop task is not installed on older setups).
-    AppLogger.info(
-        'ServiceManager: fallback — direct taskkill /IM sing-box.exe /F');
-    try {
-      final result =
-          await Process.run('taskkill', ['/IM', 'sing-box.exe', '/F']);
-      final ok = result.exitCode == 0 ||
-          (result.stdout as String).contains('not found') ||
-          (result.stderr as String).contains('not found');
-      if (ok) {
-        AppLogger.info(
-            'ServiceManager: sing-box stopped via taskkill fallback');
-      }
-      return true; // treat "not running" as success
-    } on Exception catch (e) {
-      AppLogger.error('ServiceManager.stop error: $e');
-      return false;
-    }
+    AppLogger.info('ServiceManager: stopping sing-box via task');
+    return await stopViaSchtask();
   }
 
   // ── Status ───────────────────────────────────────────────────────────────────

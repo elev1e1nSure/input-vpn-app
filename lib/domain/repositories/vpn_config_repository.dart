@@ -9,11 +9,15 @@ abstract class VpnConfigRepository {
   Result<VpnServer?> getSelectedServer();
   Result<ParsedConfig?> getParsedConfig(String serverId);
 
+  /// Add a config. For subscriptions this starts the fetch/parse in the
+  /// background and returns immediately.
   Result<void> addConfig(String name, String raw, String type);
   Result<void> removeConfig(String configId);
   Result<void> updateConfig(
       String configId, String newName, String newRawConfig);
   Result<void> selectServer(VpnServer server);
+
+  /// Refresh subscription usage stats.
   Result<void> refreshSubscriptionStats(String configId);
 
   Result<void> saveState();

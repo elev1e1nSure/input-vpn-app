@@ -85,14 +85,32 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ResultCode: Integer;
   AppDataPath: String;
+  OwnerPidFile: String;
+  OwnerPidText: String;
+  OwnerPid: Integer;
 begin
   if CurUninstallStep = usUninstall then
   begin
-    // 1. Kill sing-box directly (app runs as admin now)
+    // 1. Kill the app itself
     Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM input_vpn.exe /F /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM sing-box.exe /F /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-    // 2. Remove only the app's own TUN adapter. Do NOT reset DNS on physical
+    // 2. Kill ONLY the sing-box.exe this app spawned, identified by owner.pid
+    //    Third-party sing-box / VPN clients are never touched.
+    OwnerPidFile := ExpandConstant('{userappdata}') + '\inputvpn\singbox\owner.pid';
+    if FileExists(OwnerPidFile) then
+    begin
+      if LoadStringFromFile(OwnerPidFile, OwnerPidText) then
+      begin
+        OwnerPid := StrToIntDef(Trim(OwnerPidText), 0);
+        if OwnerPid > 0 then
+        begin
+          Exec(ExpandConstant('{sys}\taskkill.exe'), '/PID ' + IntToStr(OwnerPid) + ' /F /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        end;
+      end;
+      DeleteFile(OwnerPidFile);
+    end;
+
+    // 3. Remove only the app's own TUN adapter. Do NOT reset DNS on physical
     //    adapters: the app runs sing-box in TUN mode (hijack-dns) and never
     //    reconfigures physical-NIC DNS, so a blanket DHCP reset would clobber
     //    users' manually-set static DNS that this app never changed.
@@ -101,11 +119,11 @@ begin
         'Get-NetAdapter | Where-Object { $_.Name -like ''InputVPN*'' } | Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue"',
       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-    // 3. Clean up any leftover scheduled tasks from old installs
+    // 4. Clean up any leftover scheduled tasks from old installs
     Exec(ExpandConstant('{sys}\schtasks.exe'), '/delete /f /tn "InputVPNSingBox"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec(ExpandConstant('{sys}\schtasks.exe'), '/delete /f /tn "InputVPNStop"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-    // 4. Optionally delete user data
+    // 5. Optionally delete user data
     if Assigned(DeleteDataCheckbox) and DeleteDataCheckbox.Checked then
     begin
       AppDataPath := ExpandConstant('{userappdata}') + '\inputvpn';

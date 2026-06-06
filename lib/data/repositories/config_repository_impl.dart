@@ -43,10 +43,10 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
     final isUrl =
         trimmed.startsWith('http://') || trimmed.startsWith('https://');
     if (type == 'subscription' || isUrl) {
-      _addSubscription(name, trimmed);
-    } else {
-      _addSingleLink(name, trimmed, type);
+      _addSubscription(name, trimmed).then((_) {});
+      return const Result.ok(null);
     }
+    _addSingleLink(name, trimmed, type);
     return const Result.ok(null);
   }
 
@@ -90,7 +90,7 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
     saveState();
   }
 
-  void _addSubscription(String name, String url) {
+  Future<Result<void>> _addSubscription(String name, String url) async {
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     _userConfigs.add(VpnConfig(
       id: id,
@@ -102,52 +102,58 @@ class ConfigRepositoryImpl implements VpnConfigRepository {
     ));
 
     try {
-      _subs.fetch(url).then((result) {
-        if (result.isEmpty) return;
+      // Await the fetch/parse so callers don't observe a half-populated state
+      // and the saveState() below persists the fully-loaded servers.
+      final result = await _subs.fetch(url);
+      if (result.isEmpty) {
+        saveState();
+        return const Result.err('Subscription contained no usable entries.');
+      }
 
-        final displayTitle =
-            (name.isEmpty ? (result.title ?? 'Subscription') : name);
+      final displayTitle =
+          (name.isEmpty ? (result.title ?? 'Subscription') : name);
 
-        final info = result.info;
-        final configIndex = _userConfigs.indexWhere((c) => c.id == id);
-        if (configIndex != -1 && info != null) {
-          _userConfigs[configIndex] = VpnConfig(
-            id: id,
-            name: displayTitle,
-            rawConfig: url,
-            type: ConfigType.subscription,
-            addedAt: DateTime.now(),
-            subUrl: url,
-            subUpload: info.upload,
-            subDownload: info.download,
-            subTotal: info.total,
-            subExpire: info.expire != null
-                ? info.expire!.millisecondsSinceEpoch ~/ 1000
-                : null,
-          );
-        }
+      final info = result.info;
+      final configIndex = _userConfigs.indexWhere((c) => c.id == id);
+      if (configIndex != -1 && info != null) {
+        _userConfigs[configIndex] = VpnConfig(
+          id: id,
+          name: displayTitle,
+          rawConfig: url,
+          type: ConfigType.subscription,
+          addedAt: DateTime.now(),
+          subUrl: url,
+          subUpload: info.upload,
+          subDownload: info.download,
+          subTotal: info.total,
+          subExpire: info.expire != null
+              ? info.expire!.millisecondsSinceEpoch ~/ 1000
+              : null,
+        );
+      }
 
-        for (var i = 0; i < result.configs.length; i++) {
-          final p = result.configs[i];
-          final serverId = 's_${id}_$i';
-          _userServers.add(VpnServer(
-            id: serverId,
-            name: p.remark.isNotEmpty ? p.remark : '$displayTitle ${i + 1}',
-            country: p.server.isNotEmpty ? p.server : displayTitle,
-            city: p.server.isNotEmpty ? '${p.server}:${p.port}' : displayTitle,
-            flagCode: extractCountryCode(p.remark),
-            signalQuality: _estimateSignal(p),
-            rawConfig: p.raw,
-            configId: id,
-          ));
-          _parsedByServerId[serverId] = p;
-        }
-        _selectedServer ??= _userServers.isNotEmpty ? _userServers.first : null;
-      }).catchError((Object e) {
-        debugPrint('Failed to load subscription "$name": $e');
-      });
-    } finally {
+      for (var i = 0; i < result.configs.length; i++) {
+        final p = result.configs[i];
+        final serverId = 's_${id}_$i';
+        _userServers.add(VpnServer(
+          id: serverId,
+          name: p.remark.isNotEmpty ? p.remark : '$displayTitle ${i + 1}',
+          country: p.server.isNotEmpty ? p.server : displayTitle,
+          city: p.server.isNotEmpty ? '${p.server}:${p.port}' : displayTitle,
+          flagCode: extractCountryCode(p.remark),
+          signalQuality: _estimateSignal(p),
+          rawConfig: p.raw,
+          configId: id,
+        ));
+        _parsedByServerId[serverId] = p;
+      }
+      _selectedServer ??= _userServers.isNotEmpty ? _userServers.first : null;
       saveState();
+      return const Result.ok(null);
+    } on Exception catch (e) {
+      // Keep the config entry (so the user can retry) but report the failure.
+      saveState();
+      return Result.err('Failed to load subscription: $e', cause: e);
     }
   }
 

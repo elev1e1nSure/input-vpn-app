@@ -69,11 +69,19 @@ class SingBoxProcess {
     } on Exception catch (_) {}
   }
 
-  /// True if a process with [pid] exists **and** is sing-box.exe. The double
-  /// filter guards against PID reuse so we never kill an unrelated process.
+  /// Returns the expected path to sing-box.exe (next to the app executable).
+  static String _expectedSingBoxPath() {
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    return p.join(exeDir, 'sing-box.exe');
+  }
+
+  /// True if a process with [pid] exists **and** is our sing-box.exe.
+  /// Verifies both IMAGENAME and ExecutablePath to guard against PID reuse
+  /// and third-party sing-box installations.
   static Future<bool> _isOwnedPidAlive(int pid) async {
     if (pid <= 0) return false;
     try {
+      // First check: process exists and is named sing-box.exe
       final r = await Process.run('tasklist', [
         '/FI',
         'PID eq $pid',
@@ -83,28 +91,58 @@ class SingBoxProcess {
         'CSV',
         '/NH',
       ]);
-      return r.stdout.toString().toLowerCase().contains('sing-box.exe');
+      if (!r.stdout.toString().toLowerCase().contains('sing-box.exe')) {
+        return false;
+      }
+
+      // Second check: verify the executable path matches our expected location
+      final expectedPath = _expectedSingBoxPath().toLowerCase();
+      final wmic = await Process.run('wmic', [
+        'process',
+        'where',
+        'ProcessId=$pid',
+        'get',
+        'ExecutablePath',
+        '/VALUE',
+      ]);
+      final output = wmic.stdout.toString().trim();
+      final match = RegExp(r'ExecutablePath=(.+)').firstMatch(output);
+      if (match == null) return false;
+      final actualPath = match.group(1)!.trim().toLowerCase();
+      return actualPath == expectedPath;
     } on Exception catch (_) {
       return false;
     }
   }
 
   /// Kill ONLY the sing-box.exe this app spawned in a previous run, identified
-  /// by the persisted owner PID. Verifies the PID still maps to sing-box.exe
-  /// before killing, so third-party sing-box processes are never touched.
+  /// by the persisted owner PID. Verifies the PID still maps to our sing-box.exe
+  /// (both IMAGENAME and ExecutablePath) before killing, so third-party sing-box
+  /// processes are never touched. Deletes owner.pid only after successful kill.
   /// Safe to call at startup or on termination signals.
   static Future<void> cleanupOrphan() async {
     try {
       final f = await _ownerPidFile();
       if (!await f.exists()) return;
       final pid = int.tryParse((await f.readAsString()).trim());
-      try {
-        await f.delete();
-      } on Exception catch (_) {}
-      if (pid == null || pid <= 0) return;
+      if (pid == null || pid <= 0) {
+        // Invalid PID — clear the stale file
+        try {
+          await f.delete();
+        } on Exception catch (_) {}
+        return;
+      }
+
+      // Verify and kill only if it's still our process
       if (await _isOwnedPidAlive(pid)) {
         await Process.run('taskkill', ['/PID', '$pid', '/F', '/T']);
       }
+
+      // Delete owner.pid AFTER kill to prevent race where PID is reused
+      // between check and delete.
+      try {
+        await f.delete();
+      } on Exception catch (_) {}
     } on Exception catch (_) {
       // No owned process or taskkill failed — that's OK.
     }
