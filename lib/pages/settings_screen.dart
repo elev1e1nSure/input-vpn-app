@@ -299,6 +299,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       await _updateService.installAndExit(installerPath);
+    } on UpdateVerificationException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _downloadError = e.message;
+      });
     } on Exception catch (_) {
       if (!mounted) return;
       setState(() {
