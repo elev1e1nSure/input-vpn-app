@@ -15,6 +15,8 @@ class NetworkUtils {
 
     debugPrint('NetworkUtils: starting global cleanup...');
     const script = r'''
+      Get-NetRoute | Where-Object { $_.InterfaceAlias -like "InputVPN*" } |
+        Remove-NetRoute -Confirm:$false -ErrorAction SilentlyContinue
       Get-NetAdapter | Where-Object { $_.Name -like "InputVPN*" } |
         Remove-NetAdapter -Confirm:$false -ErrorAction SilentlyContinue
       Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {

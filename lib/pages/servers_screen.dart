@@ -207,60 +207,63 @@ class _ServerTileState extends State<_ServerTile> {
                   color: primary.withValues(alpha: 0.12),
                 ),
                 child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 6,
-                ),
-                onTap: widget.onTap,
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: primary.withValues(alpha: 0.16),
-                    shape: BoxShape.circle,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 6,
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.public,
-                      size: 20,
-                      color: primary.withValues(alpha: 0.8),
+                  onTap: widget.onTap,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: primary.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
                     ),
-                  ),
-                ),
-                title: Text(
-                  _stripFlags(widget.server.name),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                subtitle: widget.subtitle,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.edit,
-                          size: 18,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.3),
-                        ),
-                        onPressed: widget.onEdit,
+                    child: Center(
+                      child: Icon(
+                        Icons.public,
+                        size: 20,
+                        color: primary.withValues(alpha: 0.8),
                       ),
                     ),
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.delete,
-                          size: 18,
-                          color: theme.colorScheme.error.withValues(alpha: 0.4),
-                        ),
-                        onPressed: widget.onDelete,
-                      ),
+                  ),
+                  title: Text(
+                    _stripFlags(widget.server.name),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
                     ),
-                  ],
+                  ),
+                  subtitle: widget.subtitle,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.edit,
+                            size: 18,
+                            color:
+                                theme.iconTheme.color?.withValues(alpha: 0.3),
+                          ),
+                          onPressed: widget.onEdit,
+                        ),
+                      ),
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.delete,
+                            size: 18,
+                            color:
+                                theme.colorScheme.error.withValues(alpha: 0.4),
+                          ),
+                          onPressed: widget.onDelete,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
@@ -284,76 +287,68 @@ class _ServerTileState extends State<_ServerTile> {
                         : theme.colorScheme.surface.withValues(alpha: 0.78),
                   ),
                   child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 6,
-            ),
-            onTap: widget.onTap,
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? primary.withValues(alpha: 0.16)
-                    : theme.scaffoldBackgroundColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.public,
-                  size: 20,
-                  color: isSelected
-                      ? primary.withValues(alpha: 0.8)
-                      : theme.iconTheme.color?.withValues(alpha: 0.25),
-                ),
-              ),
-            ),
-            title: Text(
-              _stripFlags(widget.server.name),
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? theme.colorScheme.onSurface : null,
-              ),
-            ),
-            subtitle: widget.subtitle,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.edit,
-                      size: 18,
-                      color: theme.iconTheme.color?.withValues(
-                        alpha: _hovered ? 0.6 : 0.3,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 6,
+                    ),
+                    onTap: widget.onTap,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: theme.scaffoldBackgroundColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.public,
+                          size: 20,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.25),
+                        ),
                       ),
                     ),
-                    onPressed: widget.onEdit,
-                  ),
-                ),
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.delete,
-                      size: 18,
-                      color: theme.colorScheme.error.withValues(
-                        alpha: _hovered ? 0.8 : 0.4,
+                    title: Text(
+                      _stripFlags(widget.server.name),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    onPressed: widget.onDelete,
+                    subtitle: widget.subtitle,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.edit,
+                              size: 18,
+                              color: theme.iconTheme.color?.withValues(
+                                alpha: _hovered ? 0.6 : 0.3,
+                              ),
+                            ),
+                            onPressed: widget.onEdit,
+                          ),
+                        ),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.delete,
+                              size: 18,
+                              color: theme.colorScheme.error.withValues(
+                                alpha: _hovered ? 0.8 : 0.4,
+                              ),
+                            ),
+                            onPressed: widget.onDelete,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
                 ),
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

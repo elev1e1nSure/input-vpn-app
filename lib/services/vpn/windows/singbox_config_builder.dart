@@ -389,6 +389,32 @@ class SingBoxConfigBuilder {
       case 'quic':
         out['transport'] = {'type': 'quic'};
         return;
+      case 'xhttp':
+      case 'splithttp':
+        final block = <String, dynamic>{
+          'type': 'splithttp',
+          if (p.host != null && p.host!.isNotEmpty) 'host': p.host,
+          if (p.path != null && p.path!.isNotEmpty) 'path': p.path,
+        };
+        final extraRaw = p.transport['extra'];
+        if (extraRaw != null) {
+          try {
+            final extra =
+                jsonDecode(extraRaw.toString()) as Map<String, dynamic>;
+            final maxBytes =
+                int.tryParse(extra['scMaxEachPostBytes']?.toString() ?? '');
+            if (maxBytes != null && maxBytes > 0) {
+              block['max_upload_size'] = maxBytes;
+            }
+            final intervalMs =
+                int.tryParse(extra['scMinPostsIntervalMs']?.toString() ?? '');
+            if (intervalMs != null && intervalMs > 0) {
+              block['min_upload_interval'] = '${intervalMs}ms';
+            }
+          } on Exception catch (_) {}
+        }
+        out['transport'] = block;
+        return;
       default:
         return;
     }

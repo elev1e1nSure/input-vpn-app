@@ -760,7 +760,7 @@ class _ConnectButtonState extends State<_ConnectButton>
                 ? Color.lerp(baseColor, primary, 0.055)
                 : baseColor;
         final iconColor =
-            isConnected ? theme.colorScheme.onPrimary : theme.iconTheme.color;
+            isConnected ? primary : theme.iconTheme.color;
 
         return MouseRegion(
           cursor: SystemMouseCursors.click,
@@ -781,16 +781,38 @@ class _ConnectButtonState extends State<_ConnectButton>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 140),
-                    curve: Curves.easeOutCubic,
-                    width: 184,
-                    height: 184,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: buttonColor,
-                    ),
-                    child: Center(
+                  Container(
+                    decoration: isConnected
+                        ? BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: primary.withValues(
+                                    alpha: 0.08 + _pulse.value * 0.18),
+                                blurRadius: 20 + _pulse.value * 32,
+                                spreadRadius: _pulse.value * 6,
+                              ),
+                            ],
+                          )
+                        : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 140),
+                      curve: Curves.easeOutCubic,
+                      width: 184,
+                      height: 184,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: buttonColor,
+                        border: Border.all(
+                          color: isConnected
+                              ? primary.withValues(
+                                  alpha: 0.20 + _pulse.value * 0.18)
+                              : theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.08),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 120),
                         transitionBuilder: (child, animation) =>
@@ -812,6 +834,7 @@ class _ConnectButtonState extends State<_ConnectButton>
                               ),
                       ),
                     ),
+                  ),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -838,14 +861,29 @@ class _PublicIpText extends StatelessWidget {
       // Fire-and-forget refresh if IP hasn't been resolved yet.
       Future.microtask(appState.refreshPublicIp);
     }
-    return Text(
-      ip != null ? 'IP: $ip' : 'IP: …',
-      textAlign: TextAlign.center,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+          ),
+        ),
+        const SizedBox(width: 7),
+        Text(
+          ip ?? '…',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.72),
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1014,10 +1052,21 @@ class _SessionTimerState extends State<_SessionTimer> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final since = _since;
     if (since == null) return Text(widget.fallback);
     final elapsed = DateTime.now().difference(since);
-    return Text('${widget.fallback}  ·  ${_fmt(elapsed)}');
+    return Text(
+      '${widget.fallback}  ·  ${_fmt(elapsed)}',
+      textAlign: TextAlign.center,
+      style: theme.textTheme.headlineSmall?.copyWith(
+        fontSize: 30,
+        fontWeight: FontWeight.w900,
+        height: 1.02,
+        letterSpacing: 0,
+        color: theme.colorScheme.primary,
+      ),
+    );
   }
 }
 
